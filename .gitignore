@@ -1,8 +1,7 @@
-./*.a
 *.out
 *.exe
 bin
-./lib
+lib
 obj
 .cache
 *.backtrace

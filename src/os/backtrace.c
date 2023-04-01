@@ -84,7 +84,6 @@ static bt_error_func (void *f, const char [[unused]] * unused2, int errnum) {
 static void bt_error_func (void *f, const char __attribute__ ((unused)) * unused2, int errnum) {
 #endif
     close_backtrace_file ();
-    printf (unused2);
 
     if (errnum != -1) {
         if (!f)
@@ -146,9 +145,8 @@ tempfile:
                     (_sopen_s (&BT_FD, BT_FILENAME, O_RDWR | O_CREAT | O_EXCL, _SH_DENYNO, _S_IREAD | _S_IWRITE),
                      BT_FD == -1)
 #else
-                    (open (BT_FILENAME, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR))
+                    (open (BT_FILENAME, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR) == -1)
 #endif
-                            == -1
                         ? bt_error_func (NULL, NULL, 0)
                         : (void) 0
                 );
@@ -164,12 +162,11 @@ tempfile:
     if (({
             char newname [sizeof (BT_FILENAME_TEMPLATE)];
             _close (BT_FD);
-            int res = rename (
-                BT_FILENAME, memcpy (
-                                 mempcpy (newname, BT_FILENAME, sizeof (BT_FILENAME_MOD) - 1), BT_FILENAME_SUFFIX,
-                                 sizeof (BT_FILENAME_SUFFIX)
-                             )
+            memcpy (
+                mempcpy (newname, BT_FILENAME, sizeof (BT_FILENAME_MOD) - 1), BT_FILENAME_SUFFIX,
+                sizeof (BT_FILENAME_SUFFIX)
             );
+            int res = rename (BT_FILENAME, newname);
             memcpy (BT_FILENAME, newname, sizeof (BT_FILENAME));
             res;
         }))

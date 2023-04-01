@@ -8,8 +8,8 @@ EXTERNLIB     := $(EXTERNDIR)/lib
 BINDIR        := bin
 
 ifeq ($(OS), Windows_NT)
-	GCC_LINUX   := gcc
-	GCC_WINDOWS := desdewindowsnopuedes
+	GCC_LINUX   := desdewindowsnopuedes
+	GCC_WINDOWS := gcc
 else
 	GCC_LINUX   := $(shell which gcc)
 	GCC_WINDOWS := $(shell which x86_64-w64-mingw32-gcc)

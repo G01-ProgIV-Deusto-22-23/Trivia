@@ -9,10 +9,6 @@ extern "C" {
     static volatile int      STDERR_SAVE         = -1;
     static volatile int      LAST_LOG_LINE       = 0;
 
-#ifdef _WIN32
-#else
-#endif
-
     int get_log_file (void) {
         return LOG_FILE_FILENO;
     }
