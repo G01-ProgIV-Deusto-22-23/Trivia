@@ -36,3 +36,6 @@
 
 # Backtraces
 *.backtrace
+
+# Clangd compile commands
+compile_commands*.json
