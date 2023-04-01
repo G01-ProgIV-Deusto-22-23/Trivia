@@ -1,0 +1,64 @@
+---
+BasedOnStyle: LLVM
+AccessModifierOffset: -4
+AlignAfterOpenBracket: BlockIndent
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossComments: true
+  AlignCompound: true
+AlignConsecutiveBitFields:
+  Enabled: true
+  AcrossComments: true
+  AlignCompound: true
+  PadOperators: true
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossComments: true
+  AlignCompound: true
+  PadOperators: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossComments: true
+  AlignCompound: true
+  PadOperators: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakBeforeMultilineStrings: true
+BraceWrapping:
+  AfterClass: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeWhile: true
+  IndentBraces: true
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakAfterJavaFieldAnnotations: true
+BreakBeforeConceptDeclarations: Never
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
+BreakStringLiterals: false
+ColumnLimit: 120
+CommentPragmas: "^ pragma:"
+Cpp11BracedListStyle: false
+FixNamespaceComments: false
+IndentAccessModifiers: true
+IndentCaseLabels: true
+IndentExternBlock: Indent
+IndentPPDirectives: BeforeHash
+IndentWidth: 4
+IndentWrappedFunctionNames: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+NamespaceIndentation: All
+QualifierAlignment: Left
+RemoveBracesLLVM: true
+RequiresClausePosition: WithPreceding
+SeparateDefinitionBlocks: Always
+SortIncludes: Never
+SortJavaStaticImport: After
+SpaceAfterCStyleCast: true
+SpaceAroundPointerQualifiers: After
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeParens: Always
+SpaceBeforeSquareBrackets: true
+TabWidth: 4
