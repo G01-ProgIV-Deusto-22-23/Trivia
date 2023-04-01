@@ -1,4 +1,4 @@
-#if defined(__cplusplus) || __STDC_VERSION__ > 201710L
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
 [[__noreturn__]] static void trivia_abort (void [[unused]] * unused) {
 #else
 __attribute__ ((__noreturn__)) static void trivia_abort (void __attribute__ ((unused)) * unused) {
@@ -6,11 +6,12 @@ __attribute__ ((__noreturn__)) static void trivia_abort (void __attribute__ ((un
     unreachable ();
 }
 
-#if defined(__cplusplus) || __STDC_VERSION__ > 201710L
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
 static void sigsegv_handler (const int [[unused]] unused) {
 #else
 static void                                sigsegv_handler (const int __attribute__ ((unused)) unused) {
 #endif
+    print_backtrace ();
     _Pragma ("GCC diagnostic push");
     _Pragma ("GCC diagnostic ignored \"-Wimplicit-function-declaration\"");
     error ("segmentation fault.", trivia_abort);

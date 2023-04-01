@@ -43,7 +43,11 @@ ui_windows: CC     := $(GCC_WINDOWS)
 os_windows: CC     := $(GCC_WINDOWS)
 # os_windows: CFLAGS += -mwindows
 
+ifeq ($(OS), Windows_NT)
+all: windows
+else
 all: linux windows
+endif
 
 init: init_bin init_lib init_obj
 
@@ -121,3 +125,5 @@ endif
 
 PHONY += clean
 .PHONY: $(PHONY)
+
+.SILENT: init_bin init_obj init_lib

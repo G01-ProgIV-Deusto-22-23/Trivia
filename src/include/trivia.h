@@ -35,8 +35,11 @@
 #include <curses.h>
 #include <form.h>
 #include <menu.h>
-#include <ncurses_dll.h>
-#include <ncurses_mingw.h>
+
+#ifdef _WIN32
+    #include <ncurses_dll.h>
+    #include <ncurses_mingw.h>
+#endif
 
 #include "types.h"
 #include "macros.h"
