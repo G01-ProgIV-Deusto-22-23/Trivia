@@ -1,4 +1,3 @@
-#include <stdio.h>
 #define IS_BACKTRACE_SRC_FILE
 #define BT_FILENAME_SUFFIX   ".backtrace"
 #define BT_FILENAME_MOD      "XXXXXX"
@@ -140,16 +139,14 @@ tempfile:
             tries++;
 
             if (tries == BT_FILENAME_TRIES)
-                return (void) (
+
 #ifdef _WIN32
-                    (_sopen_s (&BT_FD, BT_FILENAME, O_RDWR | O_CREAT | O_EXCL, _SH_DENYNO, _S_IREAD | _S_IWRITE),
-                     BT_FD == -1)
+                (_sopen_s (&BT_FD, BT_FILENAME, _O_RDWR | _O_SEQUENTIAL, _SH_DENYNO, _S_IREAD | _S_IWRITE), BT_FD == -1)
 #else
-                    (open (BT_FILENAME, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR) == -1)
+                ((BT_FD = open (BT_FILENAME, O_RDWR, S_IRUSR | S_IWUSR)) == -1)
 #endif
-                        ? bt_error_func (NULL, NULL, 0)
-                        : (void) 0
-                );
+                    ? bt_error_func (NULL, NULL, 0)
+                    : (void) 0;
 
             goto tempfile;
         }
@@ -161,21 +158,34 @@ tempfile:
 #ifdef _WIN32
     if (({
             char newname [sizeof (BT_FILENAME_TEMPLATE)];
-            _close (BT_FD);
-            memcpy (
-                mempcpy (newname, BT_FILENAME, sizeof (BT_FILENAME_MOD) - 1), BT_FILENAME_SUFFIX,
-                sizeof (BT_FILENAME_SUFFIX)
-            );
-            int res = rename (BT_FILENAME, newname);
-            memcpy (BT_FILENAME, newname, sizeof (BT_FILENAME));
-            res;
-        }))
-        bt_error_func (NULL, NULL, 0);
+            int  res = -1;
+            if (!_close (BT_FD)) {
+                memcpy (
+                    mempcpy (newname, BT_FILENAME, sizeof (BT_FILENAME_MOD) - 1), BT_FILENAME_SUFFIX,
+                    sizeof (BT_FILENAME_SUFFIX)
+                );
+                if ((res = rename (BT_FILENAME, newname)) == -1) {
+                    res = remove (newname) | rename (BT_FILENAME, newname);
+                }
+                memcpy (BT_FILENAME, newname, sizeof (BT_FILENAME));
+            }
 
-    _sopen_s (&BT_FD, BT_FILENAME, O_RDWR | O_CREAT | O_EXCL, _SH_DENYNO, _S_IREAD | _S_IWRITE);
+            res;
+        }) ||
+        _sopen_s (&BT_FD, BT_FILENAME, _O_RDWR | _O_SEQUENTIAL, _SH_DENYNO, _S_IREAD | _S_IWRITE))
+        bt_error_func (NULL, NULL, 0);
 #endif
 
-    BT_STATE = backtrace_create_state (NULL, 1, bt_error_func, NULL);
+    BT_STATE = backtrace_create_state (
+        NULL,
+#ifdef _WIN32
+        0
+#else
+        1
+#endif
+        ,
+        bt_error_func, NULL
+    );
 
     struct tm *_time = NULL;
     if (!(({
@@ -206,5 +216,5 @@ void end_backtrace (void) {
         remove (BT_FILENAME) == -1
 #endif
     )
-        warning ("could not remove the bactrace file.");
+        warning ("could not remove the backtrace file.");
 }

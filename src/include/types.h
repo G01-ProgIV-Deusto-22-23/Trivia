@@ -44,4 +44,6 @@ typedef uint64_t       setdimsfunc_t (const uint32_t, uint32_t);
 typedef uint32_t       setwidthfunc_t (const uint32_t);
 typedef setwidthfunc_t setheightfunc_t;
 
+typedef enum { server_off, server_on, server_starting } server_status_t;
+
 #endif

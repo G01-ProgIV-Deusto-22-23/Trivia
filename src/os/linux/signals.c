@@ -3,6 +3,7 @@
 #else
 __attribute__ ((__noreturn__)) static void trivia_abort (void __attribute__ ((unused)) * unused) {
 #endif
+    trap ();
     unreachable ();
 }
 
@@ -20,6 +21,4 @@ static void                                sigsegv_handler (const int __attribut
 
 void handle_signals (void) {
     sigaction (SIGSEGV, &(struct sigaction) { .sa_handler = sigsegv_handler }, NULL);
-    sigaction (SIGINT, NULL, NULL);
-    sigaction (SIGTERM, NULL, NULL);
 }

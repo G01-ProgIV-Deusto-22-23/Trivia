@@ -153,6 +153,7 @@ size_t
                 _h -= 5;
             uint32_t _x = 2;
             uint32_t _y = _h;
+            fitwin (_w, _h, _x, _y);
 
             if (set_menu_sub (*(MENUS + menu), derwin (win, (int) _h, (int) _w, (int) _y, (int) _x)) != E_OK)
                 error ("could not set the menu subwindow.");

@@ -6,3 +6,4 @@ obj
 .cache
 *.backtrace
 compile_commands*.json
+*.log

@@ -268,13 +268,14 @@ static void
                      stderr, L"%sMessage in function %s (%s: line %d)%s\n",                                                                                     \
                      get_log_file () == -1 ? "\033[1m\033[32m" : "", __func__, __FILE__, __LINE__,                                                              \
                      __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, get_log_file () == 1 ? ".\033[0m" : ".",                                          \
+                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
+                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
                          (ct_error (                                                                                                                            \
                               __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
                               "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
                           ),                                                                                                                                    \
-                          get_log_file () == 1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                            \
-                                               : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                  \
+                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                           \
+                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                 \
                      )                                                                                                                                          \
                  ),                                                                                                                                             \
                  fflush (stderr), (void) ({                                                                                                                     \
@@ -326,13 +327,14 @@ static void
                      stderr, "%sMessage in function %s (%s: line %d)%s\n",                                                                                      \
                      get_log_file () == -1 ? "\033[1m\033[32m" : "", __func__, __FILE__, __LINE__,                                                              \
                      __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, get_log_file () == 1 ? ".\033[0m" : ".",                                          \
+                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
+                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
                          (ct_error (                                                                                                                            \
                               __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
                               "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
                           ),                                                                                                                                    \
-                          get_log_file () == 1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                            \
-                                               : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                  \
+                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                           \
+                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                 \
                      )                                                                                                                                          \
                  ),                                                                                                                                             \
                  fflush (stderr), (void) ({                                                                                                                     \
@@ -391,7 +393,8 @@ static void
                      stderr, L"%sWarning in function %s (%s: line %d)%s\n",                                                                                     \
                      get_log_file () == -1 ? "\033[1m\033[33m" : "", __func__, __FILE__, __LINE__,                                                              \
                      __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, get_log_file () == 1 ? ".\033[0m" : ".",                                          \
+                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
+                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
                          (ct_error (                                                                                                                            \
                               __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
                               "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
@@ -449,7 +452,8 @@ static void
                      stderr, "%sWarning in function %s (%s: line %d)%s\n",                                                                                      \
                      get_log_file () == -1 ? "\033[1m\033[33m" : "", __func__, __FILE__, __LINE__,                                                              \
                      __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, get_log_file () == 1 ? ".\033[0m" : ".",                                          \
+                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
+                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
                          (ct_error (                                                                                                                            \
                               __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
                               "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
@@ -557,26 +561,6 @@ static void
                  write (STDERR_FILENO, "\n", sizeof ("\n") - 1), close_log_file (),                                                                                        \
                  print_backtrace (), /* I know this is not an async-safe approach and that I should not be doing this                                                      \
                     but its not as if errors while displaying mattered too much at this point */                                                                           \
-                 (void) ({                                                                                                                                                 \
-                     if (is_log_window ()) {                                                                                                                               \
-                         int line;                                                                                                                                         \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                           \
-                             clear_log_window ();                                                                                                                          \
-                         if (has_colors ())                                                                                                                                \
-                             wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                             \
-                         mvwprintw (                                                                                                                                       \
-                             get_log_window (), line, 1, "Error in function %s (%s: line %d)%s", __func__, __FILE__,                                                       \
-                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                                    \
-                         );                                                                                                                                                \
-                         if (has_colors ())                                                                                                                                \
-                             wattroff (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                            \
-                         __builtin_choose_expr (                                                                                                                           \
-                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                                \
-                             waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                                            \
-                         );                                                                                                                                                \
-                         refresh_log_window ();                                                                                                                            \
-                     }                                                                                                                                                     \
-                 }),                                                                                                                                                       \
                  ({                                                                                                                                                        \
                      _Pragma ("GCC diagnostic push");                                                                                                                      \
                      _Pragma ("GCC diagnostic ignored \"-Waddress\"");                                                                                                     \
@@ -610,9 +594,31 @@ static void
                      __builtin_has_attribute (                                                                                                                             \
                          ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                                \
                          __noreturn__                                                                                                                                      \
-                     ),                                                                                                                                                    \
+                     ) ||                                                                                                                                                  \
+                         __builtin_has_attribute (                                                                                                                         \
+                             ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                            \
+                             noreturn                                                                                                                                      \
+                         ),                                                                                                                                                \
                      (trap (), unreachable ()),                                                                                                                            \
                      (({                                                                                                                                                   \
+                          if (is_log_window ()) {                                                                                                                          \
+                              int line;                                                                                                                                    \
+                              if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                      \
+                                  clear_log_window ();                                                                                                                     \
+                              if (has_colors ())                                                                                                                           \
+                                  wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                        \
+                              mvwprintw (                                                                                                                                  \
+                                  get_log_window (), line, 1, "Error in function %s (%s: line %d)%s", __func__,                                                            \
+                                  __FILE__, __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                     \
+                              );                                                                                                                                           \
+                              if (has_colors ())                                                                                                                           \
+                                  wattroff (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                       \
+                              __builtin_choose_expr (                                                                                                                      \
+                                  sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                           \
+                                  waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                                       \
+                              );                                                                                                                                           \
+                              refresh_log_window ();                                                                                                                       \
+                          }                                                                                                                                                \
                           if (!isendwin ()) {                                                                                                                              \
                               refresh_log_window ();                                                                                                                       \
                               def_prog_mode ();                                                                                                                            \
@@ -698,26 +704,6 @@ static void
                  write (STDERR_FILENO, "\n", sizeof ("\n") - 1), close_log_file (),                                                                                        \
                  print_backtrace (), /* I know this is not an async-safe approach and that I should not be doing this                                                      \
                     but its not as if errors while displaying mattered too much at this point */                                                                           \
-                 (void) ({                                                                                                                                                 \
-                     if (is_log_window ()) {                                                                                                                               \
-                         int line;                                                                                                                                         \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                           \
-                             clear_log_window ();                                                                                                                          \
-                         if (has_colors ())                                                                                                                                \
-                             wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                             \
-                         mvwprintw (                                                                                                                                       \
-                             get_log_window (), line, 1, "Error in function %s (%s: line %d)%s", __func__, __FILE__,                                                       \
-                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                                    \
-                         );                                                                                                                                                \
-                         if (has_colors ())                                                                                                                                \
-                             wattroff (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                            \
-                         __builtin_choose_expr (                                                                                                                           \
-                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                                \
-                             waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                                            \
-                         );                                                                                                                                                \
-                         refresh_log_window ();                                                                                                                            \
-                     }                                                                                                                                                     \
-                 }),                                                                                                                                                       \
                  ({                                                                                                                                                        \
                      _Pragma ("GCC diagnostic push");                                                                                                                      \
                      _Pragma ("GCC diagnostic ignored \"-Waddress\"");                                                                                                     \
@@ -751,9 +737,31 @@ static void
                      __builtin_has_attribute (                                                                                                                             \
                          ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                                \
                          __noreturn__                                                                                                                                      \
-                     ),                                                                                                                                                    \
+                     ) ||                                                                                                                                                  \
+                         __builtin_has_attribute (                                                                                                                         \
+                             ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                            \
+                             noreturn                                                                                                                                      \
+                         ),                                                                                                                                                \
                      (trap (), unreachable ()),                                                                                                                            \
                      (({                                                                                                                                                   \
+                          if (is_log_window ()) {                                                                                                                          \
+                              int line;                                                                                                                                    \
+                              if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                      \
+                                  clear_log_window ();                                                                                                                     \
+                              if (has_colors ())                                                                                                                           \
+                                  wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                        \
+                              mvwprintw (                                                                                                                                  \
+                                  get_log_window (), line, 1, "Error in function %s (%s: line %d)%s", __func__,                                                            \
+                                  __FILE__, __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                     \
+                              );                                                                                                                                           \
+                              if (has_colors ())                                                                                                                           \
+                                  wattroff (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                       \
+                              __builtin_choose_expr (                                                                                                                      \
+                                  sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                           \
+                                  waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                                       \
+                              );                                                                                                                                           \
+                              refresh_log_window ();                                                                                                                       \
+                          }                                                                                                                                                \
                           if (!isendwin ()) {                                                                                                                              \
                               refresh_log_window ();                                                                                                                       \
                               def_prog_mode ();                                                                                                                            \

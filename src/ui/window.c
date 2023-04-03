@@ -24,8 +24,22 @@ bool delete_windows (void) {
         return false;
 
     bool all = true;
-    for (; all &= remove_window (TRIVIA_WINDOW_LIST);)
-        ;
+    for (window_list_t head = TRIVIA_WINDOW_LIST, temp; head; free (temp)) {
+        int ret;
+        if (!head->delfunc || (all &= ((ret = head->delfunc (head->win)) != ERR), ret == ERR)) {
+            if (head->delfunc == delwinfunc)
+                warning ("could not delete window.");
+
+            else if (head->delfunc == (delwinfunc_t *) (void *) delete_log_window)
+                warning ("could not delete the log window");
+
+            else
+                warning ("could not delete menu.");
+        }
+
+        temp = head;
+        head = head->next;
+    }
 
     TRIVIA_WINDOW_LIST = NULL;
     stop_menu_gc ();
@@ -58,10 +72,10 @@ static bool remove_window (window_list_t node) {
     if (!node)
         return false;
 
-    for (window_list_t head = TRIVIA_WINDOW_LIST, prev = TRIVIA_WINDOW_LIST; head->next; head = (prev = head)->next)
+    for (window_list_t head = TRIVIA_WINDOW_LIST, prev = TRIVIA_WINDOW_LIST; head; head = (prev = head)->next)
         if (head == node) {
             int ret;
-            if ((ret = head->delfunc (head->win)) == ERR) {
+            if (!head->delfunc || (ret = head->delfunc (head->win)) == ERR) {
                 if (head->delfunc == delwinfunc)
                     warning ("could not delete window.");
 

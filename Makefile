@@ -28,20 +28,23 @@ endif
 
 DFLAGS := \
 	-g3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
-	-Wshadow -Wstrict-prototypes -Wwrite-strings -Wconversion -Wcast-align
+	-Wshadow=local -Wstrict-prototypes -Wwrite-strings -Wconversion -Wcast-align
 
 LIBS := -pthread
 
-linux:      CC := $(GCC_LINUX)
-ui_linux:   CC := $(GCC_LINUX)
-os_linux:   CC := $(GCC_LINUX)
+linux:      CC     := $(GCC_LINUX)
+linux:      CFLAGS += -I $(EXTERNINCLUDE)/linux
+ui_linux:   CC     := $(GCC_LINUX)
+ui_linux:   CFLAGS += -I $(EXTERNINCLUDE)/linux
+os_linux:   CC     := $(GCC_LINUX)
+ui_linux:   CFLAGS += -I $(EXTERNINCLUDE)/linux
 
 windows:    CC     := $(GCC_WINDOWS)
-# windows:    CFLAGS += -mwindows
+windows:    CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows
 ui_windows: CC     := $(GCC_WINDOWS)
-# ui_windows: CFLAGS += -mwindows
+ui_windows: CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows
 os_windows: CC     := $(GCC_WINDOWS)
-# os_windows: CFLAGS += -mwindows
+os_windows: CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows
 
 ifeq ($(OS), Windows_NT)
 all: windows
