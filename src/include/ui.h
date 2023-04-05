@@ -33,7 +33,7 @@ extern int close_log_file (void);
              impl_set_log_file (                                                                                                                                          \
                  ({                                                                                                                                                       \
                      _Pragma ("GCC diagnostic push");                                                                                                                     \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow\"");                                                                                                     \
+                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                                     \
                      FILE *const __impl_set_log_file__ = __builtin_choose_expr (                                                                                          \
                          isint (x), _fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                             \
                          fopen (                                                                                                                                          \
@@ -80,7 +80,7 @@ extern int close_log_file (void);
              impl_set_log_file (                                                                                                                                          \
                  ({                                                                                                                                                       \
                      _Pragma ("GCC diagnostic push");                                                                                                                     \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow\"");                                                                                                     \
+                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                                    \
                      FILE *const __impl_set_log_file__ = __builtin_choose_expr (                                                                                          \
                          isint (x), fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                              \
                          fopen (                                                                                                                                          \
@@ -204,7 +204,7 @@ extern size_t impl_create_menu (
          ),                                                                                                                                             \
          ({                                                                                                                                             \
              _Pragma ("GCC diagnostic push");                                                                                                           \
-             _Pragma ("GCC diagnostic ignored \"-Wshadow\"");                                                                                           \
+             _Pragma ("GCC diagnostic ignored \"-Wshadow=local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                          \
              __builtin_choose_expr (__builtin_constant_p (t), (void) 0, ({                                                                              \
                                         if (__builtin_choose_expr (isint (t), t, actionmenu) < actionmenu ||                                            \
                                             __builtin_choose_expr (isint (t), t, actionmenu) > multimenu)                                               \

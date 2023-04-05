@@ -4,7 +4,7 @@
 #define decplaces(x)                                                                                                   \
     ({                                                                                                                 \
         _Pragma ("GCC diagnostic push");                                                                               \
-        _Pragma ("GCC diagnostic ignored \"-Wshadow\"");                                                               \
+        _Pragma ("GCC diagnostic ignored \"-Wshadow=local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                             \
         int64_t __deplaces_temp__ = (int64_t) (x);                                                                     \
         _Pragma ("GCC diagnostic pop");                                                                                \
         if (__deplaces_temp__ < 0)                                                                                     \

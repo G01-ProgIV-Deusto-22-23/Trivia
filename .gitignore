@@ -1,9 +1,11 @@
 *.out
 *.exe
+*.bin
 bin
-lib
+lib/*/*.a
 obj
+*.o
 .cache
 *.backtrace
-compile_commands*.json
 *.log
+compile_commands*.json

@@ -5,7 +5,6 @@ static void wait_server_start (void) {
     mvwprintw (win, 2, 2, "Reiniciando el servidor, espera.");
 
     wrefresh (win);
-    refresh (win);
 
     restart_server ();
 
@@ -13,7 +12,7 @@ static void wait_server_start (void) {
 }
 
 void server_status_menu (void) {
-    size_t menu = get_server_status () == server_off ? actionmenu (
+    delete_menu (get_server_status () == server_off ? actionmenu (
                                              0, 0, 0, 0, ((const char *const []) { "Encender servidor" }),
                                              ((choicefunc_t *const []) { start_server }), "Servidor apagado"
                                          )
@@ -25,11 +24,5 @@ void server_status_menu (void) {
         : actionmenu (
               0, 0, 0, 0, ((const char *const []) { "El servidor está siendo iniciado, espera." }),
               ((choicefunc_t *const []) { wait_server_start }), "Servidor encendido"
-          );
-
-    size_t ret = get_menu_ret (menu);
-    delete_menu (menu);
-
-    if (ret != (size_t) -1)
-        server_status_menu ();
+          ));
 }

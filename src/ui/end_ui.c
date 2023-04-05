@@ -8,6 +8,7 @@ int end_ui (void) {
             warning ("could not restore the initial state of the cursor.");
 
         refresh_log_window ();
+        clear ();
 
         if (endwin () == ERR) {
             warning ("could not end the UI sucessfully.");

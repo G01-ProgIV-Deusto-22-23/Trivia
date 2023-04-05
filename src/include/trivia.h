@@ -13,6 +13,7 @@
     #include <cassert>
     #include <cerrno>
     #include <ctime>
+    #include <atomic>
 
     #ifndef _WIN32
         #include <cunistd>
@@ -30,12 +31,14 @@
     #include <assert.h>
     #include <errno.h>
     #include <time.h>
+    #include <stdatomic.h>
 
     #ifndef _WIN32
         #include <unistd.h>
     #endif
 #endif
 #include <pthread.h>
+#include <semaphore.h>
 
 #include <backtrace.h>
 
@@ -68,5 +71,6 @@ static const char
 #include "macros.h"
 #include "ui.h"
 #include "os.h"
+#include "server.h"
 
 #endif

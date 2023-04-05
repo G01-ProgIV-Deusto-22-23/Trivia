@@ -1,8 +1,9 @@
 #include "menu.h"
 
-MENU          *MENUS [sizeof (size_t) * __CHAR_BIT__] = { 0 };
-_Atomic size_t MENU_CONTROL                           = 0;
-int            FREE_MENU_ERR                          = OK;
+MENU                  *MENUS [sizeof (size_t) * __CHAR_BIT__] = { 0 };
+volatile atomic_size_t MENU_CONTROL                           = 0;
+int                    FREE_MENU_ERR                          = OK;
+sem_t                  FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 
 static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
 static menutype_t MENU_TYPE [sizeof (MENUS) / sizeof (*MENUS)]      = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
@@ -10,9 +11,7 @@ static menutype_t MENU_TYPE [sizeof (MENUS) / sizeof (*MENUS)]      = { [0 ...(s
 static void      *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]      = { 0 };
 static bool       FREE_MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
 
-static bool           MENU_GC_FLAG = false;
-static pthread_t      MENU_GC_THREAD [1 + sizeof (MENUS) / sizeof (*MENUS)];
-static pthread_once_t MENU_GC_ONCE_CONTROL = PTHREAD_ONCE_INIT;
+static pthread_t MENU_GC_THREAD [1 + sizeof (MENUS) / sizeof (*MENUS)];
 
 static int         MENU_EXIT_KEY     = DEFAULT_MENU_EXIT_KEY;
 static const char *MENU_EXIT_MESSAGE = DEFAULT_MENU_EXIT_MESSAGE;
@@ -24,16 +23,11 @@ static void *impl_trivia_free_menu (void *__menu__) {
     if (!*(MENUS + menu))
         return *(MENUS + menu);
 
-    waddch (menu_win (*(MENUS + menu)), 'q');
-
     {
         int err = unpost_menu (*(MENUS + menu));
         if (err != E_OK && err != E_NOT_POSTED)
             warning ("could not hide the menu.");
     }
-
-    delete_window (menu_win (*(MENUS + menu)));
-    delete_window (menu_sub (*(MENUS + menu)));
 
     for (short i       = 0; i < item_count (*(MENUS + menu));
          FREE_MENU_ERR &= free_item (*(menu_items (*(MENUS + menu)) + i++))) {
@@ -48,47 +42,68 @@ static void *impl_trivia_free_menu (void *__menu__) {
         free (*(MENU_RETS + menu));
 
     FREE_MENU_ERR &= free_menu (*(MENUS + menu));
+    refresh ();
 
-    MENU_CONTROL           ^= 1 << menu;
+    MENU_CONTROL ^= ((size_t) 1) << menu;
+
+    sem_post (FREE_MENU_SEMS + menu);
+
     return *(MENUS + menu) = *(MENU_RETS + menu) = (void *) (intptr_t) (*(FREE_MENU_RETS + menu) = 0);
 }
 
-static void trivia_free_menu (const size_t menu) {
-    if (pthread_create (MENU_GC_THREAD + menu, NULL, impl_trivia_free_menu, (void *) (uintptr_t) menu))
-        FREE_MENU_ERR = (warning ("could not start the menu freeing function."), ERR);
-}
+void trivia_free_menu (const size_t menu) {
+    if (!pthread_create (MENU_GC_THREAD + menu + 1, NULL, impl_trivia_free_menu, (void *) (uintptr_t) menu))
+        return;
 
-static void impl_menu_gc2 (void) {
-    MENU_GC_FLAG = true;
-    for (size_t CHOICEMENU_CONTROL_PREV = MENU_CONTROL; MENU_GC_FLAG; CHOICEMENU_CONTROL_PREV = MENU_CONTROL) {
-        if (MENU_CONTROL == CHOICEMENU_CONTROL_PREV)
-            continue;
-
-        for (size_t i = 0; i < arrsize (MENUS); i++)
-            if ((CHOICEMENU_CONTROL_PREV ^ (MENU_CONTROL & (1 << i))))
-                trivia_free_menu (i);
-    }
-}
-
-#if defined(__cplusplus) || __STDC_VERSION__ >= 201710L
-static void *impl_menu_gc (void *) {
-#else
-static void *impl_menu_gc (__attribute__ ((unused)) void *nothing) {
-#endif
-    if (pthread_once (&MENU_GC_ONCE_CONTROL, impl_menu_gc2))
-        error ("could not start the menu garbage collector.");
-
-    return NULL;
+    FREE_MENU_ERR = (warning ("could not start the menu freeing function."), ERR);
+    sem_post (FREE_MENU_SEMS + menu);
 }
 
 void start_menu_gc (void) {
-    if (pthread_create (MENU_GC_THREAD, NULL, impl_menu_gc, NULL))
-        error ("could not start the menu garbage collector.");
+    for (size_t i = 0; i < arrsize (FREE_MENU_SEMS);)
+        if (sem_init (FREE_MENU_SEMS + i++, 0, 0))
+            error ("could not start the menu garbage collector.");
 }
 
 void stop_menu_gc (void) {
-    MENU_GC_FLAG         = false;
-    MENU_GC_ONCE_CONTROL = PTHREAD_ONCE_INIT;
+    for (size_t i = 0; i < arrsize (FREE_MENU_SEMS);)
+        if (sem_init (FREE_MENU_SEMS + i++, 0, 1))
+            error ("could not destroy a semaphore.");
+}
+
+static size_t impl_create_menu2 (
+    const size_t menu, const menutype_t t, uint32_t w, uint32_t h, uint32_t x, uint32_t y,
+    ITEM *const *const restrict items, size_t *const restrict ret
+) {
+    if (!(*(MENUS + menu) = new_menu ((ITEM **) items)))
+        error ("could not create menu");
+
+    fitwin (w, h, x, y);
+    {
+        WINDOW *win = newwin ((int) h, (int) w, (int) y, (int) x);
+        if (set_menu_win (*(MENUS + menu), win) != E_OK)
+            error ("could not set the menu window.");
+
+        {
+            uint32_t _w = (uint32_t) (getmaxx (win) - getbegx (win) - 2);
+            uint32_t _h = (uint32_t) (getmaxy (win) - getbegy (win)) / 2;
+            if (_h > 5)
+                _h -= 5;
+            uint32_t _x = 2;
+            uint32_t _y = _h;
+            fitwin (_w, _h, _x, _y);
+
+            if (set_menu_sub (*(MENUS + menu), derwin (win, (int) _h, (int) _w, (int) _y, (int) _x)) != E_OK)
+                error ("could not set the menu subwindow.");
+        }
+    }
+
+    keypad (menu_win (*(MENUS + menu)), true);
+    add_window ((void *) (uintptr_t) menu, true);
+    *(MENU_TYPE + menu) = t;
+    set_menu_ret (menu, ret);
+
+    return menu;
 }
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
@@ -99,10 +114,10 @@ __attribute__ ((nonnull (8), warn_unused_result))
 size_t
     impl_create_menu (
         const menutype_t t, uint32_t w, uint32_t h, uint32_t x, uint32_t y, const size_t n,
-        const char *const (*const restrict choices) [2], const size_t (*const restrict lens) [2],
-        choicefunc_t *const *const restrict funcs
+        const char *const (*const choices) [2], const size_t (*const lens) [2],
+        choicefunc_t *const *const funcs
     ) {
-    if (MENU_CONTROL == (size_t) -1)
+    if (atomic_load (&MENU_CONTROL) == (size_t) -1)
         error ("no more menus can be created.");
 
     if (!choices)
@@ -113,8 +128,10 @@ size_t
 
     size_t menu = 0;
     for (; menu < arrsize (MENUS); menu++)
-        if (!(MENU_CONTROL & (1 << menu)))
+        if (!((atomic_load (&MENU_CONTROL) >> menu) & (size_t) 1))
             break;
+
+    atomic_fetch_or (&MENU_CONTROL, 1 << menu);
 
     ITEM **items;
     if (!(**(MENU_CHOICE_DATA + menu) = malloc (n * sizeof (char *))) ||
@@ -137,34 +154,7 @@ size_t
     }
     *(items + n) = NULL;
 
-    if (!(*(MENUS + menu) = new_menu (items)))
-        error ("could not create menu");
-
-    fitwin (w, h, x, y);
-    {
-        WINDOW *win = newwin ((int) h, (int) w, (int) y, (int) x);
-        if (set_menu_win (*(MENUS + menu), win) != E_OK)
-            error ("could not set the menu window.");
-
-        {
-            uint32_t _w = (uint32_t) (getmaxx (win) - getbegx (win) - 2);
-            uint32_t _h = (uint32_t) (getmaxy (win) - getbegy (win)) / 2;
-            if (_h > 5)
-                _h -= 5;
-            uint32_t _x = 2;
-            uint32_t _y = _h;
-            fitwin (_w, _h, _x, _y);
-
-            if (set_menu_sub (*(MENUS + menu), derwin (win, (int) _h, (int) _w, (int) _y, (int) _x)) != E_OK)
-                error ("could not set the menu subwindow.");
-        }
-    }
-    keypad (menu_win (*(MENUS + menu)), true);
-    add_window ((void *) (uintptr_t) menu, true);
-    *(MENU_TYPE + menu) = t;
-    set_menu_ret (menu, NULL);
-
-    return menu;
+    return impl_create_menu2 (menu, t, w, h, x, y, items, NULL);
 }
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
@@ -217,7 +207,6 @@ size_t
         ) != E_OK)
         warning ("could not set the menu format.");
 
-display:
     box (menu_win (*(MENUS + menu)), 0, 0);
     if (*title)
         print_menu_title (menu, title);
@@ -226,26 +215,34 @@ display:
         menu_win (*(MENUS + menu)), getmaxy (menu_win (*(MENUS + menu))) - getbegy (menu_win (*(MENUS + menu))) - 5,
         (int) strlen (mark) + 2, "%s", get_menu_exit_message ()
     );
-    refresh ();
 
     int prevcurs;
     if ((prevcurs = curs_set (0)) == ERR)
         warning ("could not hide the cursor.");
 
-    if (({
-            int           err = post_menu (*(MENUS + menu));
-            err != E_OK &&err != E_POSTED;
-        }))
-        warning ("could not show the menu.");
-
+    wrefresh (menu_sub (*(MENUS + menu)));
     wrefresh (menu_win (*(MENUS + menu)));
     refresh ();
 
-    if (*(MENU_TYPE + menu) == choicemenu && get_menu_ret (menu))
+    if (get_menu_ret (menu)) {
+        if (*get_menu_ret (menu) != (size_t) -1)
+            for (size_t i = 0; ++i < *get_menu_ret (menu); menu_driver (*(MENUS + menu), REQ_DOWN_ITEM))
+                ;
+
         *get_menu_ret (menu) = (size_t) -1;
+    }
+
+    if (({
+            int           err = post_menu (*(MENUS + menu));
+            err != E_OK &&err != E_POSTED;
+        })) {
+        warning ("could not show the menu.");
+
+        return menu;
+    }
 
     for (int c = 0; (c = tolower (wgetch (menu_win (*(MENUS + menu))))) != get_menu_exit_key ();
-         wrefresh (menu_win (*(MENUS + menu))))
+         wrefresh (menu_sub (*(MENUS + menu))), wrefresh (menu_win (*(MENUS + menu))), refresh ())
         if (c == KEY_DOWN) {
             if (item_index (current_item (*(MENUS + menu))) == item_count (*(MENUS + menu)) - 1)
                 menu_driver (*(MENUS + menu), REQ_FIRST_ITEM);
@@ -267,8 +264,12 @@ display:
         }
 
         else if (c == ' ' || c == '\r' || c == '\n' || c == KEY_ENTER) {
-            if (*(MENU_TYPE + menu) == actionmenu)
+            if (*(MENU_TYPE + menu) == actionmenu) {
+                if (get_menu_ret (menu))
+                    *get_menu_ret (menu) = (size_t) item_index (current_item (*(MENUS + menu)));
+
                 goto action;
+            }
 
             else if (*(MENU_TYPE + menu) == choicemenu) {
                 if (get_menu_ret (menu))
@@ -285,6 +286,7 @@ display:
                         !*(get_menu_ret (menu) + item_index (current_item (*(MENUS + menu))));
             }
 
+        cont:
             continue;
         }
 
@@ -292,24 +294,73 @@ display:
         if (curs_set (prevcurs) == ERR)
             warning ("could not restore the cursor to its previous state.");
 
-    unpost_menu (*(MENUS + menu));
+    {
+        int err = unpost_menu (*(MENUS + menu));
+        if (err != E_OK && err != E_NOT_POSTED)
+            warning ("could not hide the menu.");
+    }
 
     return menu;
 
 action:
-    unpost_menu (*(MENUS + menu));
+    choicefunc_t *exec;
+    if (!(exec = item_userptr (*(menu_items (*(MENUS + menu)) + item_index (current_item (*(MENUS + menu)))))))
+        goto cont;
 
-    if (item_userptr (current_item (*(MENUS + menu))))
-        ((choicefunc_t *) item_userptr (current_item (*(MENUS + menu)))) ();
+    size_t n = (size_t) item_count (*(MENUS + menu));
 
-    goto display;
+    void *p;
+    if (!(p = malloc (((sizeof (char *) + sizeof (size_t)) * 2 + sizeof (choicefunc_t *)) * n)))
+        error ("could not allocate space for the recreation of menu data.");
+
+    char **const  c = p;
+    size_t *const l = (void *) ((char *) p + sizeof (char *) * 2 * n);
+    for (size_t i = 0; i < n; i++) {
+        if (!(*(c + i * 2) = malloc (*(l + i * 2) = strlen (item_name (*(menu_items (*(MENUS + menu)) + i))))))
+            error ("could not allocate space for the recreation of menu data.");
+
+        if (!(*(c + i * 2 + 1) =
+                  malloc (*(l + i * 2 + 1) = strlen (item_description (*(menu_items (*(MENUS + menu)) + i))))))
+            error ("could not allocate space for the recreation of menu data.");
+
+        memcpy (*(c + i * 2), item_name (*(menu_items (*(MENUS + menu)) + i)), *(l + i * 2));
+        memcpy (*(c + i * 2 + 1), item_description (*(menu_items (*(MENUS + menu)) + i)), *(l + i * 2 + 1));
+    }
+
+    choicefunc_t **f = (void *) ((char *) p + (sizeof (char *) + sizeof (size_t)) * 2 * n);
+    for (size_t i = 0; i < n; i++)
+        *(f + i) = (choicefunc_t *) item_userptr (*(menu_items (*(MENUS + menu)) + i));
+
+    int dims [4];
+    getbegyx (menu_win (*(MENUS + menu)), *(dims + 3), *(dims + 2));
+    getmaxyx (menu_win (*(MENUS + menu)), *(dims + 1), *dims);
+    *dims       = *dims - (*(dims + 2) -= (int) get_hor_padding ()) + (int) get_hor_padding () * 2;
+    *(dims + 1) = *(dims + 1) - (*(dims + 3) -= (int) get_ver_padding ()) + (int) get_ver_padding () * 2;
+
+    delete_menu (menu);
+
+    exec ();
+
+    // There's risk of overflowing the stack, but I don't think anybody will dare to make nearly-infinite invocations of
+    // menus.
+    return impl_display_menu (
+        ({
+            size_t m = impl_create_menu (
+                actionmenu, (uint32_t) *dims, (uint32_t) * (dims + 1), (uint32_t) * (dims + 2), (uint32_t) * (dims + 3),
+                n, (const char *const (*const restrict) [2]) c, (const size_t (*const restrict) [2]) l, f
+            );
+            free (p);
+            m;
+        }),
+        title, mark
+    );
 }
 
 size_t *get_menu_ret (const size_t menu) {
     if (menu >= arrsize (MENUS))
         error ("not a valid menu index.");
 
-    if (!(*(MENU_TYPE + menu) == actionmenu || *(MENU_RETS + menu)))
+    if (!*(MENU_RETS + menu))
         return set_menu_ret (menu, NULL);
 
     return *(MENU_RETS + menu);
@@ -325,15 +376,15 @@ size_t *set_menu_ret (const size_t menu, size_t *const restrict ret) {
     if (*(FREE_MENU_RETS + menu))
         free (*(MENU_RETS + menu));
 
-    return *(MENU_RETS + menu) = ret ? (size_t *) ret : (*(MENU_TYPE + menu) == actionmenu ? NULL : ({
+    return *(MENU_RETS + menu) = ret ? (size_t *) ret : ({
         size_t *buf;
         if (!(*(FREE_MENU_RETS + menu) =
                   !!(buf = calloc (
-                         *(MENU_TYPE + menu) == choicemenu ? 1 : (size_t) item_count (*(MENUS + menu)), sizeof (size_t)
+                         *(MENU_TYPE + menu) == multimenu ? (size_t) item_count (*(MENUS + menu)) : 1, sizeof (size_t)
                      ))))
             error ("could not create a menu return buffer.");
         buf;
-    }));
+    });
 }
 
 int get_menu_exit_key (void) {

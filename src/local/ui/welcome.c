@@ -4,7 +4,7 @@
 __attribute__ ((noreturn))
 #endif
 void welcome (void) {
-    actionmenu (
+    size_t menu = actionmenu (
         0, 0, 0, 0,
         ((const char *[]) { "Administrar partidas", "Configurar el servidor", "Administrar el estado del servidor" }),
         ((choicefunc_t *const []) { NULL, NULL, server_status_menu }), "Bienvenido, administrador"

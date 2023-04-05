@@ -21,7 +21,7 @@ RUNTIME_DIAGS      := true
 
 CFLAGS := \
 	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fstrict-aliasing -fmax-errors=0\
-	-D_GNU_SOURCE -static --static -L $(LIBDIR) -I $(EXTERNINCLUDE) -include $(SRCINCLUDE)/trivia.h
+	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h -pthread
 ifeq ($(RUNTIME_DIAGS), false)
 	CFLAGS += -DDISABLE_RUNTIME_DIAGS
 endif
@@ -30,21 +30,22 @@ DFLAGS := \
 	-g3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
 	-Wshadow=local -Wstrict-prototypes -Wwrite-strings -Wconversion -Wcast-align
 
-LIBS := -pthread
+UILIBS     := -lformw -lmenuw -lpanelw -lncursesw
+OSLIBS     := -lbacktrace
+TRIVIALIBS := -lui -los -lserver
+LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS)
 
-linux:      CC     := $(GCC_LINUX)
-linux:      CFLAGS += -I $(EXTERNINCLUDE)/linux
-ui_linux:   CC     := $(GCC_LINUX)
-ui_linux:   CFLAGS += -I $(EXTERNINCLUDE)/linux
-os_linux:   CC     := $(GCC_LINUX)
-ui_linux:   CFLAGS += -I $(EXTERNINCLUDE)/linux
+linux: CC     := $(GCC_LINUX)
+linux: LIBDIR := $(LIBDIR)/linux
+linux: CFLAGS += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR)
+linux: OBJDIR := $(OBJDIR)/linux
+linux: BINDIR := $(BINDIR)/linux
 
-windows:    CC     := $(GCC_WINDOWS)
-windows:    CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows
-ui_windows: CC     := $(GCC_WINDOWS)
-ui_windows: CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows
-os_windows: CC     := $(GCC_WINDOWS)
-os_windows: CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows
+windows: CC     := $(GCC_WINDOWS)
+windows: LIBDIR := $(LIBDIR)/windows
+windows: CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: OBJDIR := $(OBJDIR)/windows
+windows: BINDIR := $(BINDIR)/windows
 
 ifeq ($(OS), Windows_NT)
 all: windows
@@ -55,9 +56,19 @@ endif
 init: init_bin init_lib init_obj
 
 init_bin:
+ifeq ($(OS), Windows_NT)
 	@echo $(shell mkdir $(BINDIR))
+else
+	@echo $(shell mkdir -p $(BINDIR))
+endif
+
 init_lib:
+ifeq ($(OS), Windows_NT)
 	@echo $(shell mkdir $(LIBDIR))
+else
+	@echo $(shell mkdir -p $(LIBDIR))
+endif
+
 init_obj:
 ifeq ($(OS), Windows_NT)
 	@echo $(shell mkdir $(OBJDIR))
@@ -65,63 +76,88 @@ else
 	@echo $(shell mkdir -p $(OBJDIR))
 endif
 
-UILINUX := $(LIBDIR)/libuilinux.a
-UILINUXOBJS := $(patsubst $(SRCDIR)/ui/%.c, $(OBJDIR)/ui_linux_%.o, $(wildcard $(SRCDIR)/ui/*.c))
-OSLINUX := $(LIBDIR)/liboslinux.a
-OSLINUXOBJS := $(patsubst $(SRCDIR)/os/%.c, $(OBJDIR)/os_linux_%.o, $(wildcard $(SRCDIR)/os/*.c))
-OSLINUXOBJS += $(patsubst $(SRCDIR)/os/linux/%.c, $(OBJDIR)/os_linux_linux_%.o, $(wildcard $(SRCDIR)/os/linux/*.c))
+UIL     := $(LIBDIR)/linux/libui.a
+UIW     := $(LIBDIR)/windows/libui.a
+UIOBJSL := $(patsubst $(SRCDIR)/ui/%.c, $(OBJDIR)/linux/ui_%.o, $(wildcard $(SRCDIR)/ui/*.c))
+UIOBJSW := $(patsubst $(SRCDIR)/ui/%.c, $(OBJDIR)/windows/ui_%.o, $(wildcard $(SRCDIR)/ui/*.c))
 
-linux: ui_linux os_linux
+OSL     := $(LIBDIR)/linux/libos.a
+OSW     := $(LIBDIR)/windows/libos.a
+OSOBJSL := $(patsubst $(SRCDIR)/os/%.c, $(OBJDIR)/linux/os_%.o, $(wildcard $(SRCDIR)/os/*.c))
+OSOBJSW := $(patsubst $(SRCDIR)/os/%.c, $(OBJDIR)/windows/os_%.o, $(wildcard $(SRCDIR)/os/*.c))
+OSOBJSL += $(patsubst $(SRCDIR)/os/linux/%.c, $(OBJDIR)/linux/os_linux_%.o, $(wildcard $(SRCDIR)/os/linux/*.c))
+OSOBJSW += $(patsubst $(SRCDIR)/os/windows/%.c, $(OBJDIR)/windows/os_windows_%.o, $(wildcard $(SRCDIR)/os/windows/*.c))
 
-ui_linux: init $(UILINUX)
+SERVERL     := $(LIBDIR)/linux/libserver.a
+SERVERW     := $(LIBDIR)/windows/libserver.a
+SERVEROBJSL := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/linux/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
+SERVEROBJSW := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/windows/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
 
-$(UILINUX): $(UILINUXOBJS)
+LOCALL     := $(BINDIR)/linux/local
+LOCALW     := $(BINDIR)/windows/local.exe
+LOCALOBJSL := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/linux/local_ui_%.o, $(wildcard $(SRCDIR)/local/ui/*.c))
+LOCALOBJSW := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/windows/local_ui_%.o, $(wildcard $(SRCDIR)/local/ui/*.c))
+
+linux:   init $(LOCALL)
+windows: init $(LOCALW)
+
+$(UIL): $(UIOBJSL)
 	ar rcs $@ $^
 
-$(OBJDIR)/ui_linux_%.o: $(SRCDIR)/ui/%.c
-	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
-
-os_linux: init $(OSLINUX)
-
-$(OSLINUX): $(OSLINUXOBJS)
+$(UIW): $(UIOBJSW)
 	ar rcs $@ $^
 
-$(OBJDIR)/os_linux_%.o: $(SRCDIR)/os/%.c
+$(OBJDIR)/linux/ui_%.o: $(SRCDIR)/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(OBJDIR)/os_linux_linux_%.o: $(SRCDIR)/os/linux/%.c
+$(OBJDIR)/windows/ui_%.o: $(SRCDIR)/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-UIWINDOWS := $(LIBDIR)/libuiwindows.a
-UIWINDOWSOBJS := $(patsubst $(SRCDIR)/ui/%.c, $(OBJDIR)/ui_windows_%.o, $(wildcard $(SRCDIR)/ui/*.c))
-OSWINDOWS := $(LIBDIR)/liboswindows.a
-OSWINDOWSOBJS := $(patsubst $(SRCDIR)/os/%.c, $(OBJDIR)/os_windows_%.o, $(wildcard $(SRCDIR)/os/*.c))
-OSWINDOWSOBJS += $(patsubst $(SRCDIR)/os/windows/%.c, $(OBJDIR)/os_windows_windows_%.o, $(wildcard $(SRCDIR)/os/windows/*.c))
-
-windows: ui_windows os_windows
-
-ui_windows: init $(UIWINDOWS)
-
-$(UIWINDOWS): $(UIWINDOWSOBJS)
+$(OSL): $(OSOBJSL)
 	ar rcs $@ $^
 
-$(OBJDIR)/ui_windows_%.o: $(SRCDIR)/ui/%.c
-	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
-
-os_windows: init $(OSWINDOWS)
-
-$(OSWINDOWS): $(OSWINDOWSOBJS)
+$(OSW): $(OSOBJSW)
 	ar rcs $@ $^
 
-$(OBJDIR)/os_windows_%.o: $(SRCDIR)/os/%.c
+$(OBJDIR)/linux/os_%.o: $(SRCDIR)/os/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(OBJDIR)/os_windows_windows_%.o: $(SRCDIR)/os/windows/%.c
+$(OBJDIR)/windows/os_%.o: $(SRCDIR)/os/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(OBJDIR)/linux/os_linux_%.o: $(SRCDIR)/os/linux/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(OBJDIR)/windows/os_windows_%.o: $(SRCDIR)/os/windows/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(SERVERL): $(SERVEROBJSL)
+	ar rcs $@ $^
+
+$(SERVERW): $(SERVEROBJSW)
+	ar rcs $@ $^
+
+$(OBJDIR)/linux/server_%.o: $(SRCDIR)/server/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(OBJDIR)/windows/server_%.o: $(SRCDIR)/server/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(LOCALL): $(UIL) $(OSL) $(SERVERL) $(LOCALOBJSL)
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
+
+$(LOCALW): $(UIW) $(OSW) $(SERVERW) $(LOCALOBJSW)
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(LIBS)
+
+$(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
+
+$(OBJDIR)/windows/local_ui_%.o: $(SRCDIR)/local/ui/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
 
 clean:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell rmdir /s /q $(BINDIR) $(LIBDIR) $(OBJDIR))
+	@echo $(shell cmd /c "rmdir /s /q $(BINDIR) $(LIBDIR) $(OBJDIR)")
 else
 	@echo $(shell rm -rf $(BINDIR) $(LIBDIR) $(OBJDIR))
 endif
@@ -129,4 +165,4 @@ endif
 PHONY += clean
 .PHONY: $(PHONY)
 
-.SILENT: init_bin init_obj init_lib
+.SILENT: init init_bin init_obj init_lib

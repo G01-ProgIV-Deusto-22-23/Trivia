@@ -30,7 +30,7 @@ extern "C" {
 
     tempfile:
 #ifdef _WIN32
-        BT_FD = mkstemp (memcpy (LOG_FILENAME, LOG_FILENAME_MOD, sizeof (LOG_FILENAME_MOD)));
+        LOG_FILE_FILENO = mkstemp (memcpy (LOG_FILENAME, LOG_FILENAME_MOD, sizeof (LOG_FILENAME_MOD)));
 #else
     LOG_FILE_FILENO = mkstemps (
         memcpy (LOG_FILENAME, LOG_FILENAME_TEMPLATE, sizeof (LOG_FILENAME_TEMPLATE)), sizeof (LOG_FILENAME_SUFFIX) - 1
@@ -46,7 +46,7 @@ extern "C" {
                     (_sopen_s (
                          &LOG_FILE_FILENO, LOG_FILENAME, _O_RDWR | _O_SEQUENTIAL, _SH_DENYNO, _S_IREAD | _S_IWRITE
                      ),
-                     BT_FD == -1)
+                     LOG_FILE_FILENO == -1)
 #else
                 ((LOG_FILE_FILENO = open (LOG_FILENAME, O_RDWR, S_IRUSR | S_IWUSR)) == -1)
 #endif

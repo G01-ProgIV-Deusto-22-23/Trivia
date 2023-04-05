@@ -1,15 +1,12 @@
 server_status_t get_server_status (void) {
-    return server_off;
+    return server_starting;
 }
 
-bool start_server (void) {
-
+void start_server (void) {
 }
 
-bool stop_server (void) {
-
+void stop_server (void) {
 }
 
-bool restart_server (void) {
-    
+void restart_server (void) {
 }

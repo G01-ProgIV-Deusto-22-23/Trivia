@@ -7,8 +7,8 @@
 #define DEFAULT_SERVER_PORT 210203
 
 extern server_status_t get_server_status (void);
-extern bool start_server (void);
-extern bool stop_server (void);
-extern bool restart_server (void);
+extern choicefunc_t start_server;
+extern choicefunc_t stop_server;
+extern choicefunc_t restart_server;
 
 #endif

@@ -485,7 +485,7 @@ static void
                               waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                               \
                          );                                                                                                                                     \
                          refresh_log_window ();                                                                                                                 \
-                     }                                                                                                                                          \
+                     }                                                                                                                                         \
                  }))
         #endif
 
