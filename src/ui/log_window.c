@@ -20,9 +20,13 @@ extern "C" {
 
     int impl_set_log_file (const int fd, const bool temp) {
         if (!temp)
-            return LOG_FILE_FILENO = fd;
+            LOG_FILE_FILENO = fd;
+        else
+            temp_log_file ();
 
-        return temp_log_file ();
+        setbuf (fdopen (LOG_FILE_FILENO, "w+"), NULL);
+
+        return LOG_FILE_FILENO;
     }
 
     int temp_log_file (void) {

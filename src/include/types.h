@@ -47,28 +47,30 @@ typedef setwidthfunc_t setheightfunc_t;
 typedef enum { server_off, server_on, server_starting } server_status_t;
 
 typedef struct {
-	int ID_Usuario;
-	char nombreVisible[21];
-	char username[21];
-	char contrasena[21];
-	int aciertosTotales;
-	int fallosTotales;
-	int ID_Presets;
-}Usuario;
+        int  ID_Usuario;
+        char nombreVisible [21];
+        char username [21];
+        char contrasena [21];
+        int  aciertosTotales;
+        int  fallosTotales;
+        int  ID_Presets;
+} Usuario;
+
 typedef struct {
-	char nombre[21];
-	int ID_Categoria;
-}Categoria;
-typedef struct{
-	int ID_Presets;
-	int nJugadores;
-	int nRondas;
-	int RoundTime;
-	char Categorias[101];
-	char Mecanica1[4];
-	char Mecanica2[4];
-	char Mecanica3[4];
-	char Mecanica4[4];
-}Presets;
+        char nombre [21];
+        int  ID_Categoria;
+} Categoria;
+
+typedef struct {
+        int  ID_Presets;
+        int  nJugadores;
+        int  nRondas;
+        int  RoundTime;
+        char Categorias [101];
+        char Mecanica1 [4];
+        char Mecanica2 [4];
+        char Mecanica3 [4];
+        char Mecanica4 [4];
+} Presets;
 
 #endif

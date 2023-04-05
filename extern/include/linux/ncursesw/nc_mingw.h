@@ -38,50 +38,50 @@
 
 #ifdef _WIN32
 
-#ifdef WINVER
-#  if WINVER < 0x0501
-#    error WINVER must at least be 0x0501
-#  endif
-#else
-#  define WINVER 0x0501
-#endif
-#include <windows.h>
+    #ifdef WINVER
+        #if WINVER < 0x0501
+            #error WINVER must at least be 0x0501
+        #endif
+    #else
+        #define WINVER 0x0501
+    #endif
+    #include <windows.h>
 
-#undef sleep
-#define sleep(n) Sleep((n) * 1000)
+    #undef sleep
+    #define sleep(n) Sleep ((n) *1000)
 
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>		/* for struct timeval */
-#endif
+    #if HAVE_SYS_TIME_H
+        #include <sys/time.h> /* for struct timeval */
+    #endif
 
-#ifdef _MSC_VER
-#include <winsock2.h>		/* for struct timeval */
-#endif
+    #ifdef _MSC_VER
+        #include <winsock2.h> /* for struct timeval */
+    #endif
 
-#ifdef __cplusplus
+    #ifdef __cplusplus
 extern "C" {
-#endif
+    #endif
 
-#include <ncursesw/ncurses_dll.h>
+    #include <ncursesw/ncurses_dll.h>
 
-#if !HAVE_CLOCK_GETTIME && !HAVE_GETTIMEOFDAY
-NCURSES_EXPORT(int) _nc_gettimeofday(struct timeval *, void *);
-#undef HAVE_GETTIMEOFDAY
-#define HAVE_GETTIMEOFDAY 2
-#define gettimeofday(tv,tz) _nc_gettimeofday(tv,tz)
-#endif
+    #if !HAVE_CLOCK_GETTIME && !HAVE_GETTIMEOFDAY
+    NCURSES_EXPORT (int) _nc_gettimeofday (struct timeval *, void *);
+        #undef HAVE_GETTIMEOFDAY
+        #define HAVE_GETTIMEOFDAY    2
+        #define gettimeofday(tv, tz) _nc_gettimeofday (tv, tz)
+    #endif
 
-#define SIGHUP  1
-#define SIGKILL 9
-#define getlogin() "username"
+    #define SIGHUP     1
+    #define SIGKILL    9
+    #define getlogin() "username"
 
-#undef wcwidth
-#define wcwidth(ucs) _nc_wcwidth((wchar_t)(ucs))
-NCURSES_EXPORT(int) _nc_wcwidth(wchar_t);
+    #undef wcwidth
+    #define wcwidth(ucs) _nc_wcwidth ((wchar_t) (ucs))
+    NCURSES_EXPORT (int) _nc_wcwidth (wchar_t);
 
-#ifdef __cplusplus
+    #ifdef __cplusplus
 }
-#endif
+    #endif
 
 #endif /* _WIN32 */
 

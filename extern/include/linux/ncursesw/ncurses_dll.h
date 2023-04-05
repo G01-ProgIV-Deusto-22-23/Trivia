@@ -36,30 +36,30 @@
  */
 #if defined(__MINGW64__)
 
-#ifndef _WIN64
-#define _WIN64 1
-#endif
+    #ifndef _WIN64
+        #define _WIN64 1
+    #endif
 
 #elif defined(__MINGW32__)
 
-#ifndef _WIN32
-#define _WIN32 1
-#endif
+    #ifndef _WIN32
+        #define _WIN32 1
+    #endif
 
-/* 2014-08-02 workaround for broken MinGW compiler.
- * Oddly, only TRACE is mapped to trace - the other -D's are okay.
- * suggest TDM as an alternative.
- */
-#if (__GNUC__ == 4) && (__GNUC_MINOR__ == 8)
+    /* 2014-08-02 workaround for broken MinGW compiler.
+     * Oddly, only TRACE is mapped to trace - the other -D's are okay.
+     * suggest TDM as an alternative.
+     */
+    #if (__GNUC__ == 4) && (__GNUC_MINOR__ == 8)
 
-#ifdef trace
-#undef trace
-#define TRACE
-#endif
+        #ifdef trace
+            #undef trace
+            #define TRACE
+        #endif
 
-#endif	/* broken compiler */
+    #endif /* broken compiler */
 
-#endif	/* MingW */
+#endif /* MingW */
 
 /*
  * For reentrant code, we map the various global variables into SCREEN by
@@ -68,32 +68,32 @@
 #define NCURSES_PUBLIC_VAR(name) _nc_##name
 
 #if defined(BUILDING_NCURSES)
-# define NCURSES_IMPEXP NCURSES_EXPORT_GENERAL_EXPORT
+    #define NCURSES_IMPEXP NCURSES_EXPORT_GENERAL_EXPORT
 #else
-# define NCURSES_IMPEXP NCURSES_EXPORT_GENERAL_IMPORT
+    #define NCURSES_IMPEXP NCURSES_EXPORT_GENERAL_IMPORT
 #endif
 
-#define NCURSES_WRAPPED_VAR(type,name) extern NCURSES_IMPEXP type NCURSES_PUBLIC_VAR(name)(void)
+#define NCURSES_WRAPPED_VAR(type, name) extern NCURSES_IMPEXP type NCURSES_PUBLIC_VAR (name) (void)
 
-#define NCURSES_EXPORT(type) NCURSES_IMPEXP type NCURSES_API
+#define NCURSES_EXPORT(type)     NCURSES_IMPEXP type NCURSES_API
 #define NCURSES_EXPORT_VAR(type) NCURSES_IMPEXP type
 
 /*
  * These symbols hide dllimport/dllexport, for compilers which care about it.
  */
 #if defined(__CYGWIN__) || (defined(_WIN32) || defined(_WIN64))
-# if defined(NCURSES_STATIC)	/* "static" here only implies "not-a-DLL" */
-#   define NCURSES_EXPORT_GENERAL_IMPORT
-#   define NCURSES_EXPORT_GENERAL_EXPORT
-# else
-#   define NCURSES_EXPORT_GENERAL_IMPORT __declspec(dllimport)
-#   define NCURSES_EXPORT_GENERAL_EXPORT __declspec(dllexport)
-# endif
-# define NCURSES_API __cdecl
+    #if defined(NCURSES_STATIC) /* "static" here only implies "not-a-DLL" */
+        #define NCURSES_EXPORT_GENERAL_IMPORT
+        #define NCURSES_EXPORT_GENERAL_EXPORT
+    #else
+        #define NCURSES_EXPORT_GENERAL_IMPORT __declspec (dllimport)
+        #define NCURSES_EXPORT_GENERAL_EXPORT __declspec (dllexport)
+    #endif
+    #define NCURSES_API __cdecl
 #else
-# define NCURSES_EXPORT_GENERAL_IMPORT
-# define NCURSES_EXPORT_GENERAL_EXPORT
-# define NCURSES_API /* FIXME: __attribute__ ((cdecl)) is only available on x86 */
+    #define NCURSES_EXPORT_GENERAL_IMPORT
+    #define NCURSES_EXPORT_GENERAL_EXPORT
+    #define NCURSES_API /* FIXME: __attribute__ ((cdecl)) is only available on x86 */
 #endif
 
 #endif /* NCURSES_DLL_H_incl */

@@ -7,7 +7,7 @@ int                    FREE_MENU_ERR                          = OK;
 #ifdef _WIN32
 HANDLE FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #else
-sem_t  FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
+sem_t FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #endif
 
 static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
@@ -69,36 +69,36 @@ void trivia_free_menu (const size_t menu) {
 }
 
 void start_menu_gc (void) {
-    for (size_t i = 0; i < 
-    #ifdef _WIN32
-        sizeof (FREE_MENU_SEMS) / sizeof (*FREE_MENU_SEMS)
-    #else
-        arrsize (FREE_MENU_SEMS)
-    #endif
-    ;)
+    for (size_t i = 0; i <
+#ifdef _WIN32
+                       sizeof (FREE_MENU_SEMS) / sizeof (*FREE_MENU_SEMS)
+#else
+                       arrsize (FREE_MENU_SEMS)
+#endif
+             ;)
         if (
 #ifdef _WIN32
-    !(*(FREE_MENU_SEMS + i++) = CreateSemaphore (NULL, 0, 1, NULL))
+            !(*(FREE_MENU_SEMS + i++) = CreateSemaphore (NULL, 0, 1, NULL))
 #else
-    sem_init (FREE_MENU_SEMS + i++, 0, 0)
+            sem_init (FREE_MENU_SEMS + i++, 0, 0)
 #endif
         )
             error ("could not start the menu garbage collector.");
 }
 
 void stop_menu_gc (void) {
-    for (size_t i = 0; i < 
-    #ifdef _WIN32
-        sizeof (FREE_MENU_SEMS) / sizeof (*FREE_MENU_SEMS)
-    #else
-        arrsize (FREE_MENU_SEMS)
-    #endif
-    ;)
+    for (size_t i = 0; i <
+#ifdef _WIN32
+                       sizeof (FREE_MENU_SEMS) / sizeof (*FREE_MENU_SEMS)
+#else
+                       arrsize (FREE_MENU_SEMS)
+#endif
+             ;)
         if (
 #ifdef _WIN32
-    CloseHandle (*(FREE_MENU_SEMS + i++))
+            CloseHandle (*(FREE_MENU_SEMS + i++))
 #else
-    sem_destroy (FREE_MENU_SEMS + i++)
+            sem_destroy (FREE_MENU_SEMS + i++)
 #endif
         )
             error ("could not destroy a semaphore.");
@@ -159,13 +159,14 @@ size_t
         error ("The funcs pointer cannot be null.");
 
     size_t menu = 0;
-    for (; menu < 
-    #ifdef _WIN32
-        sizeof (MENUS) / sizeof (*MENUS)
-    #else
-        arrsize (MENUS)
-    #endif
-    ; menu++)
+    for (; menu <
+#ifdef _WIN32
+           sizeof (MENUS) / sizeof (*MENUS)
+#else
+           arrsize (MENUS)
+#endif
+             ;
+         menu++)
         if (!((atomic_load (&MENU_CONTROL) >> menu) & (size_t) 1))
             break;
 
@@ -232,11 +233,11 @@ __attribute__ ((nonnull (2, 3)))
 size_t
     impl_display_menu (const size_t menu, const char *const restrict title, const char *const restrict mark) {
     if (menu >=
-        #ifdef _WIN32
-            sizeof (MENUS) / sizeof (*MENUS)
-        #else
-            arrsize (MENUS)
-        #endif
+#ifdef _WIN32
+        sizeof (MENUS) / sizeof (*MENUS)
+#else
+        arrsize (MENUS)
+#endif
     )
         error ("not a valid menu index.");
 
@@ -401,12 +402,12 @@ action:
 }
 
 size_t *get_menu_ret (const size_t menu) {
-    if (menu >= 
-        #ifdef _WIN32
-            sizeof (MENUS) / sizeof (*MENUS)
-        #else
-            arrsize (MENUS)
-        #endif
+    if (menu >=
+#ifdef _WIN32
+        sizeof (MENUS) / sizeof (*MENUS)
+#else
+        arrsize (MENUS)
+#endif
     )
         error ("not a valid menu index.");
 
@@ -418,11 +419,11 @@ size_t *get_menu_ret (const size_t menu) {
 
 size_t *set_menu_ret (const size_t menu, size_t *const restrict ret) {
     if (menu >=
-        #ifdef _WIN32
-            sizeof (MENUS) / sizeof (*MENUS)
-        #else
-            arrsize (MENUS)
-        #endif
+#ifdef _WIN32
+        sizeof (MENUS) / sizeof (*MENUS)
+#else
+        arrsize (MENUS)
+#endif
     )
         error ("not a valid menu index.");
 

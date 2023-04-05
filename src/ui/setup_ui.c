@@ -61,6 +61,8 @@ int impl_setup_ui (
     const int argc, const char *const *const restrict argv, const int cursor, const int en_cbreak, const int en_echo,
     const int en_keypad, const int en_halfdelay
 ) {
+    setbuf (stderr, NULL);
+
     for (int i = 1; i < argc; i++) {
         if (TRIVIA_EXPECTING_FILENAME) {
             LOG_FILENAME              = *(argv + i);
@@ -114,9 +116,8 @@ int impl_setup_ui (
 #ifdef _WIN32
         if (strpbrk (LOG_FILENAME, WINDOWS_ILLEGAL_FILENAME_CHARS) || ({
                 bool illegal = false;
-                for (size_t i = 0; i <
-                        sizeof (WINDOWS_ILLEGAL_FILENAME_CHARS) / sizeof (*WINDOWS_ILLEGAL_FILENAME_CHARS)
-                ;)
+                for (size_t i = 0;
+                     i < sizeof (WINDOWS_ILLEGAL_FILENAME_CHARS) / sizeof (*WINDOWS_ILLEGAL_FILENAME_CHARS);)
                     if ((illegal = !strcmp (LOG_FILENAME, *(WINDOWS_ILLEGAL_FILENAMES + i++))))
                         break;
                 illegal;
@@ -137,7 +138,8 @@ int impl_setup_ui (
             stderr,
             "\n%-20s\t\t" TRIVIA_USAGE_ARG_SHORT_RIGHT "\n%-20s\t\t" TRIVIA_USAGE_ARG_LONG_RIGHT
             "\n%-20s\t\t" TRIVIA_HELP_ARG_SHORT_RIGHT "\n%-20s\t\t" TRIVIA_HELP_ARG_LONG_RIGHT
-            "\n%-20s\t\t" TRIVIA_NOLOG_ARG_RIGHT "\n%-20s\t\t" TRIVIA_LOG_ARG_RIGHT "\n%-20s\t\t" TRIVIA_LOGFILE_ARG_RIGHT,
+            "\n%-20s\t\t" TRIVIA_NOLOG_ARG_RIGHT "\n%-20s\t\t" TRIVIA_LOG_ARG_RIGHT
+            "\n%-20s\t\t" TRIVIA_LOGFILE_ARG_RIGHT,
             TRIVIA_USAGE_ARG_SHORT_LEFT, TRIVIA_USAGE_ARG_LONG_LEFT, TRIVIA_HELP_ARG_SHORT_LEFT,
             TRIVIA_HELP_ARG_LONG_LEFT, TRIVIA_NOLOG_ARG_LEFT, TRIVIA_LOG_ARG_LEFT, TRIVIA_LOGFILE_ARG_LEFT
         );
@@ -145,8 +147,10 @@ int impl_setup_ui (
         exit (0);
     }
 
+#ifndef _WIN32
     if (!TRIVIA_WANTS_NOLOG)
         set_log_file (LOG_FILENAME);
+#endif
 
     if (get_term_width () < MIN_TERM_WIDTH || get_term_height () < MIN_TERM_HEIGHT)
         error ("the terminal is not big enough to display a UI.");
@@ -167,10 +171,7 @@ int impl_setup_ui (
 
         short term_bckgd;
 
-        init_pair (
-            log_message + 1, COLOR_GREEN,
-            (pair_content (0, &(short) { 0 }, &term_bckgd), term_bckgd)
-        );
+        init_pair (log_message + 1, COLOR_GREEN, (pair_content (0, &(short) { 0 }, &term_bckgd), term_bckgd));
         init_pair (log_warning + 1, COLOR_YELLOW, term_bckgd);
         init_pair (log_error + 1, COLOR_RED, term_bckgd);
     }

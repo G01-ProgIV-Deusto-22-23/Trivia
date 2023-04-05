@@ -2,12 +2,13 @@
 #define TRIVIA_LOCAL_H
 
 extern
- #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
-[[noreturn]]
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
+    [[noreturn]]
 #else
-__attribute__ ((noreturn))
+    __attribute__ ((noreturn))
 #endif
- void welcome (void);
+    void
+                    welcome (void);
 extern choicefunc_t server_status_menu;
 
 #endif

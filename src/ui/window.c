@@ -24,7 +24,8 @@ bool delete_windows (void) {
         return false;
 
     bool fine = true;
-    for (; TRIVIA_WINDOW_LIST; remove_window (TRIVIA_WINDOW_LIST));
+    for (; TRIVIA_WINDOW_LIST; remove_window (TRIVIA_WINDOW_LIST))
+        ;
 
     return fine;
 }
@@ -52,7 +53,7 @@ static bool remove_window (window_list_t node) {
         return false;
 
     for (window_list_t *head = &TRIVIA_WINDOW_LIST, temp = NULL; *head;) {
-        temp = *head;
+        temp  = *head;
         *head = (*head)->next;
 
         if (temp == node) {
@@ -67,7 +68,6 @@ static bool remove_window (window_list_t node) {
                 else
                     warning ("could not delete menu.");
             }
-
 
             free (temp);
 

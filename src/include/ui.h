@@ -33,7 +33,8 @@ extern int close_log_file (void);
              impl_set_log_file (                                                                                                                                          \
                  ({                                                                                                                                                       \
                      _Pragma ("GCC diagnostic push");                                                                                                                     \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                                     \
+                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                                               \
+                     _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                    \
                      FILE *const __impl_set_log_file__ = __builtin_choose_expr (                                                                                          \
                          isint (x), _fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                             \
                          fopen (                                                                                                                                          \
@@ -80,7 +81,8 @@ extern int close_log_file (void);
              impl_set_log_file (                                                                                                                                          \
                  ({                                                                                                                                                       \
                      _Pragma ("GCC diagnostic push");                                                                                                                     \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                                    \
+                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                                               \
+                     _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                    \
                      FILE *const __impl_set_log_file__ = __builtin_choose_expr (                                                                                          \
                          isint (x), fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                              \
                          fopen (                                                                                                                                          \
@@ -204,14 +206,14 @@ extern size_t impl_create_menu (
          ),                                                                                                                                             \
          ({                                                                                                                                             \
              _Pragma ("GCC diagnostic push");                                                                                                           \
-             _Pragma ("GCC diagnostic ignored \"-Wshadow=local\""); _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                          \
+             _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                                     \
+             _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                          \
              __builtin_choose_expr (__builtin_constant_p (t), (void) 0, ({                                                                              \
                                         if (__builtin_choose_expr (isint (t), t, actionmenu) < actionmenu ||                                            \
                                             __builtin_choose_expr (isint (t), t, actionmenu) > multimenu)                                               \
                                             error ("the type of menu specified is not a valid menu type.");                                             \
                                     }));                                                                                                                \
-             const size_t __create_menu_arrsz__ =                                                                                                       \
-                 sizeof (c) / sizeof (*c);                                                             \
+             const size_t __create_menu_arrsz__ = sizeof (c) / sizeof (*c);                                                                             \
              if (!__create_menu_arrsz__)                                                                                                                \
                  error ("menus must have at least one item.");                                                                                          \
              size_t *const restrict __create_menu_lens__ = alloca (__create_menu_arrsz__ * 2 * sizeof (size_t));                                        \
@@ -271,13 +273,12 @@ extern size_t impl_create_menu (
                  (const char *const (*const restrict) [2]) __create_menu_choices__,                                                                     \
                  (const size_t (*const restrict) [2]) __create_menu_lens__,                                                                             \
                  (choicefunc_t *const *const restrict) __builtin_choose_expr (                                                                          \
-                     NARGS (__VA_ARGS__), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((choicefunc_t **) NULL)),                                                                                                                    \
-                         ({                                                                                                                             \
-                             choicefunc_t **const restrict __create_menu_f__ =                                                                          \
-                                 alloca (__create_menu_arrsz__ * sizeof (choicefunc_t *));                                                              \
-                             memset (__create_menu_f__, 0, __create_menu_arrsz__ * sizeof (choicefunc_t *));                                            \
-                             __create_menu_f__;                                                                                                         \
-                         })                                                                                                                             \
+                     NARGS (__VA_ARGS__), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((choicefunc_t **) NULL)), ({                                               \
+                         choicefunc_t **const restrict __create_menu_f__ =                                                                              \
+                             alloca (__create_menu_arrsz__ * sizeof (choicefunc_t *));                                                                  \
+                         memset (__create_menu_f__, 0, __create_menu_arrsz__ * sizeof (choicefunc_t *));                                                \
+                         __create_menu_f__;                                                                                                             \
+                     })                                                                                                                                 \
                  )                                                                                                                                      \
              );                                                                                                                                         \
              _Pragma ("GCC diagnostic pop");                                                                                                            \
@@ -349,7 +350,7 @@ extern size_t impl_display_menu (const size_t, const char *const restrict, const
                         c, (choicefunc_t *const *const) __builtin_choose_expr (__builtin_types_compatible_p (typeof (*__builtin_choose_expr (__builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((char *) NULL))) == pointer_type_class, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((char *) NULL)), ((char *) NULL))), choicefunc_t *), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((choicefunc_t *const *) NULL)), ({                                                                                   \
                                                                                    const size_t                                                                                                                                                                                                                                                                                                                                                                                                  \
                                                                                        __create_menu_arrsz__ =                                                                                                                                                                                                                                                                                                                                                                                   \
-                                                                                           sizeof (c) / sizeof (*c);                                                                                                                                                                                                                                                                                                                                                                                          \
+                                                                                           sizeof (c) / sizeof (*c);                                                                                                                                                                                                                                                                                                                                                                             \
                                                                                    choicefunc_t *                                                                                                                                                                                                                                                                                                                                                                                                \
                                                                                        *const restrict __create_menu_f__ =                                                                                                                                                                                                                                                                                                                                                                       \
                                                                                            alloca (                                                                                                                                                                                                                                                                                                                                                                                              \

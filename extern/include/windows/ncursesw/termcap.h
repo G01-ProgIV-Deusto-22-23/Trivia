@@ -35,35 +35,34 @@
 /* $Id: termcap.h.in,v 1.20 2021/06/17 21:26:02 tom Exp $ */
 
 #ifndef NCURSES_TERMCAP_H_incl
-#define NCURSES_TERMCAP_H_incl	1
+#define NCURSES_TERMCAP_H_incl 1
 
-#undef  NCURSES_VERSION
+#undef NCURSES_VERSION
 #define NCURSES_VERSION "6.4"
 
 #include <ncursesw/ncurses_dll.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 #include <sys/types.h>
 
-#undef  NCURSES_OSPEED
+#undef NCURSES_OSPEED
 #define NCURSES_OSPEED short
 
-extern NCURSES_EXPORT_VAR(char) PC;
-extern NCURSES_EXPORT_VAR(char *) UP;
-extern NCURSES_EXPORT_VAR(char *) BC;
-extern NCURSES_EXPORT_VAR(NCURSES_OSPEED) ospeed;
+    extern NCURSES_EXPORT_VAR (char) PC;
+    extern NCURSES_EXPORT_VAR (char *) UP;
+    extern NCURSES_EXPORT_VAR (char *) BC;
+    extern NCURSES_EXPORT_VAR (NCURSES_OSPEED) ospeed;
 
 #if !defined(NCURSES_TERM_H_incl)
-extern NCURSES_EXPORT(char *) tgetstr (const char *, char **);
-extern NCURSES_EXPORT(char *) tgoto (const char *, int, int);
-extern NCURSES_EXPORT(int) tgetent (char *, const char *);
-extern NCURSES_EXPORT(int) tgetflag (const char *);
-extern NCURSES_EXPORT(int) tgetnum (const char *);
-extern NCURSES_EXPORT(int) tputs (const char *, int, int (*)(int));
+    extern NCURSES_EXPORT (char *) tgetstr (const char *, char **);
+    extern NCURSES_EXPORT (char *) tgoto (const char *, int, int);
+    extern NCURSES_EXPORT (int) tgetent (char *, const char *);
+    extern NCURSES_EXPORT (int) tgetflag (const char *);
+    extern NCURSES_EXPORT (int) tgetnum (const char *);
+    extern NCURSES_EXPORT (int) tputs (const char *, int, int (*) (int));
 #endif
 
 #ifdef __cplusplus
