@@ -69,8 +69,6 @@ int impl_setup_ui (
             continue;
         }
 
-        TRIVIA_EXPECTING_FILENAME = false;
-
         if (!(strcmp (*(argv + i), TRIVIA_USAGE_ARG_SHORT) && strcmp (*(argv + i), TRIVIA_USAGE_ARG_LONG))) {
             TRIVIA_WANTS_USAGE = true;
 
@@ -112,19 +110,12 @@ int impl_setup_ui (
         error ("The " STRINGIFY (TRIVIA_NOLOG_ARG) " and " STRINGIFY (TRIVIA_LOG_ARG
         ) " arguments are mutually exclusive.");
 
-    if (TRIVIA_EXPECTING_FILENAME) {
-        if (!LOG_FILENAME)
-            error ("a log file name was expected.");
-
+    if (LOG_FILENAME) {
 #ifdef _WIN32
         if (strpbrk (LOG_FILENAME, WINDOWS_ILLEGAL_FILENAME_CHARS) || ({
                 bool illegal = false;
                 for (size_t i = 0; i <
-                    #ifdef _WIN32
                         sizeof (WINDOWS_ILLEGAL_FILENAME_CHARS) / sizeof (*WINDOWS_ILLEGAL_FILENAME_CHARS)
-                    #else
-                        arrsize (WINDOWS_ILLEGAL_FILENAME_CHARS)
-                    #endif
                 ;)
                     if ((illegal = !strcmp (LOG_FILENAME, *(WINDOWS_ILLEGAL_FILENAMES + i++))))
                         break;
@@ -144,9 +135,9 @@ int impl_setup_ui (
 
         fprintf (
             stderr,
-            "\n%-20s\t\t" TRIVIA_USAGE_ARG_SHORT_RIGHT "%-20s\t\t" TRIVIA_USAGE_ARG_LONG_RIGHT
-            "%-20s\t\t" TRIVIA_HELP_ARG_SHORT_RIGHT "%-20s\t\t" TRIVIA_HELP_ARG_LONG_RIGHT
-            "%-20s\t\t" TRIVIA_NOLOG_ARG_RIGHT "%-20s\t\t" TRIVIA_LOG_ARG_RIGHT "%-20s\t\t" TRIVIA_LOGFILE_ARG_RIGHT,
+            "\n%-20s\t\t" TRIVIA_USAGE_ARG_SHORT_RIGHT "\n%-20s\t\t" TRIVIA_USAGE_ARG_LONG_RIGHT
+            "\n%-20s\t\t" TRIVIA_HELP_ARG_SHORT_RIGHT "\n%-20s\t\t" TRIVIA_HELP_ARG_LONG_RIGHT
+            "\n%-20s\t\t" TRIVIA_NOLOG_ARG_RIGHT "\n%-20s\t\t" TRIVIA_LOG_ARG_RIGHT "\n%-20s\t\t" TRIVIA_LOGFILE_ARG_RIGHT,
             TRIVIA_USAGE_ARG_SHORT_LEFT, TRIVIA_USAGE_ARG_LONG_LEFT, TRIVIA_HELP_ARG_SHORT_LEFT,
             TRIVIA_HELP_ARG_LONG_LEFT, TRIVIA_NOLOG_ARG_LEFT, TRIVIA_LOG_ARG_LEFT, TRIVIA_LOGFILE_ARG_LEFT
         );

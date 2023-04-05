@@ -32,7 +32,8 @@ DFLAGS := \
 
 UILIBS     := -lformw -lmenuw -lpanelw -lncursesw
 OSLIBS     := -lbacktrace
-TRIVIALIBS := -lui -los -lserver
+BDLIBS     := -lsqlite3
+TRIVIALIBS := -lui -los -lserver -lbd
 LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS)
 
 ifeq ($(OS), Windows_NT)
@@ -93,6 +94,11 @@ SERVERW     := $(LIBDIR)/windows/libserver.a
 SERVEROBJSL := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/linux/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
 SERVEROBJSW := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/windows/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
 
+BDL := $(LIBDIR)/linux/libbd.a
+BDW := $(LIBDIR)/windows/libbd.a
+BDOBJSL := $(patsubst $(SRCDIR)/bd/%.c, $(OBJDIR)/linux/bd_%.o, $(wildcard $(SRCDIR)/bd/*.c))
+BDOBJSW := $(patsubst $(SRCDIR)/bd/%.c, $(OBJDIR)/linux/bd_%.o, $(wildcard $(SRCDIR)/bd/*.c))
+
 LOCALL     := $(BINDIR)/linux/local
 LOCALW     := $(BINDIR)/windows/local.exe
 LOCALOBJSL := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/linux/local_ui_%.o, $(wildcard $(SRCDIR)/local/ui/*.c))
@@ -143,10 +149,22 @@ $(OBJDIR)/linux/server_%.o: $(SRCDIR)/server/%.c
 $(OBJDIR)/windows/server_%.o: $(SRCDIR)/server/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(LOCALL): $(UIL) $(OSL) $(SERVERL) $(LOCALOBJSL)
+$(BDL): $(BDOBJSL)
+	ar rcs $@ $^
+
+$(BDW): $(BDOBJSW)
+	ar rcs $@ $^
+
+$(OBJDIR)/linux/bd_%.o: $(SRCDIR)/bd/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(OBJDIR)/windows/bd_%.o: $(SRCDIR)/bd/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(LOCALL): $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
 
-$(LOCALW): $(UIW) $(OSW) $(SERVERW) $(LOCALOBJSW)
+$(LOCALW): $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(LIBS)
 
 $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c

@@ -47,6 +47,10 @@
 #include <ncursesw/form.h>
 #include <ncursesw/menu.h>
 
+#include <sqlite3.h>
+#include <sqlite3ext.h>
+#include <sqlite3rc.h>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 
@@ -73,5 +77,6 @@ static const char
 #include "ui.h"
 #include "os.h"
 #include "server.h"
+#include "bd.h"
 
 #endif

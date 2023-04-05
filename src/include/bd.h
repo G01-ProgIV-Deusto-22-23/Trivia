@@ -1,6 +1,3 @@
-#include "type.h"
-#include "sqlite3.h"
-
 #ifndef BD_H_
 #define BD_H_
 
@@ -50,6 +47,8 @@ void modifyMecanica2(sqlite3 * db, char mecanica[], int id);
 void modifyMecanica3(sqlite3 * db, char mecanica[], int id);
 void modifyMecanica4(sqlite3 * db, char mecanica[], int id);
 
-
+void imprimirUsuario(Usuario usuario);
+void imprimirCategoria(Categoria categoria);
+void imprimirPresets(Presets presets);
 
 #endif
