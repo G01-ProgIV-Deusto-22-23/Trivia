@@ -34,7 +34,7 @@ UILIBS     := -lformw -lmenuw -lpanelw -lncursesw
 OSLIBS     := -lbacktrace
 BDLIBS     := -lsqlite3
 TRIVIALIBS := -lui -los -lserver -lbd
-LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS)
+LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(BDLIBS)
 
 ifeq ($(OS), Windows_NT)
 all: windows

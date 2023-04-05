@@ -169,15 +169,7 @@ int impl_setup_ui (
 
         init_pair (
             log_message + 1, COLOR_GREEN,
-            (pair_content (
-                 0,
-#ifdef _WIN32
-                 &(short) { 0 }, &term_bckgd
-#else
-                 &(short) { 0 }, &term_bckgd
-#endif
-             ),
-             term_bckgd)
+            (pair_content (0, &(short) { 0 }, &term_bckgd), term_bckgd)
         );
         init_pair (log_warning + 1, COLOR_YELLOW, term_bckgd);
         init_pair (log_error + 1, COLOR_RED, term_bckgd);
