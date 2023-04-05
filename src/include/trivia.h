@@ -48,7 +48,6 @@
 #include <ncursesw/menu.h>
 
 #include <sqlite3.h>
-#include <sqlite3ext.h>
 #include <sqlite3rc.h>
 
 #pragma GCC diagnostic push

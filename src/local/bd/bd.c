@@ -1,10 +1,3 @@
-#include "sqlite3.h"
-#include "BD.h"
-#include "type.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 Usuario* obtenerUsuarios(sqlite3 * db) {
 	sqlite3_stmt * stmt;
 	int tamanyo = numeroUsuarios(db);

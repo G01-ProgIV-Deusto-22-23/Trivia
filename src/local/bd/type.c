@@ -1,6 +1,3 @@
-#include "type.h"
-#include <stdio.h>
-
 void imprimirUsuario(Usuario usuario) {
 	printf("ID: %d Name: %s username: %s contrasena: %s aciertosTotales: %i, fallosTotales: %i, ID_Presets: %i\n", usuario.ID_Usuario, usuario.nombreVisible, usuario.username, usuario.contrasena, usuario.aciertosTotales, usuario.fallosTotales, usuario.ID_Presets);
 }

@@ -96,8 +96,8 @@ SERVEROBJSW := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/windows/server_%.o, $(
 
 BDL := $(LIBDIR)/linux/libbd.a
 BDW := $(LIBDIR)/windows/libbd.a
-BDOBJSL := $(patsubst $(SRCDIR)/bd/%.c, $(OBJDIR)/linux/bd_%.o, $(wildcard $(SRCDIR)/bd/*.c))
-BDOBJSW := $(patsubst $(SRCDIR)/bd/%.c, $(OBJDIR)/linux/bd_%.o, $(wildcard $(SRCDIR)/bd/*.c))
+BDOBJSL := $(patsubst $(SRCDIR)/local/bd/%.c, $(OBJDIR)/linux/bd_%.o, $(wildcard $(SRCDIR)/local/bd/*.c))
+BDOBJSW := $(patsubst $(SRCDIR)/local/bd/%.c, $(OBJDIR)/windows/bd_%.o, $(wildcard $(SRCDIR)/local/bd/*.c))
 
 LOCALL     := $(BINDIR)/linux/local
 LOCALW     := $(BINDIR)/windows/local.exe
@@ -155,10 +155,10 @@ $(BDL): $(BDOBJSL)
 $(BDW): $(BDOBJSW)
 	ar rcs $@ $^
 
-$(OBJDIR)/linux/bd_%.o: $(SRCDIR)/bd/%.c
+$(OBJDIR)/linux/bd_%.o: $(SRCDIR)/local/bd/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(OBJDIR)/windows/bd_%.o: $(SRCDIR)/bd/%.c
+$(OBJDIR)/windows/bd_%.o: $(SRCDIR)/local/bd/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
 $(LOCALL): $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
