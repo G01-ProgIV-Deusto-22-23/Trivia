@@ -10,5 +10,7 @@ extern
     void
                     welcome (void);
 extern choicefunc_t server_status_menu;
+extern choicefunc_t configurarServidor;
+extern choicefunc_t usuarioMenu;
 
 #endif
