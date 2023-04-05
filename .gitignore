@@ -2,7 +2,7 @@
 *.exe
 *.bin
 bin
-lib/*/*.a
+lib
 obj
 *.o
 .cache

@@ -11,7 +11,7 @@ void server_status_menu (void) {
               )
             : choicemenu (
                   0, 0, 0, 0, ((const char *const []) { "El servidor está siendo iniciado, espera." }),
-                  "Servidor reinciándose."
+                  "Servidor reinciándose"
               )
     );
 }

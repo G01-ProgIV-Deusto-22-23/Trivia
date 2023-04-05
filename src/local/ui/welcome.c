@@ -3,8 +3,6 @@
 #else
 __attribute__ ((noreturn))
 #endif
-
-
 void welcome (void) {
     actionmenu (
         0, 0, 0, 0,
