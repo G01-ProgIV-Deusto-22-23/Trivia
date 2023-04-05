@@ -39,6 +39,7 @@
 #endif
 #include <pthread.h>
 #include <semaphore.h>
+#include <libgen.h>
 
 #include <backtrace.h>
 

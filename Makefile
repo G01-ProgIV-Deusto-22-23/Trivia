@@ -20,8 +20,8 @@ OPTIMIZATION_LEVEL := 3
 RUNTIME_DIAGS      := true
 
 CFLAGS := \
-	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fstrict-aliasing -fmax-errors=0\
-	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h -pthread
+	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fstrict-aliasing -fmax-errors=1 \
+	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h -pthread -lpthread
 ifeq ($(RUNTIME_DIAGS), false)
 	CFLAGS += -DDISABLE_RUNTIME_DIAGS
 endif
@@ -57,21 +57,21 @@ init: init_bin init_lib init_obj
 
 init_bin:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell mkdir $(BINDIR))
+	@echo $(shell cmd /c "mkdir $(BINDIR)")
 else
 	@echo $(shell mkdir -p $(BINDIR))
 endif
 
 init_lib:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell mkdir $(LIBDIR))
+	@echo $(shell cmd /c "mkdir $(LIBDIR)")
 else
 	@echo $(shell mkdir -p $(LIBDIR))
 endif
 
 init_obj:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell mkdir $(OBJDIR))
+	@echo $(shell cmd /c "mkdir $(OBJDIR)")
 else
 	@echo $(shell mkdir -p $(OBJDIR))
 endif

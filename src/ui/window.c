@@ -115,7 +115,12 @@ static int delwinfunc (void *const restrict win) {
 
 static int delmenufunc (void *const restrict menu) {
     trivia_free_menu ((size_t) (uintptr_t) menu);
+
+#ifdef _WIN32
+    WaitForSingleObject (*(FREE_MENU_SEMS + (uintptr_t) menu), 0L);
+#else
     sem_wait (FREE_MENU_SEMS + (uintptr_t) menu);
+#endif
 
     return FREE_MENU_ERR;
 }

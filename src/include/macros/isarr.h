@@ -20,19 +20,38 @@
 
 #else
 
-    #define isarr_helper(x)                                                                                            \
-        __builtin_choose_expr (                                                                                        \
-            __builtin_classify_type (x) == pointer_type_class,                                                         \
-            __builtin_types_compatible_p (                                                                             \
-                typeof (*(__builtin_choose_expr (                                                                      \
-                    __builtin_classify_type (x) == pointer_type_class &&                                               \
-                        !__builtin_types_compatible_p (typeof (x), void *),                                            \
-                    x, (char *) NULL                                                                                   \
-                ))) [],                                                                                                \
-                typeof (x)                                                                                             \
-            ),                                                                                                         \
-            0                                                                                                          \
-        )
+    #ifdef _WIN32
+        #define isarr_helper(x)                                                                                        \
+            ({                                                                                                         \
+                size_t __is_arr_var__ = __builtin_choose_expr (                                                        \
+                    __builtin_classify_type (x) == pointer_type_class,                                                 \
+                    __builtin_types_compatible_p (                                                                     \
+                        typeof (*(__builtin_choose_expr (                                                              \
+                            __builtin_classify_type (x) == pointer_type_class &&                                       \
+                                !__builtin_types_compatible_p (typeof (x), void *),                                    \
+                            x, ((char []) {})                                                                          \
+                        ))) [],                                                                                        \
+                        typeof (x)                                                                                     \
+                    ),                                                                                                 \
+                    0                                                                                                  \
+                );                                                                                                     \
+                __is_arr_var__;                                                                                        \
+            })
+    #else
+        #define isarr_helper(x)                                                                                        \
+            __builtin_choose_expr (                                                                                    \
+                __builtin_classify_type (x) == pointer_type_class,                                                     \
+                __builtin_types_compatible_p (                                                                         \
+                    typeof (*(__builtin_choose_expr (                                                                  \
+                        __builtin_classify_type (x) == pointer_type_class &&                                           \
+                            !__builtin_types_compatible_p (typeof (x), void *),                                        \
+                        x, ((char []) {})                                                                              \
+                    ))) [],                                                                                            \
+                    typeof (x)                                                                                         \
+                ),                                                                                                     \
+                0                                                                                                      \
+            )
+    #endif
 
     #define isarr_eval(x, ...)                                                                                         \
         __builtin_choose_expr (                                                                                        \
@@ -54,7 +73,7 @@
                 ) == 2,                                                                                                \
                 /* Level 2 */ isarr_helper (x) &&                                                                      \
                     isarr_helper (                                                                                     \
-                        *__builtin_choose_expr (__builtin_classify_type (x) == pointer_type_class, x, (char *) NULL)   \
+                        *__builtin_choose_expr (__builtin_classify_type (x) == pointer_type_class, x, ((char []) {}))  \
                     ),                                                                                                 \
                 __builtin_choose_expr (                                                                                \
                     __builtin_choose_expr (                                                                            \
@@ -66,16 +85,16 @@
                     ) == 3,                                                                                            \
                     /* Level 3 */ isarr_helper (x) &&                                                                  \
                         isarr_helper (*__builtin_choose_expr (                                                         \
-                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                        \
+                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})                       \
                         )) &&                                                                                          \
                         isarr_helper (*__builtin_choose_expr (                                                         \
                             __builtin_classify_type (*__builtin_choose_expr (                                          \
-                                __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                    \
+                                __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})                   \
                             )) == pointer_type_class,                                                                  \
                             *__builtin_choose_expr (                                                                   \
-                                __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                    \
+                                __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})                   \
                             ),                                                                                         \
-                            (char *) NULL                                                                              \
+                            ((char []) {})                                                                             \
                         )),                                                                                            \
                     __builtin_choose_expr (                                                                            \
                         __builtin_choose_expr (                                                                        \
@@ -87,116 +106,116 @@
                         ) == 4,                                                                                        \
                         /* Level 4 */ isarr_helper (x) &&                                                              \
                             isarr_helper (*__builtin_choose_expr (                                                     \
-                                __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                    \
+                                __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})                   \
                             )) &&                                                                                      \
                             isarr_helper (*__builtin_choose_expr (                                                     \
                                 __builtin_classify_type (*__builtin_choose_expr (                                      \
-                                    __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                \
+                                    __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})               \
                                 )) == pointer_type_class,                                                              \
                                 *__builtin_choose_expr (                                                               \
-                                    __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                \
+                                    __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})               \
                                 ),                                                                                     \
-                                (char *) NULL                                                                          \
+                                ((char []) {})                                                                         \
                             )) &&                                                                                      \
                             isarr_helper (*__builtin_choose_expr (                                                     \
                                 __builtin_classify_type (*__builtin_choose_expr (                                      \
                                     __builtin_classify_type (*__builtin_choose_expr (                                  \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
                                     )) == pointer_type_class,                                                          \
                                     *__builtin_choose_expr (                                                           \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
                                     ),                                                                                 \
-                                    (char *) NULL                                                                      \
+                                    ((char []) {})                                                                     \
                                 )) == pointer_type_class,                                                              \
                                 *__builtin_choose_expr (                                                               \
                                     __builtin_classify_type (*__builtin_choose_expr (                                  \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
                                     )) == pointer_type_class,                                                          \
                                     *__builtin_choose_expr (                                                           \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
                                     ),                                                                                 \
-                                    (char *) NULL                                                                      \
+                                    ((char []) {})                                                                     \
                                 ),                                                                                     \
-                                (char *) NULL                                                                          \
+                                ((char []) {})                                                                         \
                             )),                                                                                        \
                         /* Level 5 */ isarr_helper (x) &&                                                              \
                             isarr_helper (*__builtin_choose_expr (                                                     \
-                                __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                    \
+                                __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})                   \
                             )) &&                                                                                      \
                             isarr_helper (*__builtin_choose_expr (                                                     \
                                 __builtin_classify_type (*__builtin_choose_expr (                                      \
-                                    __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                \
+                                    __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})               \
                                 )) == pointer_type_class,                                                              \
                                 *__builtin_choose_expr (                                                               \
-                                    __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL                \
+                                    __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})               \
                                 ),                                                                                     \
-                                (char *) NULL                                                                          \
-                            )) &&                                                                                      \
-                            isarr_helper (*__builtin_choose_expr (                                                     \
-                                __builtin_classify_type (*__builtin_choose_expr (                                      \
-                                    __builtin_classify_type (*__builtin_choose_expr (                                  \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
-                                    )) == pointer_type_class,                                                          \
-                                    *__builtin_choose_expr (                                                           \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
-                                    ),                                                                                 \
-                                    (char *) NULL                                                                      \
-                                )) == pointer_type_class,                                                              \
-                                *__builtin_choose_expr (                                                               \
-                                    __builtin_classify_type (*__builtin_choose_expr (                                  \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
-                                    )) == pointer_type_class,                                                          \
-                                    *__builtin_choose_expr (                                                           \
-                                        __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL            \
-                                    ),                                                                                 \
-                                    (char *) NULL                                                                      \
-                                ),                                                                                     \
-                                (char *) NULL                                                                          \
+                                ((char []) {})                                                                         \
                             )) &&                                                                                      \
                             isarr_helper (*__builtin_choose_expr (                                                     \
                                 __builtin_classify_type (*__builtin_choose_expr (                                      \
                                     __builtin_classify_type (*__builtin_choose_expr (                                  \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
+                                    )) == pointer_type_class,                                                          \
+                                    *__builtin_choose_expr (                                                           \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
+                                    ),                                                                                 \
+                                    ((char []) {})                                                                     \
+                                )) == pointer_type_class,                                                              \
+                                *__builtin_choose_expr (                                                               \
+                                    __builtin_classify_type (*__builtin_choose_expr (                                  \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
+                                    )) == pointer_type_class,                                                          \
+                                    *__builtin_choose_expr (                                                           \
+                                        __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})           \
+                                    ),                                                                                 \
+                                    ((char []) {})                                                                     \
+                                ),                                                                                     \
+                                ((char []) {})                                                                         \
+                            )) &&                                                                                      \
+                            isarr_helper (*__builtin_choose_expr (                                                     \
+                                __builtin_classify_type (*__builtin_choose_expr (                                      \
+                                    __builtin_classify_type (*__builtin_choose_expr (                                  \
                                         __builtin_classify_type (*__builtin_choose_expr (                              \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         )) == pointer_type_class,                                                      \
                                         *__builtin_choose_expr (                                                       \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         ),                                                                             \
-                                        (char *) NULL                                                                  \
+                                        ((char []) {})                                                                 \
                                     )) == pointer_type_class,                                                          \
                                     *__builtin_choose_expr (                                                           \
                                         __builtin_classify_type (*__builtin_choose_expr (                              \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         )) == pointer_type_class,                                                      \
                                         *__builtin_choose_expr (                                                       \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         ),                                                                             \
-                                        (char *) NULL                                                                  \
+                                        ((char []) {})                                                                 \
                                     ),                                                                                 \
-                                    (char *) NULL                                                                      \
+                                    ((char []) {})                                                                     \
                                 )) == pointer_type_class,                                                              \
                                 *__builtin_choose_expr (                                                               \
                                     __builtin_classify_type (*__builtin_choose_expr (                                  \
                                         __builtin_classify_type (*__builtin_choose_expr (                              \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         )) == pointer_type_class,                                                      \
                                         *__builtin_choose_expr (                                                       \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         ),                                                                             \
-                                        (char *) NULL                                                                  \
+                                        ((char []) {})                                                                 \
                                     )) == pointer_type_class,                                                          \
                                     *__builtin_choose_expr (                                                           \
                                         __builtin_classify_type (*__builtin_choose_expr (                              \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         )) == pointer_type_class,                                                      \
                                         *__builtin_choose_expr (                                                       \
-                                            __builtin_classify_type (x) == pointer_type_class, x, (char *) NULL        \
+                                            __builtin_classify_type (x) == pointer_type_class, x, ((char []) {})       \
                                         ),                                                                             \
-                                        (char *) NULL                                                                  \
+                                        ((char []) {})                                                                 \
                                     ),                                                                                 \
-                                    (char *) NULL                                                                      \
+                                    ((char []) {})                                                                     \
                                 ),                                                                                     \
-                                (char *) NULL                                                                          \
+                                ((char []) {})                                                                         \
                             ))                                                                                         \
                     )                                                                                                  \
                 )                                                                                                      \

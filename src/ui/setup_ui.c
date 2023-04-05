@@ -119,7 +119,13 @@ int impl_setup_ui (
 #ifdef _WIN32
         if (strpbrk (LOG_FILENAME, WINDOWS_ILLEGAL_FILENAME_CHARS) || ({
                 bool illegal = false;
-                for (size_t i = 0; i < arrsize (WINDOWS_ILLEGAL_FILENAMES);)
+                for (size_t i = 0; i <
+                    #ifdef _WIN32
+                        sizeof (WINDOWS_ILLEGAL_FILENAME_CHARS) / sizeof (*WINDOWS_ILLEGAL_FILENAME_CHARS)
+                    #else
+                        arrsize (WINDOWS_ILLEGAL_FILENAME_CHARS)
+                    #endif
+                ;)
                     if ((illegal = !strcmp (LOG_FILENAME, *(WINDOWS_ILLEGAL_FILENAMES + i++))))
                         break;
                 illegal;
