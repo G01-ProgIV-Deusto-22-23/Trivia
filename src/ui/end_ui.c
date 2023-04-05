@@ -1,5 +1,5 @@
 int end_ui (void) {
-    delete_windows ();
+    //delete_windows ();
 
     if (!isendwin ()) {
         noraw ();
