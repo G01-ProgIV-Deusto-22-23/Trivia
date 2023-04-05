@@ -98,7 +98,7 @@ void stop_menu_gc (void) {
 #ifdef _WIN32
     CloseHandle (*(FREE_MENU_SEMS + i++))
 #else
-    sem_destroy (FREE_MENU_SEMS + i++, 0, 0)
+    sem_destroy (FREE_MENU_SEMS + i++)
 #endif
         )
             error ("could not destroy a semaphore.");

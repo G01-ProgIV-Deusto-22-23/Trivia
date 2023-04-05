@@ -35,6 +35,12 @@ OSLIBS     := -lbacktrace
 TRIVIALIBS := -lui -los -lserver
 LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS)
 
+ifeq ($(OS), Windows_NT)
+all: windows
+else
+all: linux windows
+endif
+
 linux: CC     := $(GCC_LINUX)
 linux: LIBDIR := $(LIBDIR)/linux
 linux: CFLAGS += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR)
@@ -47,31 +53,25 @@ windows: CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows
 windows: OBJDIR := $(OBJDIR)/windows
 windows: BINDIR := $(BINDIR)/windows
 
-ifeq ($(OS), Windows_NT)
-all: windows
-else
-all: linux windows
-endif
-
 init: init_bin init_lib init_obj
 
 init_bin:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell cmd /c "mkdir $(BINDIR)")
+	@echo $(shell test -d $(BINDIR) || mkdir -p $(BINDIR))
 else
 	@echo $(shell mkdir -p $(BINDIR))
 endif
 
 init_lib:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell cmd /c "mkdir $(LIBDIR)")
+	@echo $(shell test -d $(LIBDIR) || mkdir -p $(LIBDIR))
 else
 	@echo $(shell mkdir -p $(LIBDIR))
 endif
 
 init_obj:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell cmd /c "mkdir $(OBJDIR)")
+	@echo $(shell test -d $(OBJDIR) || mkdir -p $(OBJDIR))
 else
 	@echo $(shell mkdir -p $(OBJDIR))
 endif
@@ -156,11 +156,7 @@ $(OBJDIR)/windows/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
 
 clean:
-ifeq ($(OS), Windows_NT)
-	@echo $(shell cmd /c "rmdir /s /q $(BINDIR) $(LIBDIR) $(OBJDIR)")
-else
 	@echo $(shell rm -rf $(BINDIR) $(LIBDIR) $(OBJDIR))
-endif
 
 PHONY += clean
 .PHONY: $(PHONY)

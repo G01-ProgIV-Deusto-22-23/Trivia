@@ -137,7 +137,7 @@ int impl_setup_ui (
     }
 
     if (TRIVIA_WANTS_USAGE || TRIVIA_WANTS_HELP) {
-        fprintf (stderr, "Usage: %s [OPTION...]\n", basename (*argv));
+        fprintf (stderr, "Usage: %s [OPTION...]\n", basename ((char *) *argv));
 
         if (!TRIVIA_WANTS_HELP)
             exit (0);
