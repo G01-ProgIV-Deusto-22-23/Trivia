@@ -3,8 +3,12 @@
 
 extern MENU                  *MENUS [sizeof (size_t) * __CHAR_BIT__];
 extern volatile atomic_size_t MENU_CONTROL;
-extern int                    FREE_MENU_ERR;
-extern sem_t                  FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
+extern volatile atomic_int    FREE_MENU_ERR;
+#ifdef _WIN32
+extern HANDLE FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
+#else
+extern sem_t FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
+#endif
 
 extern void trivia_free_menu (const size_t);
 extern void start_menu_gc (void);

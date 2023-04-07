@@ -27,6 +27,8 @@ bool delete_windows (void) {
     for (; TRIVIA_WINDOW_LIST; remove_window (TRIVIA_WINDOW_LIST))
         ;
 
+    TRIVIA_WINDOW_LIST = NULL;
+
     return fine;
 }
 
@@ -44,7 +46,7 @@ void *add_window (void *const restrict win, const int ismenu) {
 
     head->delfunc =
         *(((delwinfunc_t *const []) { (delwinfunc_t *const) (void *) delete_log_window, delwinfunc, delmenufunc }) +
-          (win == get_log_window () ? 0 : (ismenu + 1)));
+          (win == get_log_window () ? 0 : (!!ismenu + 1)));
     return head->next->win = win;
 }
 
@@ -57,8 +59,8 @@ static bool remove_window (window_list_t node) {
         *head = (*head)->next;
 
         if (temp == node) {
-            int ret;
-            if (!temp->delfunc || (ret = temp->delfunc (temp->win)) == ERR) {
+            int ret = OK;
+            if (temp->delfunc && (ret = temp->delfunc (temp->win)) == ERR) {
                 if (temp->delfunc == delwinfunc)
                     warning ("could not delete window.");
 
@@ -94,7 +96,7 @@ bool delete_window (WINDOW *const restrict win) {
     if (!win)
         return false;
 
-    for (window_list_t head = TRIVIA_WINDOW_LIST; head->next; head = head->next)
+    for (window_list_t head = TRIVIA_WINDOW_LIST; head; head = head->next)
         if (head->win == win && (head->delfunc == delwinfunc || head->delfunc == (void *) delete_log_window))
             return remove_window (head);
 
@@ -102,7 +104,7 @@ bool delete_window (WINDOW *const restrict win) {
 }
 
 bool delete_menu (const size_t menu) {
-    for (window_list_t head = TRIVIA_WINDOW_LIST; head->next; head = head->next)
+    for (window_list_t head = TRIVIA_WINDOW_LIST; head; head = head->next)
         if (head->win == (void *) (uintptr_t) menu && (head->delfunc == delmenufunc))
             return remove_window (head);
 
@@ -122,5 +124,5 @@ static int delmenufunc (void *const restrict menu) {
     sem_wait (FREE_MENU_SEMS + (uintptr_t) menu);
 #endif
 
-    return FREE_MENU_ERR;
+    return atomic_load (&FREE_MENU_ERR);
 }

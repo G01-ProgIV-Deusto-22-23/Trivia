@@ -61,6 +61,11 @@ int impl_setup_ui (
     const int argc, const char *const *const restrict argv, const int cursor, const int en_cbreak, const int en_echo,
     const int en_keypad, const int en_halfdelay
 ) {
+#ifdef _WIN32
+    SetConsoleCP (CP_UTF8);
+    SetConsoleOutputCP (CP_UTF8);
+#endif
+
     setbuf (stderr, NULL);
 
     for (int i = 1; i < argc; i++) {
@@ -147,17 +152,11 @@ int impl_setup_ui (
         exit (0);
     }
 
-#ifndef _WIN32
     if (!TRIVIA_WANTS_NOLOG)
         set_log_file (LOG_FILENAME);
-#endif
 
     if (get_term_width () < MIN_TERM_WIDTH || get_term_height () < MIN_TERM_HEIGHT)
         error ("the terminal is not big enough to display a UI.");
-
-#ifdef _WIN32
-    SetConsoleCP (65001);
-#endif
 
     setlocale (LC_ALL, "es_ES.UTF-8");
 

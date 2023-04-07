@@ -2,12 +2,12 @@
 
 MENU                  *MENUS [sizeof (size_t) * __CHAR_BIT__] = { 0 };
 volatile atomic_size_t MENU_CONTROL                           = 0;
-int                    FREE_MENU_ERR                          = OK;
+volatile atomic_int    FREE_MENU_ERR                          = OK;
 
 #ifdef _WIN32
 HANDLE FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #else
-sem_t FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
+sem_t            FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #endif
 
 static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
@@ -16,17 +16,32 @@ static menutype_t MENU_TYPE [sizeof (MENUS) / sizeof (*MENUS)]      = { [0 ...(s
 static void      *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]      = { 0 };
 static bool       FREE_MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
 
-static pthread_t MENU_GC_THREAD [1 + sizeof (MENUS) / sizeof (*MENUS)];
+#ifdef _WIN32
+static HANDLE MENU_GC_THREAD [sizeof (MENUS) / sizeof (*MENUS)];
+#else
+static pthread_t MENU_GC_THREAD [sizeof (MENUS) / sizeof (*MENUS)];
+#endif
 
 static int         MENU_EXIT_KEY     = DEFAULT_MENU_EXIT_KEY;
 static const char *MENU_EXIT_MESSAGE = DEFAULT_MENU_EXIT_MESSAGE;
 
-static void *impl_trivia_free_menu (void *__menu__) {
-    size_t menu   = (size_t) (uintptr_t) __menu__;
-    FREE_MENU_ERR = OK;
+#ifdef _WIN32
+static unsigned long impl_trivia_free_menu (void *__menu__) {
+#else
+static void     *impl_trivia_free_menu (void *__menu__) {
+#endif
+    size_t menu = (size_t) (uintptr_t) __menu__;
+    atomic_store (&FREE_MENU_ERR, OK);
+
+    if (menu >= sizeof (MENUS) / sizeof (*MENUS))
+        error ("not a valid menu index.");
 
     if (!*(MENUS + menu))
-        return *(MENUS + menu);
+        return
+#ifdef _WIN32
+            (unsigned long) (uintptr_t)
+#endif
+            * (MENUS + menu);
 
     {
         int err = unpost_menu (*(MENUS + menu));
@@ -34,10 +49,23 @@ static void *impl_trivia_free_menu (void *__menu__) {
             warning ("could not hide the menu.");
     }
 
-    for (short i       = 0; i < item_count (*(MENUS + menu));
-         FREE_MENU_ERR &= free_item (*(menu_items (*(MENUS + menu)) + i++))) {
+    ITEM **const items = menu_items (*(MENUS + menu));
+
+    if (free_menu (*(MENUS + menu)) != E_OK) {
+        atomic_store (&FREE_MENU_ERR, ERR);
+
+        warning ("could not free the menu.");
+    }
+
+    for (short i = 0; i < item_count (*(MENUS + menu));) {
         free (*(**(MENU_CHOICE_DATA + menu) + i));
         free (*(*(*(MENU_CHOICE_DATA + menu) + 1) + i));
+
+        if (free_item (*(items + i++)) != E_OK) {
+            atomic_store (&FREE_MENU_ERR, ERR);
+
+            warning ("could not free menu item.");
+        }
     }
 
     free (**(MENU_CHOICE_DATA + menu));
@@ -46,7 +74,6 @@ static void *impl_trivia_free_menu (void *__menu__) {
     if (*(FREE_MENU_RETS + menu))
         free (*(MENU_RETS + menu));
 
-    FREE_MENU_ERR &= free_menu (*(MENUS + menu));
     refresh ();
 
     MENU_CONTROL ^= ((size_t) 1) << menu;
@@ -57,15 +84,27 @@ static void *impl_trivia_free_menu (void *__menu__) {
     sem_post (FREE_MENU_SEMS + menu);
 #endif
 
-    return *(MENUS + menu) = *(MENU_RETS + menu) = (void *) (intptr_t) (*(FREE_MENU_RETS + menu) = 0);
+    return
+#ifdef _WIN32
+        (unsigned long) (uintptr_t)
+#endif
+            (*(MENUS + menu) = *(MENU_RETS + menu) = (void *) (intptr_t) (*(FREE_MENU_RETS + menu) = 0));
 }
 
 void trivia_free_menu (const size_t menu) {
-    if (!pthread_create (MENU_GC_THREAD + menu + 1, NULL, impl_trivia_free_menu, (void *) (uintptr_t) menu))
+#ifdef _WIN32
+    if ((*(MENU_GC_THREAD + menu) = CreateThread (NULL, 0, impl_trivia_free_menu, NULL, 0, NULL)))
+        return;
+
+    FREE_MENU_ERR = (warning ("could not start the menu freeing function."), ERR);
+    ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1, NULL);
+#else
+    if (!pthread_create (MENU_GC_THREAD + menu, NULL, impl_trivia_free_menu, (void *) (uintptr_t) menu))
         return;
 
     FREE_MENU_ERR = (warning ("could not start the menu freeing function."), ERR);
     sem_post (FREE_MENU_SEMS + menu);
+#endif
 }
 
 void start_menu_gc (void) {
@@ -165,9 +204,8 @@ size_t
 #else
            arrsize (MENUS)
 #endif
-             ;
-         menu++)
-        if (!((atomic_load (&MENU_CONTROL) >> menu) & (size_t) 1))
+             ;)
+        if (!((atomic_load (&MENU_CONTROL) >> menu++) & 1))
             break;
 
     atomic_fetch_or (&MENU_CONTROL, 1 << menu);

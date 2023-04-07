@@ -24,7 +24,15 @@ extern "C" {
         else
             temp_log_file ();
 
-        setbuf (fdopen (LOG_FILE_FILENO, "w+"), NULL);
+        setbuf (
+            ({
+                FILE *const f = fdopen (LOG_FILE_FILENO, "w+");
+                if (!f)
+                    warning ("could not open the log file.");
+                f;
+            }),
+            NULL
+        );
 
         return LOG_FILE_FILENO;
     }

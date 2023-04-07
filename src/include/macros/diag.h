@@ -490,153 +490,171 @@ static void
         #endif
 
         #ifdef _WIN32
-            #define error(...)                                                                                                                                             \
-                (ct_error (                                                                                                                                                \
-                     NARGS (__VA_ARGS__) > 3,                                                                                                                              \
-                     "the error() function-like macro must be passed between zero and three arguments."                                                                    \
-                 ),                                                                                                                                                        \
-                 ct_error (                                                                                                                                                \
-                     !(__builtin_types_compatible_p (                                                                                                                      \
-                           typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))),                                                     \
-                           errorfunc_t                                                                                                                                     \
-                       ) ||                                                                                                                                                \
-                       __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *)            \
-                     ),                                                                                                                                                    \
-                     "the second argument passed to the error() function-like macro must be of type errorfunc_t *."                                                        \
-                 ),                                                                                                                                                        \
-                 ct_error (                                                                                                                                                \
-                     __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) !=                                                                      \
-                         pointer_type_class,                                                                                                                               \
-                     "the third argument passed to the error() function-like macro must be of a type that decays to a pointer."                                            \
-                 ),                                                                                                                                                        \
-                 SetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), ({                                                                                                       \
-                                     DWORD __error_consolemode__;                                                                                                          \
-                                     GetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), &__error_consolemode__);                                                             \
-                                     __error_consolemode__ | ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                                           \
-                                 })),                                                                                                                                      \
-                 ({                                                                                                                                                        \
-                     if (get_log_file () == -1)                                                                                                                            \
-                         write (STDERR_FILENO, "\033[1m\033[31m", sizeof ("\033[1m\033[31m"));                                                                             \
-                 }), /* error() will be using async-signal safe functions until calling the provided function in order                                                     \
-                        to serve as a signal-handling function. */                                                                                                         \
-                 write (STDERR_FILENO, "Error in function ", sizeof ("Error in function ") - 1),                                                                           \
-                 write (STDERR_FILENO, __func__, sizeof (__func__) - 1),                                                                                                   \
-                 write (STDERR_FILENO, " (", sizeof (" (") - 1),                                                                                                           \
-                 write (STDERR_FILENO, __FILE__, sizeof (__FILE__) - 1),                                                                                                   \
-                 write (STDERR_FILENO, ": line ", sizeof (": line ") - 1), ({                                                                                              \
-                     char     __error_line_digits__ [10];                                                                                                                  \
-                     uint32_t __error_line__      = (uint32_t) __LINE__;                                                                                                   \
-                     uint32_t __error_decplaces__ = (uint32_t) decplaces (__LINE__);                                                                                       \
-                     for (uint32_t __error_iter__ = 1; __error_line__; __error_line__ /= 10)                                                                               \
-                         *(__error_line_digits__ + __error_decplaces__ - __error_iter__++) =                                                                               \
-                             (char) (__error_line__ % 10) + '0';                                                                                                           \
-                     write (STDERR_FILENO, __error_line_digits__, __error_decplaces__);                                                                                    \
-                 }),                                                                                                                                                       \
-                 write (STDERR_FILENO, ")", sizeof (")") - 1), ({                                                                                                          \
-                     if (get_log_file () == -1)                                                                                                                            \
-                         write (                                                                                                                                           \
-                             STDERR_FILENO,                                                                                                                                \
-                             __builtin_choose_expr (                                                                                                                       \
-                                 sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                                          \
-                                 ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                         \
-                             ),                                                                                                                                            \
-                             sizeof (__builtin_choose_expr (                                                                                                               \
-                                 sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                                          \
-                                 ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                         \
-                             )) - 1                                                                                                                                        \
-                         );                                                                                                                                                \
-                     else                                                                                                                                                  \
-                         write (                                                                                                                                           \
-                             STDERR_FILENO,                                                                                                                                \
-                             __builtin_choose_expr (                                                                                                                       \
-                                 sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                                                 \
-                                 ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                                \
-                             ),                                                                                                                                            \
-                             sizeof (__builtin_choose_expr (                                                                                                               \
-                                 sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                                                 \
-                                 ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                                \
-                             )) - 1                                                                                                                                        \
-                         );                                                                                                                                                \
-                 }),                                                                                                                                                       \
-                 write (STDERR_FILENO, "\n", sizeof ("\n") - 1), close_log_file (),                                                                                        \
-                 print_backtrace (), /* I know this is not an async-safe approach and that I should not be doing this                                                      \
-                    but its not as if errors while displaying mattered too much at this point */                                                                           \
-                 ({                                                                                                                                                        \
-                     _Pragma ("GCC diagnostic push");                                                                                                                      \
-                     _Pragma ("GCC diagnostic ignored \"-Waddress\"");                                                                                                     \
-                     _Pragma ("GCC diagnostic ignored \"-Wincompatible-pointer-types\"");                                                                                  \
-                     _Pragma ("GCC diagnostic ignored \"-Wcast-function-type\"");                                                                                          \
-                     _Pragma ("GCC diagnostic ignored \"-Wbad-function-cast\"");                                                                                           \
-                     if (__builtin_choose_expr (                                                                                                                           \
-                             __builtin_classify_type (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL)) ==                                                                    \
-                                 pointer_type_class,                                                                                                                       \
-                             ARG2 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL), NULL                                                                                           \
-                         ))                                                                                                                                                \
-                         (__builtin_choose_expr (                                                                                                                          \
-                             __builtin_types_compatible_p (                                                                                                                \
-                                 typeof (ARG2 (                                                                                                                            \
-                                     __VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)                                                            \
-                                 )),                                                                                                                                       \
-                                 errorfunc_t                                                                                                                               \
-                             ) ||                                                                                                                                          \
-                                 __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *), \
-                             ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                            \
-                             (errorfunc_t *) NULL                                                                                                                          \
-                         )                                                                                                                                                 \
-                         ) (__builtin_choose_expr (                                                                                                                        \
-                             __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) ==                                                              \
-                                 pointer_type_class,                                                                                                                       \
-                             ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL), NULL                                                                                     \
-                         ));                                                                                                                                               \
-                     _Pragma ("GCC diagnostic pop");                                                                                                                       \
-                 }),                                                                                                                                                       \
-                 __builtin_choose_expr (                                                                                                                                   \
-                     __builtin_has_attribute (                                                                                                                             \
-                         ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                                \
-                         __noreturn__                                                                                                                                      \
-                     ) ||                                                                                                                                                  \
-                         __builtin_has_attribute (                                                                                                                         \
-                             ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                            \
-                             noreturn                                                                                                                                      \
-                         ),                                                                                                                                                \
-                     (trap (), unreachable ()),                                                                                                                            \
-                     (({                                                                                                                                                   \
-                          if (is_log_window ()) {                                                                                                                          \
-                              int line;                                                                                                                                    \
-                              if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                      \
-                                  clear_log_window ();                                                                                                                     \
-                              if (has_colors ())                                                                                                                           \
-                                  wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                        \
-                              mvwprintw (                                                                                                                                  \
-                                  get_log_window (), line, 1, "Error in function %s (%s: line %d)%s", __func__,                                                            \
-                                  __FILE__, __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                     \
-                              );                                                                                                                                           \
-                              if (has_colors ())                                                                                                                           \
-                                  wattroff (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                       \
-                              __builtin_choose_expr (                                                                                                                      \
-                                  sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                           \
-                                  waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                                       \
-                              );                                                                                                                                           \
-                              refresh_log_window ();                                                                                                                       \
-                          }                                                                                                                                                \
-                          if (!isendwin ()) {                                                                                                                              \
-                              refresh_log_window ();                                                                                                                       \
-                              def_prog_mode ();                                                                                                                            \
-                              end_ui ();                                                                                                                                   \
-                              reset_prog_mode ();                                                                                                                          \
-                              for (int __error_iter__ = ({                                                                                                                 \
-                                                            int __error_h__;                                                                                               \
-                                                            getmaxyx (get_log_window (), __error_h__, (int) { 0 });                                                        \
-                                                            __error_h__;                                                                                                   \
-                                                        }) *                                                                                                               \
-                                                        2;                                                                                                                 \
-                                   __error_iter__-- > 0; write (STDOUT_FILENO, "\n", sizeof ("\n") - 1))                                                                   \
-                                  ;                                                                                                                                        \
-                              fflush (stdout);                                                                                                                             \
-                          }                                                                                                                                                \
-                      }),                                                                                                                                                  \
-                      trap (), unreachable ())                                                                                                                             \
-                 ))
+            #define error(...)                                                                                                                                                     \
+                (ct_error (                                                                                                                                                        \
+                     NARGS (__VA_ARGS__) > 3,                                                                                                                                      \
+                     "the error() function-like macro must be passed between zero and three arguments."                                                                            \
+                 ),                                                                                                                                                                \
+                 ct_error (                                                                                                                                                        \
+                     !(__builtin_types_compatible_p (                                                                                                                              \
+                           typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))),                                                             \
+                           errorfunc_t                                                                                                                                             \
+                       ) ||                                                                                                                                                        \
+                       __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *)                    \
+                     ),                                                                                                                                                            \
+                     "the second argument passed to the error() function-like macro must be of type errorfunc_t *."                                                                \
+                 ),                                                                                                                                                                \
+                 ct_error (                                                                                                                                                        \
+                     __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) !=                                                                              \
+                         pointer_type_class,                                                                                                                                       \
+                     "the third argument passed to the error() function-like macro must be of a type that decays to a pointer."                                                    \
+                 ),                                                                                                                                                                \
+                 ({                                                                                                                                                                \
+                     HANDLE __error_stderr_handle__;                                                                                                                               \
+                     SetConsoleMode (__error_stderr_handle__ = GetStdHandle (STD_ERROR_HANDLE), ({                                                                                 \
+                                         DWORD __error_consolemode__;                                                                                                              \
+                                         GetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), &__error_consolemode__);                                                                 \
+                                         __error_consolemode__ | ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                                               \
+                                     })),                                                                                                                                          \
+                         ({                                                                                                                                                        \
+                             if (get_log_file () == -1)                                                                                                                            \
+                                 WriteFile (                                                                                                                                       \
+                                     __error_stderr_handle__, "\033[1m\033[31m", sizeof ("\033[1m\033[31m"), NULL,                                                                 \
+                                     NULL                                                                                                                                          \
+                                 );                                                                                                                                                \
+                         }),                                                                                                                                                       \
+                         WriteFile (                                                                                                                                               \
+                             __error_stderr_handle__, "Error in function ", sizeof ("Error in function ") - 1, NULL,                                                               \
+                             NULL                                                                                                                                                  \
+                         ),                                                                                                                                                        \
+                         WriteFile (__error_stderr_handle__, __func__, sizeof (__func__) - 1, NULL, NULL),                                                                         \
+                         WriteFile (__error_stderr_handle__, " (", sizeof (" (") - 1, NULL, NULL),                                                                                 \
+                         WriteFile (__error_stderr_handle__, __FILE__, sizeof (__FILE__) - 1, NULL, NULL),                                                                         \
+                         WriteFile (__error_stderr_handle__, ": line ", sizeof (": line ") - 1, NULL, NULL), ({                                                                    \
+                             char     __error_line_digits__ [10];                                                                                                                  \
+                             uint32_t __error_line__      = (uint32_t) __LINE__;                                                                                                   \
+                             uint32_t __error_decplaces__ = (uint32_t) decplaces (__LINE__);                                                                                       \
+                             for (uint32_t __error_iter__ = 1; __error_line__; __error_line__ /= 10)                                                                               \
+                                 *(__error_line_digits__ + __error_decplaces__ - __error_iter__++) =                                                                               \
+                                     (char) (__error_line__ % 10) + '0';                                                                                                           \
+                             WriteFile (                                                                                                                                           \
+                                 __error_stderr_handle__, __error_line_digits__, __error_decplaces__, NULL, NULL                                                                   \
+                             );                                                                                                                                                    \
+                         }),                                                                                                                                                       \
+                         WriteFile (__error_stderr_handle__, ")", sizeof (")") - 1, NULL, NULL), ({                                                                                \
+                             if (get_log_file () == -1)                                                                                                                            \
+                                 WriteFile (                                                                                                                                       \
+                                     __error_stderr_handle__,                                                                                                                      \
+                                     __builtin_choose_expr (                                                                                                                       \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                                          \
+                                         ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                         \
+                                     ),                                                                                                                                            \
+                                     sizeof (__builtin_choose_expr (                                                                                                               \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                                          \
+                                         ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                         \
+                                     )) - 1,                                                                                                                                       \
+                                     NULL, NULL                                                                                                                                    \
+                                 );                                                                                                                                                \
+                             else                                                                                                                                                  \
+                                 WriteFile (                                                                                                                                       \
+                                     __error_stderr_handle__,                                                                                                                      \
+                                     __builtin_choose_expr (                                                                                                                       \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                                                 \
+                                         ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                                \
+                                     ),                                                                                                                                            \
+                                     sizeof (__builtin_choose_expr (                                                                                                               \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                                                 \
+                                         ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                                \
+                                     )) - 1,                                                                                                                                       \
+                                     NULL, NULL                                                                                                                                    \
+                                 );                                                                                                                                                \
+                         }),                                                                                                                                                       \
+                         WriteFile (__error_stderr_handle__, "\n", sizeof ("\n") - 1, NULL, NULL), close_log_file (),                                                              \
+                         print_backtrace (), ({                                                                                                                                    \
+                             _Pragma ("GCC diagnostic push");                                                                                                                      \
+                             _Pragma ("GCC diagnostic ignored \"-Waddress\"");                                                                                                     \
+                             _Pragma ("GCC diagnostic ignored \"-Wincompatible-pointer-types\"");                                                                                  \
+                             _Pragma ("GCC diagnostic ignored \"-Wcast-function-type\"");                                                                                          \
+                             _Pragma ("GCC diagnostic ignored \"-Wbad-function-cast\"");                                                                                           \
+                             if (__builtin_choose_expr (                                                                                                                           \
+                                     __builtin_classify_type (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL)) ==                                                                    \
+                                         pointer_type_class,                                                                                                                       \
+                                     ARG2 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL), NULL                                                                                           \
+                                 ))                                                                                                                                                \
+                                 (__builtin_choose_expr (                                                                                                                          \
+                                     __builtin_types_compatible_p (                                                                                                                \
+                                         typeof (ARG2 (                                                                                                                            \
+                                             __VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL),                                                                                   \
+                                             ((errorfunc_t *) NULL)                                                                                                                \
+                                         )),                                                                                                                                       \
+                                         errorfunc_t                                                                                                                               \
+                                     ) ||                                                                                                                                          \
+                                         __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *), \
+                                     ARG2 (                                                                                                                                        \
+                                         __VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)                                                                \
+                                     ),                                                                                                                                            \
+                                     (errorfunc_t *) NULL                                                                                                                          \
+                                 )                                                                                                                                                 \
+                                 ) (__builtin_choose_expr (                                                                                                                        \
+                                     __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) ==                                                              \
+                                         pointer_type_class,                                                                                                                       \
+                                     ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL), NULL                                                                                     \
+                                 ));                                                                                                                                               \
+                             _Pragma ("GCC diagnostic pop");                                                                                                                       \
+                         }),                                                                                                                                                       \
+                         __builtin_choose_expr (                                                                                                                                   \
+                             __builtin_has_attribute (                                                                                                                             \
+                                 ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)),                                                                \
+                                 __noreturn__                                                                                                                                      \
+                             ) ||                                                                                                                                                  \
+                                 __builtin_has_attribute (                                                                                                                         \
+                                     ARG2 (                                                                                                                                        \
+                                         __VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL)                                                                \
+                                     ),                                                                                                                                            \
+                                     noreturn                                                                                                                                      \
+                                 ),                                                                                                                                                \
+                             (trap (), unreachable ()),                                                                                                                            \
+                             (({                                                                                                                                                   \
+                                  if (is_log_window ()) {                                                                                                                          \
+                                      int line;                                                                                                                                    \
+                                      if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                      \
+                                          clear_log_window ();                                                                                                                     \
+                                      if (has_colors ())                                                                                                                           \
+                                          wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                        \
+                                      mvwprintw (                                                                                                                                  \
+                                          get_log_window (), line, 1, "Error in function %s (%s: line %d)%s",                                                                      \
+                                          __func__, __FILE__, __LINE__,                                                                                                            \
+                                          sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                                         \
+                                      );                                                                                                                                           \
+                                      if (has_colors ())                                                                                                                           \
+                                          wattroff (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                       \
+                                      __builtin_choose_expr (                                                                                                                      \
+                                          sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                           \
+                                          waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                                       \
+                                      );                                                                                                                                           \
+                                      refresh_log_window ();                                                                                                                       \
+                                  }                                                                                                                                                \
+                                  if (!isendwin ()) {                                                                                                                              \
+                                      refresh_log_window ();                                                                                                                       \
+                                      def_prog_mode ();                                                                                                                            \
+                                      end_ui ();                                                                                                                                   \
+                                      reset_prog_mode ();                                                                                                                          \
+                                      for (int __error_iter__ =                                                                                                                    \
+                                               ({                                                                                                                                  \
+                                                   int __error_h__;                                                                                                                \
+                                                   getmaxyx (get_log_window (), __error_h__, (int) { 0 });                                                                         \
+                                                   __error_h__;                                                                                                                    \
+                                               }) *                                                                                                                                \
+                                               2;                                                                                                                                  \
+                                           __error_iter__-- > 0; WriteFile (                                                                                                       \
+                                               GetStdHandle (STD_OUTPUT_HANDLE), "\n", sizeof ("\n") - 1, NULL, NULL                                                               \
+                                           ))                                                                                                                                      \
+                                          ;                                                                                                                                        \
+                                  }                                                                                                                                                \
+                              }),                                                                                                                                                  \
+                              trap (), unreachable ())                                                                                                                             \
+                         );                                                                                                                                                        \
+                 }))
         #else
             #define error(...)                                                                                                                                             \
                 (ct_error (                                                                                                                                                \
@@ -775,7 +793,6 @@ static void
                                                         2;                                                                                                                 \
                                    __error_iter__-- > 0; write (STDOUT_FILENO, "\n", sizeof ("\n") - 1))                                                                   \
                                   ;                                                                                                                                        \
-                              fflush (stdout);                                                                                                                             \
                           }                                                                                                                                                \
                       }),                                                                                                                                                  \
                       trap (), unreachable ())                                                                                                                             \

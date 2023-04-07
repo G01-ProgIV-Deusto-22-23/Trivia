@@ -37,8 +37,12 @@
         #include <unistd.h>
     #endif
 #endif
-#include <pthread.h>
-#include <semaphore.h>
+
+#ifndef _WIN32
+    #include <pthread.h>
+    #include <semaphore.h>
+#endif
+
 #include <libgen.h>
 
 #include <backtrace.h>
