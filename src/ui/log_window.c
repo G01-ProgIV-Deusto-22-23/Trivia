@@ -2,12 +2,15 @@
 extern "C" {
 #endif
 
+#include "log_window.h"
+
 #define LOG_FILENAME_TRIES    5
 #define LOG_FILENAME_SUFFIX   ".log"
 #define LOG_FILENAME_MOD      "XXXXXX"
 #define LOG_FILENAME_TEMPLATE LOG_FILENAME_MOD LOG_FILENAME_SUFFIX
 
-    static WINDOW  *LOG_WINDOW_VAR      = NULL;
+    WINDOW *LOG_WINDOW_VAR = NULL;
+
     static uint64_t LOG_WINDOW_DIMS_VAR = UINT64_C (-1);
     static int      LOG_FILE_FILENO     = -1;
     static int      STDERR_SAVE         = -1;
@@ -26,9 +29,15 @@ extern "C" {
 
         setbuf (
             ({
-                FILE *const f = fdopen (LOG_FILE_FILENO, "w+");
+                FILE *const f = fdopen (LOG_FILE_FILENO, "r+");
                 if (!f)
-                    warning ("could not open the log file.");
+                    error ("could not open the log file.");
+                LOG_FILE_FILENO =
+#ifdef _WIN32
+                    _fileno (f);
+#else
+                fileno (f);
+#endif
                 f;
             }),
             NULL
@@ -56,7 +65,8 @@ extern "C" {
                 if (tries == LOG_FILENAME_TRIES &&
 #ifdef _WIN32
                     (_sopen_s (
-                         &LOG_FILE_FILENO, LOG_FILENAME, _O_RDWR | _O_SEQUENTIAL, _SH_DENYNO, _S_IREAD | _S_IWRITE
+                         &LOG_FILE_FILENO, LOG_FILENAME, _O_CREAT | _O_RDWR | _O_SEQUENTIAL | _O_U8TEXT, _SH_DENYNO,
+                         _S_IREAD | _S_IWRITE
                      ),
                      LOG_FILE_FILENO == -1)
 #else
@@ -85,7 +95,7 @@ extern "C" {
                         sizeof (LOG_FILENAME_SUFFIX)
                     );
                     if ((res = rename (LOG_FILENAME, newname)) == -1) {
-                        res = remove (newname) | rename (LOG_FILENAME, newname);
+                        res = remove (newname);
                     }
                     memcpy (LOG_FILENAME, newname, sizeof (LOG_FILENAME));
                 }
@@ -94,7 +104,10 @@ extern "C" {
             }))
             return LOG_FILE_FILENO;
 
-        _sopen_s (&LOG_FILE_FILENO, LOG_FILENAME, _O_RDWR | _O_SEQUENTIAL, _SH_DENYNO, _S_IREAD | _S_IWRITE);
+        _sopen_s (
+            &LOG_FILE_FILENO, LOG_FILENAME, _O_CREAT | _O_RDWR | _O_SEQUENTIAL | _O_U8TEXT, _SH_DENYNO,
+            _S_IREAD | _S_IWRITE
+        );
 #endif
 
         return LOG_FILE_FILENO;
@@ -104,30 +117,48 @@ extern "C" {
         if (LOG_FILE_FILENO == -1)
             return -1;
 
-        if (STDERR_SAVE == -1)
-            STDERR_SAVE =
-#ifdef _WIN32
-                _dup (_fileno (stderr));
-#else
-            dup (STDERR_FILENO);
-#endif
+        int ret;
 
+        if (STDERR_SAVE == -1)
+            if ((STDERR_SAVE =
 #ifdef _WIN32
-        return _dup2 (LOG_FILE_FILENO, _fileno (stderr));
+                     _dup (_fileno (stderr))
 #else
-    return dup2 (LOG_FILE_FILENO, STDERR_FILENO);
+                 dup (STDERR_FILENO)
 #endif
+                ) == -1)
+                error ("could not save stderr.");
+
+        if ((ret =
+#ifdef _WIN32
+                 _dup2 (LOG_FILE_FILENO, _fileno (stderr))
+#else
+             dup2 (LOG_FILE_FILENO, STDERR_FILENO)
+#endif
+            ) == -1)
+            error ("could not redirect stderr.");
+
+        return ret;
     }
 
     int close_log_file (void) {
         if (STDERR_SAVE == -1)
             return -1;
 
+        fflush (stderr);
+
+        int ret;
+
+        if ((ret =
 #ifdef _WIN32
-        return _dup2 (STDERR_SAVE, _fileno (stderr));
+                 _dup2 (STDERR_SAVE, _fileno (stderr))
 #else
-    return dup2 (STDERR_SAVE, STDERR_FILENO);
+             dup2 (STDERR_SAVE, STDERR_FILENO)
 #endif
+            ) == -1)
+            error ("could not restore stderr.");
+
+        return ret;
     }
 
     bool is_log_window (void) {
@@ -149,6 +180,8 @@ extern "C" {
     }
 
     int clear_log_window (void) {
+        fflush (stderr);
+
         if (wclear (LOG_WINDOW_VAR) == ERR) {
             warning ("could not clear the log window.");
 
@@ -161,7 +194,9 @@ extern "C" {
     }
 
     WINDOW *create_log_window (void) {
-        delete_log_window ();
+        if (LOG_WINDOW_VAR)
+            delete_log_window ();
+
         LOG_WINDOW_VAR = create_window (
             get_log_window_width (), get_log_window_height (), (uint32_t) getbegx (stdscr),
             (uint32_t) getmaxy (stdscr) - get_log_window_height ()
@@ -175,12 +210,7 @@ extern "C" {
     }
 
     bool delete_log_window (void) {
-        bool del       = delete_window (LOG_WINDOW_VAR);
-        LOG_WINDOW_VAR = NULL;
-
-        close_log_file ();
-
-        return del;
+        return delete_window (LOG_WINDOW_VAR) == OK;
     }
 
     uint64_t get_log_window_dims (void) {

@@ -1,3 +1,4 @@
+#include "log_window.h"
 #include "menu.h"
 
 typedef struct __window_list_struct {
@@ -7,10 +8,11 @@ typedef struct __window_list_struct {
 } *restrict window_list_t;
 
 static window_list_t TRIVIA_WINDOW_LIST = NULL;
+static bool          IS_DELETE_WINDOWS  = false;
 
 static void         create_window_list (void);
 static bool         remove_window (window_list_t);
-static delwinfunc_t delwinfunc, delmenufunc;
+static delwinfunc_t dellogfunc, delwinfunc, delmenufunc;
 
 static void create_window_list (void) {
     if (!(TRIVIA_WINDOW_LIST = calloc (1, sizeof (struct __window_list_struct))))
@@ -23,16 +25,17 @@ bool delete_windows (void) {
     if (!TRIVIA_WINDOW_LIST)
         return false;
 
-    bool fine = true;
+    bool fine = IS_DELETE_WINDOWS = true;
     for (; TRIVIA_WINDOW_LIST; remove_window (TRIVIA_WINDOW_LIST))
         ;
 
-    TRIVIA_WINDOW_LIST = NULL;
+    IS_DELETE_WINDOWS = (TRIVIA_WINDOW_LIST = NULL);
+    stop_menu_gc ();
 
     return fine;
 }
 
-void *add_window (void *const restrict win, const int ismenu) {
+void *add_window (void *const restrict win, const int wintype) {
     if (!TRIVIA_WINDOW_LIST)
         create_window_list ();
 
@@ -44,9 +47,9 @@ void *add_window (void *const restrict win, const int ismenu) {
     if (!(head->next = calloc (1, sizeof (struct __window_list_struct))))
         error ("could not add a node to the window list");
 
-    head->delfunc =
-        *(((delwinfunc_t *const []) { (delwinfunc_t *const) (void *) delete_log_window, delwinfunc, delmenufunc }) +
-          (win == get_log_window () ? 0 : (!!ismenu + 1)));
+    head->next->delfunc =
+        *(((delwinfunc_t *const []) { (delwinfunc_t *const) dellogfunc, delwinfunc, delmenufunc }) + wintype);
+
     return head->next->win = win;
 }
 
@@ -64,7 +67,7 @@ static bool remove_window (window_list_t node) {
                 if (temp->delfunc == delwinfunc)
                     warning ("could not delete window.");
 
-                else if (temp->delfunc == (delwinfunc_t *) (void *) delete_log_window)
+                else if (temp->delfunc == dellogfunc)
                     warning ("could not delete the log window");
 
                 else
@@ -80,7 +83,8 @@ static bool remove_window (window_list_t node) {
     return false;
 }
 
-WINDOW *impl_create_window (const uint32_t w, const uint32_t h, const uint32_t x, const uint32_t y, const int ismenu) {
+WINDOW *
+    impl_create_window (const uint32_t w, const uint32_t h, const uint32_t x, const uint32_t y, const int notlogwin) {
     WINDOW *win;
     if (!(win = newwin (
               (int) (h <= get_ver_padding () * 2 ? h : h - get_ver_padding () * 2),
@@ -89,26 +93,37 @@ WINDOW *impl_create_window (const uint32_t w, const uint32_t h, const uint32_t x
           )))
         error ("could not create a window.");
 
-    return add_window (win, win == get_log_window () ? 0 : (ismenu + 1));
+    return add_window (win, notlogwin);
 }
 
 bool delete_window (WINDOW *const restrict win) {
-    if (!win)
+    if (!(TRIVIA_WINDOW_LIST && win))
         return false;
 
-    for (window_list_t head = TRIVIA_WINDOW_LIST; head; head = head->next)
-        if (head->win == win && (head->delfunc == delwinfunc || head->delfunc == (void *) delete_log_window))
+    for (window_list_t head = TRIVIA_WINDOW_LIST->next; head; head = head->next)
+        if (head->win == win && (head->delfunc == delwinfunc || head->delfunc == dellogfunc))
             return remove_window (head);
 
     return false;
 }
 
 bool delete_menu (const size_t menu) {
-    for (window_list_t head = TRIVIA_WINDOW_LIST; head; head = head->next)
+    if (!TRIVIA_WINDOW_LIST)
+        return false;
+
+    for (window_list_t head = TRIVIA_WINDOW_LIST->next; head; head = head->next)
         if (head->win == (void *) (uintptr_t) menu && (head->delfunc == delmenufunc))
             return remove_window (head);
 
     return false;
+}
+
+static int dellogfunc (void *const restrict win) {
+    clear_log_window ();
+    int del        = delwin (win);
+    LOG_WINDOW_VAR = NULL;
+
+    return del;
 }
 
 static int delwinfunc (void *const restrict win) {
@@ -118,10 +133,11 @@ static int delwinfunc (void *const restrict win) {
 static int delmenufunc (void *const restrict menu) {
     trivia_free_menu ((size_t) (uintptr_t) menu);
 
+    if (!IS_DELETE_WINDOWS)
 #ifdef _WIN32
-    WaitForSingleObject (*(FREE_MENU_SEMS + (uintptr_t) menu), 0L);
+        WaitForSingleObject (*(FREE_MENU_SEMS + (size_t) (uintptr_t) menu), 0L);
 #else
-    sem_wait (FREE_MENU_SEMS + (uintptr_t) menu);
+        sem_wait (FREE_MENU_SEMS + (uintptr_t) menu);
 #endif
 
     return atomic_load (&FREE_MENU_ERR);

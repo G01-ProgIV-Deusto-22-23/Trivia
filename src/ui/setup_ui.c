@@ -57,25 +57,17 @@ static void atexit_end_ui (void) {
     end_ui ();
 }
 
+static void atexit_close_log_file (void) {
+    close_log_file ();
+}
+
 int impl_setup_ui (
     const int argc, const char *const *const restrict argv, const int cursor, const int en_cbreak, const int en_echo,
     const int en_keypad, const int en_halfdelay
 ) {
-#ifdef _WIN32
-    SetConsoleCP (CP_UTF8);
-    SetConsoleOutputCP (CP_UTF8);
-#endif
-
     setbuf (stderr, NULL);
 
-    for (int i = 1; i < argc; i++) {
-        if (TRIVIA_EXPECTING_FILENAME) {
-            LOG_FILENAME              = *(argv + i);
-            TRIVIA_EXPECTING_FILENAME = false;
-
-            continue;
-        }
-
+    for (int i = 0; i < argc; i++) {
         if (!(strcmp (*(argv + i), TRIVIA_USAGE_ARG_SHORT) && strcmp (*(argv + i), TRIVIA_USAGE_ARG_LONG))) {
             TRIVIA_WANTS_USAGE = true;
 
@@ -92,18 +84,26 @@ int impl_setup_ui (
         if (!strcmp (*(argv + i), TRIVIA_NOLOG_ARG)) {
             TRIVIA_WANTS_NOLOG = true;
 
-            continue;
+            goto log_ex;
         }
 
         if (!strcmp (*(argv + i), TRIVIA_LOG_ARG)) {
             TRIVIA_WANTS_LOG = true;
 
-            continue;
+            goto log_ex;
         }
 
         if (!strcmp (*(argv + i), TRIVIA_LOGFILE_ARG)) {
             LOG_FILENAME              = NULL;
+            TRIVIA_WANTS_LOG          = true;
             TRIVIA_EXPECTING_FILENAME = true;
+
+            goto log_ex;
+        }
+
+        if (TRIVIA_EXPECTING_FILENAME) {
+            LOG_FILENAME              = *(argv + i);
+            TRIVIA_EXPECTING_FILENAME = false;
 
             continue;
         }
@@ -111,11 +111,15 @@ int impl_setup_ui (
         error (
             "please, provide a valid argument list. Run the program with the --help (or -h) argument in order to see the list of valid arguments."
         );
+
+    log_ex:
+        if (TRIVIA_WANTS_NOLOG && TRIVIA_WANTS_LOG)
+            error ("The " STRINGIFY (TRIVIA_NOLOG_ARG) " and " STRINGIFY (TRIVIA_LOG_ARG
+            ) "/" STRINGIFY (TRIVIA_LOGFILE_ARG) " arguments are mutually exclusive.");
     }
 
-    if (TRIVIA_WANTS_NOLOG && TRIVIA_WANTS_LOG)
-        error ("The " STRINGIFY (TRIVIA_NOLOG_ARG) " and " STRINGIFY (TRIVIA_LOG_ARG
-        ) " arguments are mutually exclusive.");
+    if (TRIVIA_EXPECTING_FILENAME)
+        error ("a filename was expected.");
 
     if (LOG_FILENAME) {
 #ifdef _WIN32
@@ -134,7 +138,26 @@ int impl_setup_ui (
     }
 
     if (TRIVIA_WANTS_USAGE || TRIVIA_WANTS_HELP) {
-        fprintf (stderr, "Usage: %s [OPTION...]\n", basename ((char *) *argv));
+#ifdef _WIN32
+        {
+            char path [MAX_PATH + 1];
+#endif
+
+            fprintf (
+                stderr, "Usage: %s [OPTION...]\n",
+#ifdef _WIN32
+                ({
+                    if (!GetModuleFileNameA (NULL, path, MAX_PATH + 1))
+                        memcpy (path, "program", sizeof ("program"));
+                    basename (path);
+                })
+#else
+            basename (program_invocation_short_name)
+#endif
+            );
+#ifdef _WIN32
+        }
+#endif
 
         if (!TRIVIA_WANTS_HELP)
             exit (0);
@@ -152,8 +175,10 @@ int impl_setup_ui (
         exit (0);
     }
 
-    if (!TRIVIA_WANTS_NOLOG)
+    if (!TRIVIA_WANTS_NOLOG) {
         set_log_file (LOG_FILENAME);
+        open_log_file ();
+    }
 
     if (get_term_width () < MIN_TERM_WIDTH || get_term_height () < MIN_TERM_HEIGHT)
         error ("the terminal is not big enough to display a UI.");
@@ -178,6 +203,7 @@ int impl_setup_ui (
     create_log_window ();
 
     int settings = set_ui_settings (cursor, en_cbreak, en_echo, en_keypad, en_halfdelay);
+    atexit (atexit_close_log_file);
     atexit (atexit_end_ui);
 
     message ("UI set up completed.");

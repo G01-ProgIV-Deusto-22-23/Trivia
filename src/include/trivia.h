@@ -14,10 +14,6 @@
     #include <cerrno>
     #include <ctime>
     #include <atomic>
-
-    #ifndef _WIN32
-        #include <cunistd>
-    #endif
 #else
     #include <stdio.h>
     #include <stdlib.h>
@@ -32,15 +28,6 @@
     #include <errno.h>
     #include <time.h>
     #include <stdatomic.h>
-
-    #ifndef _WIN32
-        #include <unistd.h>
-    #endif
-#endif
-
-#ifndef _WIN32
-    #include <pthread.h>
-    #include <semaphore.h>
 #endif
 
 #include <libgen.h>
@@ -54,6 +41,13 @@
 #include <sqlite3.h>
 #include <sqlite3rc.h>
 
+#include "types.h"
+#include "macros.h"
+#include "ui.h"
+#include "os.h"
+#include "server.h"
+#include "bd.h"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 
@@ -63,7 +57,7 @@ static const int
 #else
     __attribute__ ((unused))
 #endif
-    argc = 0;
+    argc;
 
 static const char
 #if defined(__cpp_attributes) || __STDC_VERSION__ >= 201710L
@@ -71,15 +65,18 @@ static const char
 #else
     __attribute__ ((unused))
 #endif
-    * argv [] = {};
+    * argv [1];
+
+#ifdef _WIN32
+static LPWSTR
+    #if defined(__cpp_attributes) || __STDC_VERSION__ >= 201710L
+    [[unused]]
+    #else
+    __attribute__ ((unused))
+    #endif
+    pCmdLine;
+#endif
 
 #pragma GCC diagnostic pop
-
-#include "types.h"
-#include "macros.h"
-#include "ui.h"
-#include "os.h"
-#include "server.h"
-#include "bd.h"
 
 #endif

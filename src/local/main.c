@@ -1,4 +1,4 @@
-int main (int argc, char **argv) {
+trivia_main {
     setup_ui ();
 
     welcome ();

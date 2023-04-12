@@ -14,9 +14,9 @@ extern void   end_backtrace (void);
 #pragma GCC diagnostic ignored "-Wattributes"
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ >= 201710L
-[[constructor (102)]]
+[[constructor (101)]]
 #else
-__attribute__ ((constructor (102)))
+__attribute__ ((constructor (101)))
 #endif
 static void
     init_backtrace_constructor (void) {
@@ -24,9 +24,9 @@ static void
 }
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ >= 201710L
-[[destructor (102)]]
+[[destructor (101)]]
 #else
-__attribute__ ((destructor (102)))
+__attribute__ ((destructor (101)))
 #endif
 static void
     delete_backtrace_destructor (void) {

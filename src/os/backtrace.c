@@ -176,16 +176,7 @@ tempfile:
         bt_error_func (NULL, NULL, 0);
 #endif
 
-    BT_STATE = backtrace_create_state (
-        NULL,
-#ifdef _WIN32
-        0
-#else
-        1
-#endif
-        ,
-        bt_error_func, NULL
-    );
+    BT_STATE = backtrace_create_state (NULL, 1, bt_error_func, NULL);
 
     struct tm *_time = NULL;
     if (!(({

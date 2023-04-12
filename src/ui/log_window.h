@@ -1,0 +1,6 @@
+#ifndef TRIVIA_LOG_WINDOW_H
+#define TRIVIA_LOG_WINDOW_H
+
+extern WINDOW *LOG_WINDOW_VAR;
+
+#endif

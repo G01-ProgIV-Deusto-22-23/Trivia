@@ -240,252 +240,284 @@ static void
     #else
 
         #ifdef _WIN32
-            #define message(...)                                                                                                                                \
-                (ct_error (                                                                                                                                     \
-                     NARGS (__VA_ARGS__) > 3,                                                                                                                   \
-                     "the message() function-like macro must be passed between zero and three arguments."                                                       \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     !(__builtin_types_compatible_p (                                                                                                           \
-                           typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))),                                          \
-                           errorfunc_t                                                                                                                          \
-                       ) ||                                                                                                                                     \
-                       __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *) \
-                     ),                                                                                                                                         \
-                     "the second argument passed to the message() function-like macro must be of type errorfunc_t *."                                           \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) !=                                                           \
-                         pointer_type_class,                                                                                                                    \
-                     "the third argument passed to the message() function-like macro must be of a type that decays to a pointer."                               \
-                 ),                                                                                                                                             \
-                 SetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), ({                                                                                            \
-                                     DWORD __message_consolemode__;                                                                                             \
-                                     GetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), &__message_consolemode__);                                                \
-                                     __message_consolemode__ | ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                              \
-                                 })),                                                                                                                           \
-                 fwprintf (                                                                                                                                     \
-                     stderr, L"%sMessage in function %s (%s: line %d)%s\n",                                                                                     \
-                     get_log_file () == -1 ? "\033[1m\033[32m" : "", __func__, __FILE__, __LINE__,                                                              \
-                     __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
-                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
-                         (ct_error (                                                                                                                            \
-                              __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
-                              "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
-                          ),                                                                                                                                    \
-                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                           \
-                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                 \
-                     )                                                                                                                                          \
-                 ),                                                                                                                                             \
-                 fflush (stderr), (void) ({                                                                                                                     \
-                     if (is_log_window ()) {                                                                                                                    \
-                         int line;                                                                                                                              \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                \
-                             clear_log_window ();                                                                                                               \
-                         if (has_colors ())                                                                                                                     \
-                             wattron (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                                \
-                         mvwprintw (                                                                                                                            \
-                             get_log_window (), line, 1, "Message in function %s (%s: line %d)%s", __func__, __FILE__,                                          \
-                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                         \
-                         );                                                                                                                                     \
-                         if (has_colors ())                                                                                                                     \
-                             wattroff (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                               \
-                         __builtin_choose_expr (                                                                                                                \
-                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                     \
-                             (ct_error (                                                                                                                        \
-                                  __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                            \
-                                      pointer_type_class,                                                                                                       \
-                                  "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type."         \
-                              ),                                                                                                                                \
-                              waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                               \
-                         );                                                                                                                                     \
-                         refresh_log_window ();                                                                                                                 \
-                     }                                                                                                                                          \
+            #define message(...)                                                                                                                            \
+                (ct_error (                                                                                                                                 \
+                     NARGS (__VA_ARGS__) > 1,                                                                                                               \
+                     "the message() function-like macro must be passed between zero and one arguments."                                                     \
+                 ),                                                                                                                                         \
+                 ({                                                                                                                                         \
+                     HANDLE __message_stderr_handle__ = GetStdHandle (STD_ERROR_HANDLE);                                                                    \
+                     SetConsoleMode (__message_stderr_handle__, ({                                                                                          \
+                                         DWORD __message_consolemode__;                                                                                     \
+                                         GetConsoleMode (__message_stderr_handle__, &__message_consolemode__);                                              \
+                                         __message_consolemode__ | DISABLE_NEWLINE_AUTO_RETURN |                                                            \
+                                             ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                  \
+                                     }));                                                                                                                   \
+                     ({                                                                                                                                     \
+                         if (get_log_file () == -1)                                                                                                         \
+                             WriteFile (                                                                                                                    \
+                                 __message_stderr_handle__, "\033[1m\033[32m", sizeof ("\033[1m\033[32m") - 1, NULL,                                        \
+                                 NULL                                                                                                                       \
+                             );                                                                                                                             \
+                     }),                                                                                                                                    \
+                         WriteFile (                                                                                                                        \
+                             __message_stderr_handle__, "Message in function ", sizeof ("Message in function ") - 1,                                        \
+                             NULL, NULL                                                                                                                     \
+                         ),                                                                                                                                 \
+                         WriteFile (__message_stderr_handle__, __func__, sizeof (__func__) - 1, NULL, NULL),                                                \
+                         WriteFile (__message_stderr_handle__, " (", sizeof (" (") - 1, NULL, NULL),                                                        \
+                         WriteFile (__message_stderr_handle__, __FILE__, sizeof (__FILE__) - 1, NULL, NULL),                                                \
+                         WriteFile (__message_stderr_handle__, ": line ", sizeof (": line ") - 1, NULL, NULL), ({                                           \
+                             char     __message_line_digits__ [10];                                                                                         \
+                             uint32_t __message_line__      = (uint32_t) __LINE__;                                                                          \
+                             uint32_t __message_decplaces__ = (uint32_t) decplaces (__LINE__);                                                              \
+                             for (uint32_t __message_iter__ = 1; __message_line__; __message_line__ /= 10)                                                  \
+                                 *(__message_line_digits__ + __message_decplaces__ - __message_iter__++) =                                                  \
+                                     (char) (__message_line__ % 10) + '0';                                                                                  \
+                             WriteFile (                                                                                                                    \
+                                 __message_stderr_handle__, __message_line_digits__, __message_decplaces__, NULL, NULL                                      \
+                             );                                                                                                                             \
+                         }),                                                                                                                                \
+                         WriteFile (__message_stderr_handle__, ")", sizeof (")") - 1, NULL, NULL), ({                                                       \
+                             if (get_log_file () == -1)                                                                                                     \
+                                 WriteFile (                                                                                                                \
+                                     __message_stderr_handle__,                                                                                             \
+                                     __builtin_choose_expr (                                                                                                \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                   \
+                                         ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                  \
+                                     ),                                                                                                                     \
+                                     sizeof (__builtin_choose_expr (                                                                                        \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                   \
+                                         ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                  \
+                                     )) - 1,                                                                                                                \
+                                     NULL, NULL                                                                                                             \
+                                 );                                                                                                                         \
+                             else                                                                                                                           \
+                                 WriteFile (                                                                                                                \
+                                     __message_stderr_handle__,                                                                                             \
+                                     __builtin_choose_expr (                                                                                                \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                          \
+                                         ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                         \
+                                     ),                                                                                                                     \
+                                     sizeof (__builtin_choose_expr (                                                                                        \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                          \
+                                         ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                         \
+                                     )) - 1,                                                                                                                \
+                                     NULL, NULL                                                                                                             \
+                                 );                                                                                                                         \
+                         }),                                                                                                                                \
+                         WriteFile (__message_stderr_handle__, "\n", sizeof ("\n") - 1, NULL, NULL);                                                        \
+                     (void) ({                                                                                                                              \
+                         if (is_log_window ()) {                                                                                                            \
+                             int line;                                                                                                                      \
+                             if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                                 clear_log_window ();                                                                                                       \
+                             if (has_colors ())                                                                                                             \
+                                 wattron (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                        \
+                             mvwprintw (                                                                                                                    \
+                                 get_log_window (), line, 1, "Message in function %s (%s: line %d)%s", __func__,                                            \
+                                 __FILE__, __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                       \
+                             );                                                                                                                             \
+                             if (has_colors ())                                                                                                             \
+                                 wattroff (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                       \
+                             __builtin_choose_expr (                                                                                                        \
+                                 sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                             \
+                                 (ct_error (                                                                                                                \
+                                      __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                    \
+                                          pointer_type_class,                                                                                               \
+                                      "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type." \
+                                  ),                                                                                                                        \
+                                  waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                       \
+                             );                                                                                                                             \
+                             refresh_log_window ();                                                                                                         \
+                         }                                                                                                                                  \
+                     });                                                                                                                                    \
                  }))
         #else
-            #define message(...)                                                                                                                                \
-                (ct_error (                                                                                                                                     \
-                     NARGS (__VA_ARGS__) > 3,                                                                                                                   \
-                     "the message() function-like macro must be passed between zero and three arguments."                                                       \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     !(__builtin_types_compatible_p (                                                                                                           \
-                           typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))),                                          \
-                           errorfunc_t                                                                                                                          \
-                       ) ||                                                                                                                                     \
-                       __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *) \
-                     ),                                                                                                                                         \
-                     "the second argument passed to the message() function-like macro must be of type errorfunc_t *."                                           \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) !=                                                           \
-                         pointer_type_class,                                                                                                                    \
-                     "the third argument passed to the message() function-like macro must be of a type that decays to a pointer."                               \
-                 ),                                                                                                                                             \
-                 fprintf (                                                                                                                                      \
-                     stderr, "%sMessage in function %s (%s: line %d)%s\n",                                                                                      \
-                     get_log_file () == -1 ? "\033[1m\033[32m" : "", __func__, __FILE__, __LINE__,                                                              \
-                     __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
-                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
-                         (ct_error (                                                                                                                            \
-                              __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
-                              "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
-                          ),                                                                                                                                    \
-                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                           \
-                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                 \
-                     )                                                                                                                                          \
-                 ),                                                                                                                                             \
-                 fflush (stderr), (void) ({                                                                                                                     \
-                     if (is_log_window ()) {                                                                                                                    \
-                         int line;                                                                                                                              \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                \
-                             clear_log_window ();                                                                                                               \
-                         if (has_colors ())                                                                                                                     \
-                             wattron (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                                \
-                         mvwprintw (                                                                                                                            \
-                             get_log_window (), line, 1, "Message in function %s (%s: line %d)%s", __func__, __FILE__,                                          \
-                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                         \
-                         );                                                                                                                                     \
-                         if (has_colors ())                                                                                                                     \
-                             wattroff (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                               \
-                         __builtin_choose_expr (                                                                                                                \
-                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                     \
-                             (ct_error (                                                                                                                        \
-                                  __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                            \
-                                      pointer_type_class,                                                                                                       \
-                                  "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type."         \
-                              ),                                                                                                                                \
-                              waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                               \
-                         );                                                                                                                                     \
-                         refresh_log_window ();                                                                                                                 \
-                     }                                                                                                                                          \
+            #define message(...)                                                                                                                        \
+                (ct_error (                                                                                                                             \
+                     NARGS (__VA_ARGS__) > 1,                                                                                                           \
+                     "the message() function-like macro must be passed between zero and three arguments."                                               \
+                 ),                                                                                                                                     \
+                 fprintf (                                                                                                                              \
+                     stderr, "%sMessage in function %s (%s: line %d)%s\n",                                                                              \
+                     get_log_file () == -1 ? "\033[1m\033[32m" : "", __func__, __FILE__, __LINE__,                                                      \
+                     __builtin_choose_expr (                                                                                                            \
+                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                           \
+                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                      \
+                         (ct_error (                                                                                                                    \
+                              __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                    \
+                              "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type."     \
+                          ),                                                                                                                            \
+                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                   \
+                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                         \
+                     )                                                                                                                                  \
+                 ),                                                                                                                                     \
+                 fflush (stderr), (void) ({                                                                                                             \
+                     if (is_log_window ()) {                                                                                                            \
+                         int line;                                                                                                                      \
+                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                             clear_log_window ();                                                                                                       \
+                         if (has_colors ())                                                                                                             \
+                             wattron (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                        \
+                         mvwprintw (                                                                                                                    \
+                             get_log_window (), line, 1, "Message in function %s (%s: line %d)%s", __func__, __FILE__,                                  \
+                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                 \
+                         );                                                                                                                             \
+                         if (has_colors ())                                                                                                             \
+                             wattroff (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                       \
+                         __builtin_choose_expr (                                                                                                        \
+                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                             \
+                             (ct_error (                                                                                                                \
+                                  __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                    \
+                                      pointer_type_class,                                                                                               \
+                                  "the message() function-like macro must be passed either no arguments or a single argument of pointer or array type." \
+                              ),                                                                                                                        \
+                              waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                       \
+                         );                                                                                                                             \
+                         refresh_log_window ();                                                                                                         \
+                     }                                                                                                                                  \
                  }))
         #endif
 
         #ifdef _WIN32
-            #define warning(...)                                                                                                                                \
-                (ct_error (                                                                                                                                     \
-                     NARGS (__VA_ARGS__) > 3,                                                                                                                   \
-                     "the warning() function-like macro must be passed between zero and three arguments."                                                       \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     !(__builtin_types_compatible_p (                                                                                                           \
-                           typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))),                                          \
-                           errorfunc_t                                                                                                                          \
-                       ) ||                                                                                                                                     \
-                       __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *) \
-                     ),                                                                                                                                         \
-                     "the second argument passed to the warning() function-like macro must be of type errorfunc_t *."                                           \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) !=                                                           \
-                         pointer_type_class,                                                                                                                    \
-                     "the third argument passed to the warning() function-like macro must be of a type that decays to a pointer."                               \
-                 ),                                                                                                                                             \
-                 SetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), ({                                                                                            \
-                                     DWORD __warning_consolemode__;                                                                                             \
-                                     GetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), &__warning_consolemode__);                                                \
-                                     __warning_consolemode__ | ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                              \
-                                 })),                                                                                                                           \
-                 fwprintf (                                                                                                                                     \
-                     stderr, L"%sWarning in function %s (%s: line %d)%s\n",                                                                                     \
-                     get_log_file () == -1 ? "\033[1m\033[33m" : "", __func__, __FILE__, __LINE__,                                                              \
-                     __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
-                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
-                         (ct_error (                                                                                                                            \
-                              __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
-                              "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
-                          ),                                                                                                                                    \
-                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                           \
-                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                 \
-                     )                                                                                                                                          \
-                 ),                                                                                                                                             \
-                 fflush (stderr), (void) ({                                                                                                                     \
-                     if (is_log_window ()) {                                                                                                                    \
-                         int line;                                                                                                                              \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                \
-                             clear_log_window ();                                                                                                               \
-                         if (has_colors ())                                                                                                                     \
-                             wattron (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                                \
-                         mvwprintw (                                                                                                                            \
-                             get_log_window (), line, 1, "Warning in function %s (%s: line %d)%s", __func__, __FILE__,                                          \
-                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                         \
-                         );                                                                                                                                     \
-                         if (has_colors ())                                                                                                                     \
-                             wattroff (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                               \
-                         __builtin_choose_expr (                                                                                                                \
-                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                     \
-                             (ct_error (                                                                                                                        \
-                                  __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                            \
-                                      pointer_type_class,                                                                                                       \
-                                  "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type."         \
-                              ),                                                                                                                                \
-                              waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                               \
-                         );                                                                                                                                     \
-                         refresh_log_window ();                                                                                                                 \
-                     }                                                                                                                                          \
+            #define warning(...)                                                                                                                            \
+                (ct_error (                                                                                                                                 \
+                     NARGS (__VA_ARGS__) > 1,                                                                                                               \
+                     "the warning() function-like macro must be passed between zero and one arguments."                                                     \
+                 ),                                                                                                                                         \
+                 ({                                                                                                                                         \
+                     HANDLE __warning_stderr_handle__ = GetStdHandle (STD_ERROR_HANDLE);                                                                    \
+                     SetConsoleMode (__warning_stderr_handle__, ({                                                                                          \
+                                         DWORD __warning_consolemode__;                                                                                     \
+                                         GetConsoleMode (__warning_stderr_handle__, &__warning_consolemode__);                                              \
+                                         __warning_consolemode__ | DISABLE_NEWLINE_AUTO_RETURN |                                                            \
+                                             ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                  \
+                                     }));                                                                                                                   \
+                     ({                                                                                                                                     \
+                         if (get_log_file () == -1)                                                                                                         \
+                             WriteFile (                                                                                                                    \
+                                 __warning_stderr_handle__, "\033[1m\033[33m", sizeof ("\033[1m\033[33m") - 1, NULL,                                        \
+                                 NULL                                                                                                                       \
+                             );                                                                                                                             \
+                     }),                                                                                                                                    \
+                         WriteFile (                                                                                                                        \
+                             __warning_stderr_handle__, "Warning in function ", sizeof ("Warning in function ") - 1,                                        \
+                             NULL, NULL                                                                                                                     \
+                         ),                                                                                                                                 \
+                         WriteFile (__warning_stderr_handle__, __func__, sizeof (__func__) - 1, NULL, NULL),                                                \
+                         WriteFile (__warning_stderr_handle__, " (", sizeof (" (") - 1, NULL, NULL),                                                        \
+                         WriteFile (__warning_stderr_handle__, __FILE__, sizeof (__FILE__) - 1, NULL, NULL),                                                \
+                         WriteFile (__warning_stderr_handle__, ": line ", sizeof (": line ") - 1, NULL, NULL), ({                                           \
+                             char     __warning_line_digits__ [10];                                                                                         \
+                             uint32_t __warning_line__      = (uint32_t) __LINE__;                                                                          \
+                             uint32_t __warning_decplaces__ = (uint32_t) decplaces (__LINE__);                                                              \
+                             for (uint32_t __warning_iter__ = 1; __warning_line__; __warning_line__ /= 10)                                                  \
+                                 *(__warning_line_digits__ + __warning_decplaces__ - __warning_iter__++) =                                                  \
+                                     (char) (__warning_line__ % 10) + '0';                                                                                  \
+                             WriteFile (                                                                                                                    \
+                                 __warning_stderr_handle__, __warning_line_digits__, __warning_decplaces__, NULL, NULL                                      \
+                             );                                                                                                                             \
+                         }),                                                                                                                                \
+                         WriteFile (__warning_stderr_handle__, ")", sizeof (")") - 1, NULL, NULL), ({                                                       \
+                             if (get_log_file () == -1)                                                                                                     \
+                                 WriteFile (                                                                                                                \
+                                     __warning_stderr_handle__,                                                                                             \
+                                     __builtin_choose_expr (                                                                                                \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                   \
+                                         ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                  \
+                                     ),                                                                                                                     \
+                                     sizeof (__builtin_choose_expr (                                                                                        \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".\033[0m",                                                   \
+                                         ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                  \
+                                     )) - 1,                                                                                                                \
+                                     NULL, NULL                                                                                                             \
+                                 );                                                                                                                         \
+                             else                                                                                                                           \
+                                 WriteFile (                                                                                                                \
+                                     __warning_stderr_handle__,                                                                                             \
+                                     __builtin_choose_expr (                                                                                                \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                          \
+                                         ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                         \
+                                     ),                                                                                                                     \
+                                     sizeof (__builtin_choose_expr (                                                                                        \
+                                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, ".",                                                          \
+                                         ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                         \
+                                     )) - 1,                                                                                                                \
+                                     NULL, NULL                                                                                                             \
+                                 );                                                                                                                         \
+                         }),                                                                                                                                \
+                         WriteFile (__warning_stderr_handle__, "\n", sizeof ("\n") - 1, NULL, NULL);                                                        \
+                     (void) ({                                                                                                                              \
+                         if (is_log_window ()) {                                                                                                            \
+                             int line;                                                                                                                      \
+                             if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                                 clear_log_window ();                                                                                                       \
+                             if (has_colors ())                                                                                                             \
+                                 wattron (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                        \
+                             mvwprintw (                                                                                                                    \
+                                 get_log_window (), line, 1, "Warning in function %s (%s: line %d)%s", __func__,                                            \
+                                 __FILE__, __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                       \
+                             );                                                                                                                             \
+                             if (has_colors ())                                                                                                             \
+                                 wattroff (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                       \
+                             __builtin_choose_expr (                                                                                                        \
+                                 sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                             \
+                                 (ct_error (                                                                                                                \
+                                      __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                    \
+                                          pointer_type_class,                                                                                               \
+                                      "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type." \
+                                  ),                                                                                                                        \
+                                  waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                       \
+                             );                                                                                                                             \
+                             refresh_log_window ();                                                                                                         \
+                         }                                                                                                                                  \
+                     });                                                                                                                                    \
                  }))
         #else
-            #define warning(...)                                                                                                                                \
-                (ct_error (                                                                                                                                     \
-                     NARGS (__VA_ARGS__) > 3,                                                                                                                   \
-                     "the warning() function-like macro must be passed between zero and three arguments."                                                       \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     !(__builtin_types_compatible_p (                                                                                                           \
-                           typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))),                                          \
-                           errorfunc_t                                                                                                                          \
-                       ) ||                                                                                                                                     \
-                       __builtin_types_compatible_p (typeof (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))), errorfunc_t *) \
-                     ),                                                                                                                                         \
-                     "the second argument passed to the warning() function-like macro must be of type errorfunc_t *."                                           \
-                 ),                                                                                                                                             \
-                 ct_error (                                                                                                                                     \
-                     __builtin_classify_type (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL)) !=                                                           \
-                         pointer_type_class,                                                                                                                    \
-                     "the third argument passed to the warning() function-like macro must be of a type that decays to a pointer."                               \
-                 ),                                                                                                                                             \
-                 fprintf (                                                                                                                                      \
-                     stderr, "%sWarning in function %s (%s: line %d)%s\n",                                                                                      \
-                     get_log_file () == -1 ? "\033[1m\033[33m" : "", __func__, __FILE__, __LINE__,                                                              \
-                     __builtin_choose_expr (                                                                                                                    \
-                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                                   \
-                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                              \
-                         (ct_error (                                                                                                                            \
-                              __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                            \
-                              "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type."             \
-                          ),                                                                                                                                    \
-                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                           \
-                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                                 \
-                     )                                                                                                                                          \
-                 ),                                                                                                                                             \
-                 fflush (stderr), (void) ({                                                                                                                     \
-                     if (is_log_window ()) {                                                                                                                    \
-                         int line;                                                                                                                              \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                \
-                             clear_log_window ();                                                                                                               \
-                         if (has_colors ())                                                                                                                     \
-                             wattron (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                                \
-                         mvwprintw (                                                                                                                            \
-                             get_log_window (), line, 1, "Warning in function %s (%s: line %d)%s", __func__, __FILE__,                                          \
-                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                         \
-                         );                                                                                                                                     \
-                         if (has_colors ())                                                                                                                     \
-                             wattroff (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                               \
-                         __builtin_choose_expr (                                                                                                                \
-                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                                     \
-                             (ct_error (                                                                                                                        \
-                                  __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                            \
-                                      pointer_type_class,                                                                                                       \
-                                  "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type."         \
-                              ),                                                                                                                                \
-                              waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                               \
-                         );                                                                                                                                     \
-                         refresh_log_window ();                                                                                                                 \
-                     }                                                                                                                                          \
+            #define warning(...)                                                                                                                        \
+                (ct_error (                                                                                                                             \
+                     NARGS (__VA_ARGS__) > 1,                                                                                                           \
+                     "the warning() function-like macro must be passed between zero and one arguments."                                                 \
+                 ),                                                                                                                                     \
+                 fprintf (                                                                                                                              \
+                     stderr, "%sWarning in function %s (%s: line %d)%s\n",                                                                              \
+                     get_log_file () == -1 ? "\033[1m\033[33m" : "", __func__, __FILE__, __LINE__,                                                      \
+                     __builtin_choose_expr (                                                                                                            \
+                         sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1,                                                                           \
+                         get_log_file () == -1 ? ".\033[0m" : ".",                                                                                      \
+                         (ct_error (                                                                                                                    \
+                              __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                                    \
+                              "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type."     \
+                          ),                                                                                                                            \
+                          get_log_file () == -1 ? (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                                                   \
+                                                : (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                         \
+                     )                                                                                                                                  \
+                 ),                                                                                                                                     \
+                 fflush (stderr), (void) ({                                                                                                             \
+                     if (is_log_window ()) {                                                                                                            \
+                         int line;                                                                                                                      \
+                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                             clear_log_window ();                                                                                                       \
+                         if (has_colors ())                                                                                                             \
+                             wattron (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                        \
+                         mvwprintw (                                                                                                                    \
+                             get_log_window (), line, 1, "Warning in function %s (%s: line %d)%s", __func__, __FILE__,                                  \
+                             __LINE__, sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1 ? "." : ": "                                                 \
+                         );                                                                                                                             \
+                         if (has_colors ())                                                                                                             \
+                             wattroff (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                       \
+                         __builtin_choose_expr (                                                                                                        \
+                             sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                                                             \
+                             (ct_error (                                                                                                                \
+                                  __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) !=                                                    \
+                                      pointer_type_class,                                                                                               \
+                                  "the warning() function-like macro must be passed either no arguments or a single argument of pointer or array type." \
+                              ),                                                                                                                        \
+                              waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))                                                       \
+                         );                                                                                                                             \
+                         refresh_log_window ();                                                                                                         \
+                     }                                                                                                                                  \
                  }))
         #endif
 
@@ -510,16 +542,17 @@ static void
                      "the third argument passed to the error() function-like macro must be of a type that decays to a pointer."                                                    \
                  ),                                                                                                                                                                \
                  ({                                                                                                                                                                \
-                     HANDLE __error_stderr_handle__;                                                                                                                               \
-                     SetConsoleMode (__error_stderr_handle__ = GetStdHandle (STD_ERROR_HANDLE), ({                                                                                 \
+                     HANDLE __error_stderr_handle__ = GetStdHandle (STD_ERROR_HANDLE);                                                                                             \
+                     SetConsoleMode (__error_stderr_handle__, ({                                                                                                                   \
                                          DWORD __error_consolemode__;                                                                                                              \
-                                         GetConsoleMode (GetStdHandle (STD_ERROR_HANDLE), &__error_consolemode__);                                                                 \
-                                         __error_consolemode__ | ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                                               \
+                                         GetConsoleMode (__error_stderr_handle__, &__error_consolemode__);                                                                         \
+                                         __error_consolemode__ | DISABLE_NEWLINE_AUTO_RETURN |                                                                                     \
+                                             ENABLE_VIRTUAL_TERMINAL_PROCESSING;                                                                                                   \
                                      })),                                                                                                                                          \
                          ({                                                                                                                                                        \
                              if (get_log_file () == -1)                                                                                                                            \
                                  WriteFile (                                                                                                                                       \
-                                     __error_stderr_handle__, "\033[1m\033[31m", sizeof ("\033[1m\033[31m"), NULL,                                                                 \
+                                     __error_stderr_handle__, "\033[1m\033[31m", sizeof ("\033[1m\033[31m") - 1, NULL,                                                             \
                                      NULL                                                                                                                                          \
                                  );                                                                                                                                                \
                          }),                                                                                                                                                       \
@@ -677,7 +710,7 @@ static void
                  ),                                                                                                                                                        \
                  ({                                                                                                                                                        \
                      if (get_log_file () == -1)                                                                                                                            \
-                         write (STDERR_FILENO, "\033[1m\033[31m", sizeof ("\033[1m\033[31m"));                                                                             \
+                         write (STDERR_FILENO, "\033[1m\033[31m", sizeof ("\033[1m\033[31m") - 1);                                                                         \
                  }), /* error() will be using async-signal safe functions until calling the provided function in order                                                     \
                         to serve as a signal-handling function. */                                                                                                         \
                  write (STDERR_FILENO, "Error in function ", sizeof ("Error in function ") - 1),                                                                           \

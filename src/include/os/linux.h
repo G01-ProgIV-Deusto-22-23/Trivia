@@ -5,4 +5,13 @@
 #include <fcntl.h>
 #include <byteswap.h>
 
+#ifdef __cplusplus
+    #include <cunistd>
+#else
+    #include <unistd.h>
+#endif
+
+#include <pthread.h>
+#include <semaphore.h>
+
 #endif

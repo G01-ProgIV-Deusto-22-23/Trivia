@@ -18,10 +18,13 @@ int impl_set_ui_settings (
             warning ("could not make the cursor very visible.");
     }
 
-    if (en_cbreak)
-        cbreak ();
-    else
-        raw ();
+    if (en_cbreak) {
+        if (cbreak () == ERR)
+            warning ("could not disable line buffering for UI.");
+    }
+
+    else if (raw () == ERR)
+        warning ("could not set the UI to raw mode.");
 
     nonl ();
 

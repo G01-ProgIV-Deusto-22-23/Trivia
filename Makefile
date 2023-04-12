@@ -21,7 +21,7 @@ RUNTIME_DIAGS      := true
 
 CFLAGS := \
 	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fstrict-aliasing -fmax-errors=1 \
-	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h -pthread -lpthread
+	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h
 ifeq ($(RUNTIME_DIAGS), false)
 	CFLAGS += -DDISABLE_RUNTIME_DIAGS
 endif
@@ -30,7 +30,7 @@ DFLAGS := \
 	-g3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
 	-Wshadow=local -Wstrict-prototypes -Wwrite-strings -Wconversion -Wcast-align
 
-UILIBS     := -lformw -lmenuw -lpanelw -lncursesw
+UILIBS     := -lformw -lmenuw -lpanelw -lncursesw -lm
 OSLIBS     := -lbacktrace
 BDLIBS     := -lsqlite3
 TRIVIALIBS := -lui -los -lserver -lbd
@@ -44,13 +44,13 @@ endif
 
 linux: CC     := $(GCC_LINUX)
 linux: LIBDIR := $(LIBDIR)/linux
-linux: CFLAGS += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR)
+linux: CFLAGS += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
 linux: OBJDIR := $(OBJDIR)/linux
 linux: BINDIR := $(BINDIR)/linux
 
 windows: CC     := $(GCC_WINDOWS)
 windows: LIBDIR := $(LIBDIR)/windows
-windows: CFLAGS += -mwindows -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: CFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
 windows: OBJDIR := $(OBJDIR)/windows
 windows: BINDIR := $(BINDIR)/windows
 
