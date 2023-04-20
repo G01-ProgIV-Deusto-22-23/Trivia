@@ -34,10 +34,10 @@ bool delete_windows (void) {
         return false;
 
     bool fine = IS_DELETE_WINDOWS = true;
-    for (; TRIVIA_WINDOW_LIST; remove_window (TRIVIA_WINDOW_LIST))
+    for (; TRIVIA_WINDOW_LIST; fine |= remove_window (TRIVIA_WINDOW_LIST))
         ;
 
-    IS_DELETE_WINDOWS = (TRIVIA_WINDOW_LIST = NULL);
+    IS_DELETE_WINDOWS = false;
 
     stop_menu_gc ();
     stop_form_gc ();

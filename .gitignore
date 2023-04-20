@@ -8,5 +8,6 @@ obj
 .cache
 *.backtrace
 *.log
+*valgrind*
 compile_commands*.json
 clang-format-all

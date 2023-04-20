@@ -81,6 +81,4 @@ static LPWSTR
 
 #pragma GCC diagnostic pop
 
-#define SEMAPHORE_WAIT_MILLS 10
-
 #endif

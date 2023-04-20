@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "ncursesw/menu.h"
 #include "window.h"
 
 MENU                  *MENUS [__WORDSIZE] = { 0 };
@@ -43,19 +44,15 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 
     {
         int err = unpost_menu (*(MENUS + menu));
-        if (err != E_OK && err != E_NOT_POSTED)
+        if (!(err == E_OK || err == E_NOT_POSTED))
             warning ("could not hide the menu.");
     }
 
     ITEM **const items = menu_items (*(MENUS + menu));
+    size_t       n     = (size_t) item_count (*(MENUS + menu));
 
-    if (free_menu (*(MENUS + menu)) != E_OK) {
-        atomic_store (&FREE_MENU_ERR, ERR);
-
-        warning ("could not free the menu.");
-    }
-
-    for (short i = 0; i < item_count (*(MENUS + menu));) {
+    set_menu_items (*(MENUS + menu), NULL);
+    for (size_t i = 0; i < n;) {
         free (*(**(MENU_CHOICE_DATA + menu) + i));
         free (*(*(*(MENU_CHOICE_DATA + menu) + 1) + i));
 
@@ -69,12 +66,27 @@ static void     *impl_trivia_free_menu (void *__menu__) {
     free (**(MENU_CHOICE_DATA + menu));
     free (*(*(MENU_CHOICE_DATA + menu) + 1));
 
-    if (*(FREE_MENU_RETS + menu))
+    if (*(FREE_MENU_RETS + menu)) {
         free (*(MENU_RETS + menu));
+        *(MENU_RETS + menu) = NULL;
+    }
+
+    if (free_menu (*(MENUS + menu)) != E_OK) {
+        atomic_store (&FREE_MENU_ERR, ERR);
+
+        warning ("could not free the menu.");
+
+        return
+#ifdef _WIN32
+            (unsigned long) (uintptr_t)
+#endif
+            * (MENUS + menu);
+    }
 
     refresh ();
 
-    MENU_CONTROL ^= ((size_t) 1) << menu;
+    atomic_fetch_xor (&MENU_CONTROL, ((size_t) 1) << menu);
+    *(MENUS + menu) = (void *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = 0));
 
 #ifdef _WIN32
     ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1, NULL);
@@ -86,7 +98,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 #ifdef _WIN32
         (unsigned long) (uintptr_t)
 #endif
-            (*(MENUS + menu) = (void *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = 0)));
+        * (MENUS + menu);
 }
 
 void trivia_free_menu (const size_t menu) {
@@ -148,43 +160,17 @@ void stop_menu_gc (void) {
     }
 }
 
-#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
-[[nonnull (8), nodiscard]]
-#else
-__attribute__ ((nonnull (8), warn_unused_result))
-#endif
-size_t
-    impl_create_menu (
-        const menutype_t t, uint32_t w, uint32_t h, uint32_t x, uint32_t y, const size_t n,
-        const char *const (*const choices) [2], const size_t (*const lens) [2], choicefunc_t *const *const funcs
-    ) {
-    if (atomic_load (&MENU_CONTROL) == (size_t) -1)
-        error ("no more menus can be created.");
-
-    if (!choices)
-        error ("The choices pointer cannot be null");
-
-    if (!funcs)
-        error ("The funcs pointer cannot be null.");
-
-    size_t menu = 0;
-    for (; menu <
+static size_t impl_create_menu2 (
+    const size_t menu, const menutype_t t, uint32_t w, uint32_t h, uint32_t x, uint32_t y, const size_t n,
+    const char *const (*const choices) [2], const size_t (*const lens) [2], choicefunc_t *const *const funcs
+) {
 #ifdef _WIN32
-           sizeof (MENUS) / sizeof (*MENUS)
+    WaitForSingleObject (*(FREE_MENU_SEMS + menu), 0L);
 #else
-           arrsize (MENUS)
+    sem_wait (FREE_MENU_SEMS + menu);
 #endif
-             ;)
-        if (!((atomic_load (&MENU_CONTROL) >> menu++) & 1))
-            break;
 
     atomic_fetch_or (&MENU_CONTROL, 1 << menu);
-
-#ifdef _WIN32
-    WaitForSingleObject (*(FREE_MENU_SEMS + menu), SEMAPHORE_WAIT_MILLS);
-#else
-    sem_trywait (FREE_MENU_SEMS + menu);
-#endif
 
     ITEM **items;
     if (!(**(MENU_CHOICE_DATA + menu) = malloc (n * sizeof (char *))) ||
@@ -230,6 +216,12 @@ size_t
         }
     }
 
+#ifdef _WIN32
+    ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1L, 0);
+#else
+        sem_post (FREE_MENU_SEMS + menu);
+#endif
+
     add_window ((void *) (uintptr_t) menu, 2);
 
     keypad (menu_win (*(MENUS + menu)), true);
@@ -237,6 +229,39 @@ size_t
     set_menu_ret (menu, NULL);
 
     return menu;
+}
+
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
+[[nonnull (8), nodiscard]]
+#else
+__attribute__ ((nonnull (8), warn_unused_result))
+#endif
+size_t
+    impl_create_menu (
+        const menutype_t t, uint32_t w, uint32_t h, uint32_t x, uint32_t y, const size_t n,
+        const char *const (*const choices) [2], const size_t (*const lens) [2], choicefunc_t *const *const funcs
+    ) {
+    if (atomic_load (&MENU_CONTROL) == (size_t) -1)
+        error ("no more menus can be created.");
+
+    if (!choices)
+        error ("The choices pointer cannot be null");
+
+    if (!funcs)
+        error ("The funcs pointer cannot be null.");
+
+    size_t menu = 0;
+    for (; menu <
+#ifdef _WIN32
+           sizeof (MENUS) / sizeof (*MENUS)
+#else
+           arrsize (MENUS)
+#endif
+             ;)
+        if (!((atomic_load (&MENU_CONTROL) >> menu++) & 1))
+            break;
+
+    return impl_create_menu2 (menu, t, w, h, x, y, n, choices, lens, funcs);
 }
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
@@ -268,13 +293,9 @@ static void
         warning ("could not print the title's horizontal line.");
 }
 
-#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
-[[nonnull (2, 3)]]
-#else
-__attribute__ ((nonnull (2, 3)))
-#endif
-size_t
-    impl_display_menu (const size_t menu, const char *const restrict title, const char *const restrict mark) {
+static size_t impl_display_menu2 (
+    const size_t menu, size_t current, const char *const restrict title, const char *const restrict mark
+) {
     if (menu >=
 #ifdef _WIN32
         sizeof (MENUS) / sizeof (*MENUS)
@@ -319,6 +340,9 @@ size_t
 
         *get_menu_ret (menu) = (size_t) -1;
     }
+
+    if (current && set_current_item (*(MENUS + menu), *(menu_items (*(MENUS + menu)) + current)) != E_OK)
+        warning ("could not change the current item.");
 
     if (({
             int           err = post_menu (*(MENUS + menu));
@@ -425,23 +449,41 @@ action:
     *dims       = *dims - (*(dims + 2) -= (int) get_hor_padding ()) + (int) get_hor_padding () * 2;
     *(dims + 1) = *(dims + 1) - (*(dims + 3) -= (int) get_ver_padding ()) + (int) get_ver_padding () * 2;
 
-    delete_menu (menu);
+    current = (size_t) item_index (current_item (*(MENUS + menu)));
+
+    if (!delete_menu (menu)) {
+        warning ("could not delete menu, choice function not called.");
+        free (p);
+
+        goto cont;
+    }
 
     exec ();
 
     // There's risk of overflowing the stack, but I don't think anybody will dare to make nearly-infinite invocations of
     // menus.
-    return impl_display_menu (
+    return impl_display_menu2 (
         ({
-            size_t m = impl_create_menu (
-                actionmenu, (uint32_t) *dims, (uint32_t) * (dims + 1), (uint32_t) * (dims + 2), (uint32_t) * (dims + 3),
-                n, (const char *const (*const restrict) [2]) c, (const size_t (*const restrict) [2]) l, f
+            impl_create_menu2 (
+                menu, actionmenu, (uint32_t) *dims, (uint32_t) * (dims + 1), (uint32_t) * (dims + 2),
+                (uint32_t) * (dims + 3), n, (const char *const (*const restrict) [2]) c,
+                (const size_t (*const restrict) [2]) l, f
             );
             free (p);
-            m;
+            menu;
         }),
-        title, mark
+        current, title, mark
     );
+}
+
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
+[[nonnull (2, 3)]]
+#else
+__attribute__ ((nonnull (2, 3)))
+#endif
+size_t
+    impl_display_menu (const size_t menu, const char *const restrict title, const char *const restrict mark) {
+    return impl_display_menu2 (menu, 0, title, mark);
 }
 
 size_t *get_menu_ret (const size_t menu) {

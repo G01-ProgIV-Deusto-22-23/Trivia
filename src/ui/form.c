@@ -195,9 +195,9 @@ size_t
     atomic_fetch_or (&FORM_CONTROL, 1 << form);
 
 #ifdef _WIN32
-    WaitForSingleObject (*(FREE_FORM_SEMS + form), SEMAPHORE_WAIT_MILLS);
+    WaitForSingleObject (*(FREE_FORM_SEMS + form), 0L);
 #else
-    sem_trywait (FREE_FORM_SEMS + form);
+    sem_wait (FREE_FORM_SEMS + form);
 #endif
 
     FIELD **fields;
@@ -271,6 +271,12 @@ size_t
                 error ("could not set the form subwindow.");
         }
     }
+
+#ifdef _WIN32
+    ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1L, NULL);
+#else
+    sem_post (FREE_FORM_SEMS + form);
+#endif
 
     add_window ((void *) (uintptr_t) form, 3);
 
