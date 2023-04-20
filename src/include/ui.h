@@ -4,6 +4,185 @@
 // end_ui.c
 extern int end_ui (void);
 
+// form.c
+
+#define DEFAULT_FORM_EXIT_KEY     KEY_F (1)
+#define DEFAULT_FORM_EXIT_MESSAGE "Pulsa F1 para salir."
+
+#define DEFAULT_FORM_ERASE_KEY     KEY_F (5)
+#define DEFAULT_FORM_ERASE_MESSAGE "Pulsa F5 para borrar el contenido de todos los campos."
+
+#define DEFAULT_FORM_SAVE_KEY     '\n'
+#define DEFAULT_FORM_SAVE_MESSAGE "Pulsa Intro para guardar los cambios."
+
+#define MAX_FORM_FIELDS    __WORDSIZE
+#define MAX_FORM_FIELD_LEN ((size_t) (1 << 12) - 1)
+
+extern field_attr_t impl_field_attrs (const size_t, const FIELDTYPE *const);
+
+#define alnum_field(len, ...)                                                                                          \
+    (ct_error (NARGS (__VA_ARGS__) > 1, "the alnum_field() macro accepts either one or two arguments."),               \
+     ct_error (                                                                                                        \
+         !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))),                                               \
+         "both arguments passed to the alnum_field macro must be integers."                                            \
+     ),                                                                                                                \
+     ({                                                                                                                \
+         field_attr_t __alnum_field_fa__        = impl_field_attrs (len, TYPE_ALNUM);                                  \
+         __alnum_field_fa__.type_args.alnum.min = __builtin_choose_expr (                                              \
+             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                     \
+         );                                                                                                            \
+         __alnum_field_fa__;                                                                                           \
+     }))
+
+#define alpha_field(len, ...)                                                                                          \
+    (ct_error (NARGS (__VA_ARGS__) > 1, "the alpha_field() macro accepts either one or two arguments."),               \
+     ct_error (                                                                                                        \
+         !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))),                                               \
+         "both arguments passed to the alpha_field macro must be integers."                                            \
+     ),                                                                                                                \
+     ({                                                                                                                \
+         field_attr_t __alpha_field_fa__        = impl_field_attrs (len, TYPE_ALNUM);                                  \
+         __alpha_field_fa__.type_args.alnum.min = __builtin_choose_expr (                                              \
+             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                     \
+         );                                                                                                            \
+         __alpha_field_fa__;                                                                                           \
+     }))
+
+#define passwd_field(len, ...)                                                                                         \
+    (ct_error (NARGS (__VA_ARGS__) > 1, "the alnum_field() macro accepts either one or two arguments."),               \
+     ct_error (                                                                                                        \
+         !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))),                                               \
+         "both arguments passed to the alnum_field macro must be integers."                                            \
+     ),                                                                                                                \
+     ({                                                                                                                \
+         field_attr_t __passwd_field_fa__           = impl_field_attrs (len, TYPE_ALNUM);                              \
+         __passwd_field_fa__.type_args.alnum.passwd = true;                                                            \
+         __passwd_field_fa__.type_args.alnum.min    = __builtin_choose_expr (                                          \
+             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                  \
+         );                                                                                                         \
+         __passwd_field_fa__;                                                                                          \
+     }))
+
+#define int_field(len, ...)                                                                                            \
+    (ct_error (NARGS (__VA_ARGS__) > 2, "the int_field() macro accepts between one and three arguments."),             \
+     ct_error (                                                                                                        \
+         !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                              \
+           isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0))),                                                           \
+         "all arguments passed to the alpha_field macro must be integers."                                             \
+     ),                                                                                                                \
+     ({                                                                                                                \
+         _Pragma ("GCC diagnostic push");                                                                              \
+         _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                        \
+         field_attr_t __int_field_fa__ = impl_field_attrs (len, TYPE_INTEGER);                                         \
+         _Pragma ("GCC diagnostic pop");                                                                               \
+         __builtin_choose_expr (                                                                                       \
+             NARGS (__VA_ARGS__) >= 2,                                                                                 \
+             (__int_field_fa__.type_args.integer.min = __builtin_choose_expr (                                         \
+                  isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                \
+              ),                                                                                                       \
+              __int_field_fa__.type_args.integer.max = __builtin_choose_expr (                                         \
+                  isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX)),                                       \
+                  ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX), LONG_MAX                                      \
+              )),                                                                                                      \
+             (void) 0                                                                                                  \
+         );                                                                                                            \
+         __int_field_fa__;                                                                                             \
+     }))
+
+#define ipv4_field() impl_field_attrs (15, TYPE_IPV4)
+
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
+[[nodiscard]]
+#else
+__attribute__ ((warn_unused_result))
+#endif
+size_t
+    impl_create_form (
+        uint32_t, uint32_t, uint32_t, uint32_t, const size_t, const field_attr_t *const,
+        const char *const *const restrict
+    );
+
+#define create_form(w, h, x, y, attrs, ...)                                                                            \
+    (ct_error (NARGS (__VA_ARGS__) > 1, "the create_form() macro admits either 5 or 6 arguments."),                    \
+     ct_error (                                                                                                        \
+         !(isint (w) && isint (h) && isint (x) && isint (y)),                                                          \
+         "the first four arguments passed to the create_form() macro must be of integer type."                         \
+     ),                                                                                                                \
+     ct_error (                                                                                                        \
+         !(__builtin_types_compatible_p (typeof (attrs), field_attr_t []) ||                                           \
+           __builtin_types_compatible_p (typeof (attrs), const field_attr_t [])),                                      \
+         "the fifth argument passed to the create_form() macro must be a (const) field_attr_t []."                     \
+     ),                                                                                                                \
+     ct_error (                                                                                                        \
+         __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) != pointer_type_class,                      \
+         "the sixth argument passed to the create_form() macro must be of pointer type."                               \
+     ),                                                                                                                \
+     impl_create_form (                                                                                                \
+         __builtin_choose_expr (isint (w), w, 0), __builtin_choose_expr (isint (h), h, 0),                             \
+         __builtin_choose_expr (isint (x), x, 0), __builtin_choose_expr (isint (y), y, 0),                             \
+         arrsize (__builtin_choose_expr (                                                                              \
+             __builtin_types_compatible_p (typeof (attrs), field_attr_t []) ||                                         \
+                 __builtin_types_compatible_p (typeof (attrs), const field_attr_t []),                                 \
+             attrs, ((char []) {})                                                                                     \
+         )),                                                                                                           \
+         (const field_attr_t *) __builtin_choose_expr (                                                                \
+             __builtin_classify_type (attrs) == pointer_type_class, attrs, NULL                                        \
+         ),                                                                                                            \
+         (const char *const *) __builtin_choose_expr (                                                                 \
+             __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) == pointer_type_class,                  \
+             ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL), NULL                                                             \
+         )                                                                                                             \
+     ))
+
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
+[[nonnull (2)]]
+#else
+__attribute__ ((nonnull (2)))
+#endif
+size_t
+    impl_display_form (const size_t, const char *const restrict);
+
+#define display_form(form, ...)                                                                                        \
+    (ct_error (NARGS (__VA_ARGS__) > 1, "the display_form() macro admits either one or two arguments."),               \
+     ct_error (!isint (form), "the first argument passed to the display_form() macro must be of integer type."),       \
+     ct_error (                                                                                                        \
+         __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                        \
+         "the second argument passed to the display_form() macro must be of pointer or array type."                    \
+     ),                                                                                                                \
+     impl_display_form (                                                                                               \
+         form, __builtin_choose_expr (                                                                                 \
+                   __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == pointer_type_class,              \
+                   ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""), ""                                                           \
+               )                                                                                                       \
+                   ? __builtin_choose_expr (                                                                           \
+                         __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == pointer_type_class,        \
+                         ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""), ""                                                     \
+                     )                                                                                                 \
+                   : ""                                                                                                \
+     ))
+
+#define form(w, h, x, y, attrs, ...)                                                                                   \
+    (ct_error (NARGS (__VA_ARGS__) > 2, "the form() macro admits between 5 and 7 arguments."), ({                      \
+         size_t __form_form__ = create_form (w, h, x, y, attrs, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL));              \
+         display_form (__form_form__, ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", ""));                                      \
+     }))
+
+// extern const char *const *get_form_data (const size_t);
+extern const char (*get_form_data (const size_t)) [MAX_FORM_FIELD_LEN + 1];
+extern void set_form_data (const size_t, const char *const *const restrict);
+
+extern int         get_form_exit_key (void);
+extern const char *get_form_exit_message (void);
+extern int         set_form_exit_key (const int, const char *const restrict);
+
+extern int         get_form_erase_key (void);
+extern const char *get_form_erase_message (void);
+extern int         set_form_erase_key (const int, const char *const restrict);
+
+extern int         get_form_save_key (void);
+extern const char *get_form_save_message (void);
+extern int         set_form_save_key (const int, const char *const restrict);
+
 // halfdelay_secs.c
 
 #define DEFAULT_HALFDELAY_SECS 2
@@ -395,8 +574,8 @@ extern int         get_menu_exit_key (void);
 extern const char *get_menu_exit_message (void);
 extern int         set_menu_exit_key (const int, const char *const restrict);
 
-#define DEFAULT_MENU_EXIT_KEY     'q'
-#define DEFAULT_MENU_EXIT_MESSAGE "Pulsa Q para salir."
+#define DEFAULT_MENU_EXIT_KEY     KEY_F (1)
+#define DEFAULT_MENU_EXIT_MESSAGE "Pulsa F1 para salir."
 
 // padding.c
 
@@ -699,6 +878,7 @@ extern WINDOW *impl_create_window (uint32_t, uint32_t, uint32_t, uint32_t, const
 
 extern bool delete_window (WINDOW *const restrict);
 extern bool delete_menu (const size_t);
+extern bool delete_form (const size_t);
 extern bool delete_windows (void);
 
 #endif

@@ -173,21 +173,22 @@ extern "C" {
         if (!LOG_WINDOW_VAR)
             return ERR;
 
-        refresh ();
         box (LOG_WINDOW_VAR, 0, 0);
-        refresh ();
-        return wrefresh (LOG_WINDOW_VAR);
+        return wrefresh (LOG_WINDOW_VAR) | refresh ();
     }
 
     int clear_log_window (void) {
         fflush (stderr);
 
         if (wclear (LOG_WINDOW_VAR) == ERR) {
+            WINDOW *temp   = LOG_WINDOW_VAR;
+            LOG_WINDOW_VAR = NULL;
             warning ("could not clear the log window.");
+            LOG_WINDOW_VAR = temp;
 
             return ERR;
         }
-
+        clearok (LOG_WINDOW_VAR, TRUE);
         LAST_LOG_LINE = 0;
 
         return refresh_log_window ();
@@ -197,11 +198,13 @@ extern "C" {
         if (LOG_WINDOW_VAR)
             delete_log_window ();
 
-        LOG_WINDOW_VAR = create_window (
-            get_log_window_width (), get_log_window_height (), (uint32_t) getbegx (stdscr),
-            (uint32_t) getmaxy (stdscr) - get_log_window_height ()
+        nodelay (
+            LOG_WINDOW_VAR = create_window (
+                get_log_window_width (), get_log_window_height (), (uint32_t) getbegx (stdscr),
+                (uint32_t) getmaxy (stdscr) - get_log_window_height ()
+            ),
+            TRUE
         );
-
         refresh_log_window ();
 
         open_log_file ();

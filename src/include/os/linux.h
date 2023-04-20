@@ -14,4 +14,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+#include <bits/wordsize.h>
+
+#ifndef __WORDSIZE
+    #define __WORDSIZE BITS_PER_LONG
+#endif
+
 #endif

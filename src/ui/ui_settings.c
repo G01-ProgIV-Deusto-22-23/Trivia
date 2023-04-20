@@ -26,7 +26,8 @@ int impl_set_ui_settings (
     else if (raw () == ERR)
         warning ("could not set the UI to raw mode.");
 
-    nonl ();
+    if (nl () == ERR)
+        warning ("could not translate the return key into newlines.");
 
     if (en_echo)
         echo ();

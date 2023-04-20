@@ -9,6 +9,12 @@
 #include <share.h>
 #include <process.h>
 
+#ifdef _WIN64
+    #define __WORDSIZE 64
+#else
+    #define __WORDSIZE 32
+#endif
+
 #undef KEY_DOWN
 #define KEY_DOWN 2
 
@@ -20,5 +26,8 @@
 
 #undef KEY_RIGHT
 #define KEY_RIGHT 5
+
+#undef KEY_F0
+#define KEY_F0 8
 
 #endif

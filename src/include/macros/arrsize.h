@@ -68,113 +68,93 @@ template <typename T> static constexpr size_t ARRSIZE_HELPER_FUNC (T, size_t N1,
          ARRSIZE_HELPER (x, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)))
 
 #else
-    #define arrsize(x, ...)                                                                                            \
-        (ct_error (                                                                                                    \
-             !isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                                            \
-             "the second argument passed to the arrsize() macro must be an integer between 1 and 5."                   \
-         ),                                                                                                            \
-         ct_error (                                                                                                    \
-             !__builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                             \
-             "the second argument passed to the arrsize() macro must be known at compile-time."                        \
-         ),                                                                                                            \
-         ct_error (                                                                                                    \
-             __builtin_choose_expr (                                                                                   \
-                 __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                                        \
-                     isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                                     \
-                 ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                                               \
-             ) < 1 ||                                                                                                  \
+    #ifdef _WIN32
+        #define arrsize(x, ...) (sizeof (x) / sizeof (*x))
+    #else
+        #define arrsize(x, ...)                                                                                        \
+            (ct_error (                                                                                                \
+                 !isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                                        \
+                 "the second argument passed to the arrsize() macro must be an integer between 1 and 5."               \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
+                 !__builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                         \
+                 "the second argument passed to the arrsize() macro must be known at compile-time."                    \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
                  __builtin_choose_expr (                                                                               \
                      __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                                    \
                          isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                                 \
                      ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                                           \
-                 ) > 5,                                                                                                \
-             "the second argument passed to the arrsize() macro must be an integer between 1 and 5."                   \
-         ),                                                                                                            \
-         ct_error (                                                                                                    \
-             !isarr_eval (x, 1) && __builtin_choose_expr (                                                             \
-                                       __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                  \
-                                           isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                               \
-                                       ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                         \
-                                   ) >= 1,                                                                             \
-             "the object passed to the arrsize() macro is not an array."                                               \
-         ),                                                                                                            \
-         ct_error (                                                                                                    \
-             !isarr_eval (x, 2) && __builtin_choose_expr (                                                             \
-                                       __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                  \
-                                           isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                               \
-                                       ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                         \
-                                   ) >= 2,                                                                             \
-             "the object passed to the arrsize() macro is not an array of arrays."                                     \
-         ),                                                                                                            \
-         ct_error (                                                                                                    \
-             !isarr_eval (x, 3) && __builtin_choose_expr (                                                             \
-                                       __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                  \
-                                           isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                               \
-                                       ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                         \
-                                   ) >= 3,                                                                             \
-             "the object passed to the arrsize() macro is not an array of arrays of arrays."                           \
-         ),                                                                                                            \
-         ct_error (                                                                                                    \
-             !isarr_eval (x, 4) && __builtin_choose_expr (                                                             \
-                                       __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                  \
-                                           isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                               \
-                                       ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                         \
-                                   ) >= 4,                                                                             \
-             "the object passed to the arrsize() macro is not an array of arrays of arrays of arrays."                 \
-         ),                                                                                                            \
-         ct_error (                                                                                                    \
-             !isarr_eval (x, 5) && __builtin_choose_expr (                                                             \
-                                       __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                  \
-                                           isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                               \
-                                       ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                         \
-                                   ) == 5,                                                                             \
-             "the object passed to the arrsize() macro is not an array of arrays of arrays of arrays of arrays."       \
-         ),                                                                                                            \
-         __builtin_choose_expr (                                                                                       \
-             ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 1, sizeof (x) / (sizeof (*x)),                                    \
+                 ) < 1 ||                                                                                              \
+                     __builtin_choose_expr (                                                                           \
+                         __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&                                \
+                             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                             \
+                         ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                                       \
+                     ) > 5,                                                                                            \
+                 "the second argument passed to the arrsize() macro must be an integer between 1 and 5."               \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
+                 !isarr_eval (x, 1) && __builtin_choose_expr (                                                         \
+                                           __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&              \
+                                               isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                           \
+                                           ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                     \
+                                       ) >= 1,                                                                         \
+                 "the object passed to the arrsize() macro is not an array."                                           \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
+                 !isarr_eval (x, 2) && __builtin_choose_expr (                                                         \
+                                           __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&              \
+                                               isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                           \
+                                           ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                     \
+                                       ) >= 2,                                                                         \
+                 "the object passed to the arrsize() macro is not an array of arrays."                                 \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
+                 !isarr_eval (x, 3) && __builtin_choose_expr (                                                         \
+                                           __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&              \
+                                               isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                           \
+                                           ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                     \
+                                       ) >= 3,                                                                         \
+                 "the object passed to the arrsize() macro is not an array of arrays of arrays."                       \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
+                 !isarr_eval (x, 4) && __builtin_choose_expr (                                                         \
+                                           __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&              \
+                                               isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                           \
+                                           ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                     \
+                                       ) >= 4,                                                                         \
+                 "the object passed to the arrsize() macro is not an array of arrays of arrays of arrays."             \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
+                 !isarr_eval (x, 5) && __builtin_choose_expr (                                                         \
+                                           __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)) &&              \
+                                               isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                           \
+                                           ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1), 0                                     \
+                                       ) == 5,                                                                         \
+                 "the object passed to the arrsize() macro is not an array of arrays of arrays of arrays of arrays."   \
+             ),                                                                                                        \
              __builtin_choose_expr (                                                                                   \
-                 ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 2,                                                            \
-                 sizeof (x) / (sizeof (*__builtin_choose_expr (                                                        \
-                                  __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})              \
-                              ))),                                                                                     \
+                 ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 1, sizeof (x) / (sizeof (*x)),                                \
                  __builtin_choose_expr (                                                                               \
-                     ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 3,                                                        \
+                     ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 2,                                                        \
                      sizeof (x) / (sizeof (*__builtin_choose_expr (                                                    \
-                                      __builtin_classify_type (*__builtin_choose_expr (                                \
-                                          __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})      \
-                                      )) == pointer_type_class,                                                        \
-                                      *__builtin_choose_expr (                                                         \
-                                          __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})      \
-                                      ),                                                                               \
-                                      ((char [1]) {})                                                                  \
+                                      __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})          \
                                   ))),                                                                                 \
                      __builtin_choose_expr (                                                                           \
-                         ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 4,                                                    \
-                         sizeof (x) /                                                                                  \
-                             (sizeof (*__builtin_choose_expr (                                                         \
-                                 __builtin_classify_type (*__builtin_choose_expr (                                     \
-                                     __builtin_classify_type (*__builtin_choose_expr (                                 \
-                                         __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})       \
-                                     )) == pointer_type_class,                                                         \
-                                     *__builtin_choose_expr (                                                          \
-                                         __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})       \
-                                     ),                                                                                \
-                                     ((char [1]) {})                                                                   \
-                                 )) == pointer_type_class,                                                             \
-                                 *__builtin_choose_expr (                                                              \
-                                     __builtin_classify_type (*__builtin_choose_expr (                                 \
-                                         __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})       \
-                                     )) == pointer_type_class,                                                         \
-                                     *__builtin_choose_expr (                                                          \
-                                         __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})       \
-                                     ),                                                                                \
-                                     ((char [1]) {})                                                                   \
-                                 ),                                                                                    \
-                                 ((char [1]) {})                                                                       \
-                             ))),                                                                                      \
-                         sizeof (x) /                                                                                  \
-                             (sizeof (*__builtin_choose_expr (                                                         \
-                                 __builtin_classify_type (*__builtin_choose_expr (                                     \
+                         ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 3,                                                    \
+                         sizeof (x) / (sizeof (*__builtin_choose_expr (                                                \
+                                          __builtin_classify_type (*__builtin_choose_expr (                            \
+                                              __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})  \
+                                          )) == pointer_type_class,                                                    \
+                                          *__builtin_choose_expr (                                                     \
+                                              __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})  \
+                                          ),                                                                           \
+                                          ((char [1]) {})                                                              \
+                                      ))),                                                                             \
+                         __builtin_choose_expr (                                                                       \
+                             ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 4,                                                \
+                             sizeof (x) /                                                                              \
+                                 (sizeof (*__builtin_choose_expr (                                                     \
                                      __builtin_classify_type (*__builtin_choose_expr (                                 \
                                          __builtin_classify_type (*__builtin_choose_expr (                             \
                                              __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})   \
@@ -194,34 +174,65 @@ template <typename T> static constexpr size_t ARRSIZE_HELPER_FUNC (T, size_t N1,
                                          ((char [1]) {})                                                               \
                                      ),                                                                                \
                                      ((char [1]) {})                                                                   \
-                                 )) == pointer_type_class,                                                             \
-                                 *__builtin_choose_expr (                                                              \
-                                     __builtin_classify_type (*__builtin_choose_expr (                                 \
-                                         __builtin_classify_type (*__builtin_choose_expr (                             \
-                                             __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})   \
-                                         )) == pointer_type_class,                                                     \
-                                         *__builtin_choose_expr (                                                      \
-                                             __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})   \
-                                         ),                                                                            \
-                                         ((char [1]) {})                                                               \
-                                     )) == pointer_type_class,                                                         \
-                                     *__builtin_choose_expr (                                                          \
-                                         __builtin_classify_type (*__builtin_choose_expr (                             \
-                                             __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})   \
-                                         )) == pointer_type_class,                                                     \
-                                         *__builtin_choose_expr (                                                      \
-                                             __builtin_classify_type (*x) == pointer_type_class, *x, ((char [1]) {})   \
-                                         ),                                                                            \
-                                         ((char [1]) {})                                                               \
-                                     ),                                                                                \
-                                     ((char [1]) {})                                                                   \
-                                 ),                                                                                    \
-                                 ((char [1]) {})                                                                       \
-                             )))                                                                                       \
+                                 ))),                                                                                  \
+                             sizeof (x) / (sizeof (*__builtin_choose_expr (                                            \
+                                              __builtin_classify_type (*__builtin_choose_expr (                        \
+                                                  __builtin_classify_type (*__builtin_choose_expr (                    \
+                                                      __builtin_classify_type (*__builtin_choose_expr (                \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      )) == pointer_type_class,                                        \
+                                                      *__builtin_choose_expr (                                         \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      ),                                                               \
+                                                      ((char [1]) {})                                                  \
+                                                  )) == pointer_type_class,                                            \
+                                                  *__builtin_choose_expr (                                             \
+                                                      __builtin_classify_type (*__builtin_choose_expr (                \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      )) == pointer_type_class,                                        \
+                                                      *__builtin_choose_expr (                                         \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      ),                                                               \
+                                                      ((char [1]) {})                                                  \
+                                                  ),                                                                   \
+                                                  ((char [1]) {})                                                      \
+                                              )) == pointer_type_class,                                                \
+                                              *__builtin_choose_expr (                                                 \
+                                                  __builtin_classify_type (*__builtin_choose_expr (                    \
+                                                      __builtin_classify_type (*__builtin_choose_expr (                \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      )) == pointer_type_class,                                        \
+                                                      *__builtin_choose_expr (                                         \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      ),                                                               \
+                                                      ((char [1]) {})                                                  \
+                                                  )) == pointer_type_class,                                            \
+                                                  *__builtin_choose_expr (                                             \
+                                                      __builtin_classify_type (*__builtin_choose_expr (                \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      )) == pointer_type_class,                                        \
+                                                      *__builtin_choose_expr (                                         \
+                                                          __builtin_classify_type (*x) == pointer_type_class, *x,      \
+                                                          ((char [1]) {})                                              \
+                                                      ),                                                               \
+                                                      ((char [1]) {})                                                  \
+                                                  ),                                                                   \
+                                                  ((char [1]) {})                                                      \
+                                              ),                                                                       \
+                                              ((char [1]) {})                                                          \
+                                          )))                                                                          \
+                         )                                                                                             \
                      )                                                                                                 \
                  )                                                                                                     \
-             )                                                                                                         \
-         ))
+             ))
+    #endif
 
 #endif
 

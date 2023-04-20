@@ -6,6 +6,7 @@ EXTERNDIR     := extern
 EXTERNINCLUDE := $(EXTERNDIR)/include
 EXTERNLIB     := $(EXTERNDIR)/lib
 BINDIR        := bin
+RESDIR        := resources
 
 ifeq ($(OS), Windows_NT)
 	GCC_LINUX   := desdewindowsnopuedes
@@ -20,7 +21,7 @@ OPTIMIZATION_LEVEL := 3
 RUNTIME_DIAGS      := true
 
 CFLAGS := \
-	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fstrict-aliasing -fmax-errors=1 \
+	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing -fmax-errors=1 \
 	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h
 ifeq ($(RUNTIME_DIAGS), false)
 	CFLAGS += -DDISABLE_RUNTIME_DIAGS
@@ -165,7 +166,7 @@ $(LOCALL): $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
 
 $(LOCALW): $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
-	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(LIBS)
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS)
 
 $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@

@@ -1,9 +1,6 @@
 #ifndef TRIVIA_MACROS_DIAG_H
 #define TRIVIA_MACROS_DIAG_H
 
-#define STRINGIFY_HELPER(x) #x
-#define STRINGIFY(x)        STRINGIFY_HELPER (x)
-
 #ifdef __cplusplus
 
 static constexpr int EVAL_CT_ERROR_HELPER_FUNC (int x) noexcept {
@@ -310,8 +307,10 @@ static void
                      (void) ({                                                                                                                              \
                          if (is_log_window ()) {                                                                                                            \
                              int line;                                                                                                                      \
-                             if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                             if ((line = inc_last_log_line ()) >= (int) get_log_window_height () - 3) {                                                     \
                                  clear_log_window ();                                                                                                       \
+                                 line = inc_last_log_line ();                                                                                               \
+                             }                                                                                                                              \
                              if (has_colors ())                                                                                                             \
                                  wattron (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                        \
                              mvwprintw (                                                                                                                    \
@@ -356,8 +355,10 @@ static void
                  fflush (stderr), (void) ({                                                                                                             \
                      if (is_log_window ()) {                                                                                                            \
                          int line;                                                                                                                      \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                         if ((line = inc_last_log_line ()) >= (int) get_log_window_height () - 3) {                                                     \
                              clear_log_window ();                                                                                                       \
+                             line = inc_last_log_line ();                                                                                               \
+                         }                                                                                                                              \
                          if (has_colors ())                                                                                                             \
                              wattron (get_log_window (), COLOR_PAIR (log_message + 1) | A_BOLD);                                                        \
                          mvwprintw (                                                                                                                    \
@@ -451,8 +452,10 @@ static void
                      (void) ({                                                                                                                              \
                          if (is_log_window ()) {                                                                                                            \
                              int line;                                                                                                                      \
-                             if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                             if ((line = inc_last_log_line ()) >= (int) get_log_window_height () - 3) {                                                     \
                                  clear_log_window ();                                                                                                       \
+                                 line = inc_last_log_line ();                                                                                               \
+                             }                                                                                                                              \
                              if (has_colors ())                                                                                                             \
                                  wattron (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                        \
                              mvwprintw (                                                                                                                    \
@@ -497,8 +500,10 @@ static void
                  fflush (stderr), (void) ({                                                                                                             \
                      if (is_log_window ()) {                                                                                                            \
                          int line;                                                                                                                      \
-                         if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                        \
+                         if ((line = inc_last_log_line ()) >= (int) get_log_window_height () - 3) {                                                     \
                              clear_log_window ();                                                                                                       \
+                             line = inc_last_log_line ();                                                                                               \
+                         }                                                                                                                              \
                          if (has_colors ())                                                                                                             \
                              wattron (get_log_window (), COLOR_PAIR (log_warning + 1) | A_BOLD);                                                        \
                          mvwprintw (                                                                                                                    \
@@ -650,8 +655,10 @@ static void
                              (({                                                                                                                                                   \
                                   if (is_log_window ()) {                                                                                                                          \
                                       int line;                                                                                                                                    \
-                                      if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                      \
+                                      if ((line = inc_last_log_line ()) >= (int) get_log_window_height () - 3) {                                                                   \
                                           clear_log_window ();                                                                                                                     \
+                                          line = inc_last_log_line ();                                                                                                             \
+                                      }                                                                                                                                            \
                                       if (has_colors ())                                                                                                                           \
                                           wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                        \
                                       mvwprintw (                                                                                                                                  \
@@ -797,8 +804,10 @@ static void
                      (({                                                                                                                                                   \
                           if (is_log_window ()) {                                                                                                                          \
                               int line;                                                                                                                                    \
-                              if ((line = inc_last_log_line ()) >= (int) get_log_window_width () - 1)                                                                      \
+                              if ((line = inc_last_log_line ()) >= (int) get_log_window_height () - 3) {                                                                   \
                                   clear_log_window ();                                                                                                                     \
+                                  line = inc_last_log_line ();                                                                                                             \
+                              }                                                                                                                                            \
                               if (has_colors ())                                                                                                                           \
                                   wattron (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                                                                        \
                               mvwprintw (                                                                                                                                  \

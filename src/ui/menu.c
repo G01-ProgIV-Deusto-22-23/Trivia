@@ -1,8 +1,9 @@
 #include "menu.h"
+#include "window.h"
 
-MENU                  *MENUS [sizeof (size_t) * __CHAR_BIT__] = { 0 };
-volatile atomic_size_t MENU_CONTROL                           = 0;
-volatile atomic_int    FREE_MENU_ERR                          = OK;
+MENU                  *MENUS [__WORDSIZE] = { 0 };
+volatile atomic_size_t MENU_CONTROL       = 0;
+volatile atomic_int    FREE_MENU_ERR      = OK;
 
 #ifdef _WIN32
 HANDLE FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
@@ -13,7 +14,7 @@ sem_t            FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
 static menutype_t MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)]     = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
                                                                             actionmenu };
-static void      *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]      = { 0 };
+static size_t    *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]      = { 0 };
 static bool       FREE_MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
 
 #ifdef _WIN32
@@ -22,8 +23,8 @@ static HANDLE FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 static pthread_t FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 #endif
 
-static int         MENU_EXIT_KEY     = DEFAULT_MENU_EXIT_KEY;
-static const char *MENU_EXIT_MESSAGE = DEFAULT_MENU_EXIT_MESSAGE;
+static int  MENU_EXIT_KEY              = DEFAULT_MENU_EXIT_KEY;
+static char MENU_EXIT_MESSAGE [BUFSIZ] = DEFAULT_MENU_EXIT_MESSAGE;
 
 #ifdef _WIN32
 static unsigned long impl_trivia_free_menu (void *__menu__) {
@@ -32,9 +33,6 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 #endif
     size_t menu = (size_t) (uintptr_t) __menu__;
     atomic_store (&FREE_MENU_ERR, OK);
-
-    if (menu >= sizeof (MENUS) / sizeof (*MENUS))
-        error ("not a valid menu index.");
 
     if (!*(MENUS + menu))
         return
@@ -88,10 +86,13 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 #ifdef _WIN32
         (unsigned long) (uintptr_t)
 #endif
-            (*(MENUS + menu) = *(MENU_RETS + menu) = (void *) (intptr_t) (*(FREE_MENU_RETS + menu) = 0));
+            (*(MENUS + menu) = (void *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = 0)));
 }
 
 void trivia_free_menu (const size_t menu) {
+    if (menu >= sizeof (MENUS) / sizeof (*MENUS))
+        error ("not a valid menu index.");
+
 #ifdef _WIN32
     if (!(*(FREE_MENU_THREADS + menu) = CreateThread (
               &(SECURITY_ATTRIBUTES
@@ -180,7 +181,7 @@ size_t
     atomic_fetch_or (&MENU_CONTROL, 1 << menu);
 
 #ifdef _WIN32
-    WaitForSingleObject (*(FREE_MENU_SEMS + menu), 50);
+    WaitForSingleObject (*(FREE_MENU_SEMS + menu), SEMAPHORE_WAIT_MILLS);
 #else
     sem_trywait (FREE_MENU_SEMS + menu);
 #endif
@@ -495,7 +496,17 @@ const char *get_menu_exit_message (void) {
 }
 
 int set_menu_exit_key (const int key, const char *const restrict message) {
-    MENU_EXIT_MESSAGE = message ? message : DEFAULT_MENU_EXIT_MESSAGE;
+    if (!message)
+        memcpy (MENU_EXIT_MESSAGE, DEFAULT_MENU_EXIT_MESSAGE, sizeof (DEFAULT_MENU_EXIT_MESSAGE));
+
+    else if (message != MENU_EXIT_MESSAGE) {
+        size_t l;
+        if ((l = strlen (message)) < sizeof (MENU_EXIT_MESSAGE))
+            memcpy (MENU_EXIT_MESSAGE, message, l + 1);
+
+        else
+            warning ("the menu exit message is too big so the previous one will be used.");
+    }
 
     return MENU_EXIT_KEY = key ? key : DEFAULT_MENU_EXIT_KEY;
 }

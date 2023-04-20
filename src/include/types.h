@@ -34,6 +34,23 @@ typedef enum { actionmenu, choicemenu, multimenu } menutype_t;
 
 typedef void choicefunc_t (void);
 
+typedef struct {
+        size_t     len;
+        FIELDTYPE *type;
+
+        union {
+                struct {
+                        int  min;
+                        bool passwd;
+                } alnum;
+
+                struct {
+                        long min;
+                        long max;
+                } integer;
+        } type_args;
+} field_attr_t;
+
 typedef int delwinfunc_t (void *);
 
 typedef uint64_t       getdimsfunc_t (void);

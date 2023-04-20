@@ -9,11 +9,13 @@
     #include <cctype>
     #include <cwchar>
     #include <clocale>
+    #include <cinttypes>
     #include <csignal>
     #include <cassert>
     #include <cerrno>
     #include <ctime>
     #include <atomic>
+    #include <climits>
 #else
     #include <stdio.h>
     #include <stdlib.h>
@@ -22,7 +24,7 @@
     #include <wchar.h>
     #include <locale.h>
     #include <stdbool.h>
-    #include <stdint.h>
+    #include <inttypes.h>
     #include <signal.h>
     #include <assert.h>
     #include <errno.h>
@@ -78,5 +80,7 @@ static LPWSTR
 #endif
 
 #pragma GCC diagnostic pop
+
+#define SEMAPHORE_WAIT_MILLS 10
 
 #endif

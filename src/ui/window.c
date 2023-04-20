@@ -1,24 +1,32 @@
+#include "form.h"
 #include "log_window.h"
 #include "menu.h"
+#include "window.h"
 
 typedef struct __window_list_struct {
         void                        *win;
         delwinfunc_t                *delfunc;
         struct __window_list_struct *next;
-} *restrict window_list_t;
+} *window_list_t;
 
 static window_list_t TRIVIA_WINDOW_LIST = NULL;
 static bool          IS_DELETE_WINDOWS  = false;
 
-static void         create_window_list (void);
-static bool         remove_window (window_list_t);
-static delwinfunc_t dellogfunc, delwinfunc, delmenufunc;
+static window_list_t create_window_list (void);
+static bool          remove_window (window_list_t);
+static delwinfunc_t  dellogfunc, delwinfunc, delmenufunc, delformfunc;
 
-static void create_window_list (void) {
+static window_list_t create_window_list (void) {
+    if (TRIVIA_WINDOW_LIST)
+        return TRIVIA_WINDOW_LIST;
+
     if (!(TRIVIA_WINDOW_LIST = calloc (1, sizeof (struct __window_list_struct))))
         error ("could not initialize the window list.");
 
     start_menu_gc ();
+    start_form_gc ();
+
+    return TRIVIA_WINDOW_LIST;
 }
 
 bool delete_windows (void) {
@@ -30,17 +38,16 @@ bool delete_windows (void) {
         ;
 
     IS_DELETE_WINDOWS = (TRIVIA_WINDOW_LIST = NULL);
+
     stop_menu_gc ();
+    stop_form_gc ();
 
     return fine;
 }
 
 void *add_window (void *const restrict win, const int wintype) {
-    if (!TRIVIA_WINDOW_LIST)
-        create_window_list ();
-
     window_list_t head;
-    for (head = TRIVIA_WINDOW_LIST; head->next; head = head->next)
+    for (head = create_window_list (); head->next; head = head->next)
         if (head->win == win)
             return win;
 
@@ -48,7 +55,8 @@ void *add_window (void *const restrict win, const int wintype) {
         error ("could not add a node to the window list");
 
     head->next->delfunc =
-        *(((delwinfunc_t *const []) { (delwinfunc_t *const) dellogfunc, delwinfunc, delmenufunc }) + wintype);
+        *(((delwinfunc_t *const []) { (delwinfunc_t *const) dellogfunc, delwinfunc, delmenufunc, delformfunc }) +
+          wintype);
 
     return head->next->win = win;
 }
@@ -70,8 +78,11 @@ static bool remove_window (window_list_t node) {
                 else if (temp->delfunc == dellogfunc)
                     warning ("could not delete the log window");
 
-                else
+                else if (temp->delfunc == delmenufunc)
                     warning ("could not delete menu.");
+
+                else
+                    warning ("could not delete form.");
             }
 
             free (temp);
@@ -118,6 +129,17 @@ bool delete_menu (const size_t menu) {
     return false;
 }
 
+bool delete_form (const size_t form) {
+    if (!TRIVIA_WINDOW_LIST)
+        return false;
+
+    for (window_list_t head = TRIVIA_WINDOW_LIST->next; head; head = head->next)
+        if (head->win == (void *) (uintptr_t) form && (head->delfunc == delformfunc))
+            return remove_window (head);
+
+    return false;
+}
+
 static int dellogfunc (void *const restrict win) {
     clear_log_window ();
     int del        = delwin (win);
@@ -141,4 +163,17 @@ static int delmenufunc (void *const restrict menu) {
 #endif
 
     return atomic_load (&FREE_MENU_ERR);
+}
+
+static int delformfunc (void *const restrict form) {
+    trivia_free_form ((size_t) (uintptr_t) form);
+
+    if (!IS_DELETE_WINDOWS)
+#ifdef _WIN32
+        WaitForSingleObject (*(FREE_FORM_SEMS + (size_t) (uintptr_t) form), 0L);
+#else
+        sem_wait (FREE_FORM_SEMS + (uintptr_t) form);
+#endif
+
+    return atomic_load (&FREE_FORM_ERR);
 }
