@@ -1,6 +1,6 @@
 int end_ui (void) {
     if (!delete_windows ())
-        warning ("could not delete all the windows.");
+        warning ("could not delete all windows.");
 
     if (!isendwin ()) {
         noraw ();

@@ -1,7 +1,4 @@
 #include "form.h"
-#include "ncursesw/curses.h"
-#include "ncursesw/eti.h"
-#include "ncursesw/form.h"
 #include "window.h"
 
 form_t                *FORMS [MAX_FORM_FIELDS] = { 0 };
@@ -220,9 +217,9 @@ size_t
     }
 
     for (size_t i = 0; i < n; field_opts_off (*(fields + i++), O_AUTOSKIP | O_BLANK)) {
-        if (!((attrs + i)->type == TYPE_ALNUM || (attrs + i)->type == TYPE_ALPHA || (attrs + i)->type == TYPE_INTEGER ||
-              (attrs + i)->type == TYPE_IPV4))
-            error ("only alphabetical, alphanumeric, integer and IPv4 fields are supported.");
+        if (!(!(attrs + i)->type || (attrs + i)->type == TYPE_ALNUM || (attrs + i)->type == TYPE_ALPHA ||
+              (attrs + i)->type == TYPE_INTEGER || (attrs + i)->type == TYPE_IPV4))
+            error ("only generic, lphabetical, alphanumeric, integer and IPv4 fields are supported.");
 
         *(fields + i) = new_field (1, (int) (attrs + i)->len, 5 + (int) i, (int) *strls, 0, 0);
 
@@ -307,6 +304,30 @@ static void
         warning ("could not print the title's horizontal line.");
 }
 
+static bool checkAlnumChar (
+    int c,
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
+    [[unused]]
+#else
+    __attribute__ ((unused))
+#endif
+    const void *arg
+) {
+    return iswalnum ((wint_t) c) || isalnum ((unsigned char) (c));
+}
+
+static bool checkAlphaChar (
+    int c,
+#if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
+    [[unused]]
+#else
+    __attribute__ ((unused))
+#endif
+    const void *arg
+) {
+    return iswalpha ((wint_t) c) || isalpha ((unsigned char) (c));
+}
+
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
 [[nonnull (2)]]
 #else
@@ -348,10 +369,6 @@ size_t
             ) != E_OK)
             error ("could not set the form subwindow.");
     }
-
-    for (size_t i = 0; i < (*(FORMS + form))->nfields;)
-        if (set_field_type (*(form_fields ((*(FORMS + form))->form) + i++), NULL) != E_OK)
-            warning ("could not set field type.");
 
     if (({
             int           err = post_form ((*(FORMS + form))->form);
@@ -610,44 +627,97 @@ size_t
                  }))
             warning ("could not update the field with the entered character.");
 
+    if (set_field_back (current_field ((*(FORMS + form))->form), A_UNDERLINE) != E_OK)
+        warning ("could not set field background.");
+
+    if (set_field_fore (current_field ((*(FORMS + form))->form), A_NORMAL) != E_OK)
+        warning ("could not set field foreground.");
+
     {
         size_t        invalid = 0;
         field_attr_t *attrs =
             (field_attr_t *) (void *) ((*(FORMS + form))->data + sizeof (size_t) * ((*(FORMS + form))->nfields + 1));
+        const char *buf;
         form_driver ((*(FORMS + form))->form, REQ_FIRST_FIELD);
-        for (size_t i                                = 0;
-             i < (*(FORMS + form))->nfields; invalid |= (
+        for (size_t i = 0; i < (*(FORMS + form))->nfields;
+             invalid  |= (
 #if __WORDSIZE == 64
-                                                            UINT64_C (1)
+                            UINT64_C (1)
 #else
-                                                            UINT32_C (1)
+                            UINT32_C (1)
 #endif
-                                                            << (i++)
-                                                        ) *
-                                                        (form_driver ((*(FORMS + form))->form, REQ_VALIDATION) != E_OK),
-                    form_driver ((*(FORMS + form))->form, REQ_NEXT_FIELD)) {
-            if (((attrs + i)->type == TYPE_ALNUM || (attrs + i)->type == TYPE_ALPHA) &&
-                set_field_type (
-                    *(form_fields ((*(FORMS + form))->form) + i), (attrs + i)->type, (attrs + i)->type_args.alnum.min
-                ) != E_OK)
-                warning ("could not set field type.");
+                            << (i)
+                        ) *
+                        !(!*buf || !(attrs + i)->type       ? (int) strlen (buf) >= (attrs + i)->type_args.alnum.min
+                          : (attrs + i)->type == TYPE_ALNUM ? ({
+                                bool r = false;
+                                Check_CTYPE_Field (r, buf, (attrs + i)->type_args.alnum.min, checkAlnumChar);
+                                r;
+                            })
+                          : (attrs + i)->type == TYPE_ALPHA ? ({
+                                bool r = false;
+                                Check_CTYPE_Field (r, buf, (attrs + i)->type_args.alnum.min, checkAlphaChar);
+                                r;
+                            })
+                          : (attrs + i)->type == TYPE_INTEGER
+                              ? ({
+                                    long low    = (attrs + i)->type_args.integer.min;
+                                    long high   = (attrs + i)->type_args.integer.max;
+                                    bool result = false;
 
-            else if ((attrs + i)->type == TYPE_INTEGER && 
-                set_field_type (
-                    *(form_fields ((*(FORMS + form))->form) + i), TYPE_INTEGER, 0, (attrs + i)->type_args.integer.min,
-                    (attrs + i)->type_args.integer.max
-                ) != E_OK)
-                warning ("could not set field type.");
+                                    buf += *buf == '-';
+                                    if (*buf) {
+                                        int      l;
+                                        wchar_t *list = _nc_Widen_String ((char *) buf, &l);
 
-            else if (set_field_type (*(form_fields ((*(FORMS + form))->form) + i), TYPE_IPV4) != E_OK)
-                warning ("could not set field type.");
+                                        if (list) {
+                                            bool blank = result = true;
 
-            set_field_back (*(form_fields ((*(FORMS + form))->form) + i), A_UNDERLINE);
-            set_field_fore (*(form_fields ((*(FORMS + form))->form) + i), A_NORMAL);
+                                            for (int n = 0; n < l; n++) {
+                                                if (blank) {
+                                                    if (!(result = (*(list + n) == ' ')))
+                                                        break;
 
-            if (set_field_buffer (*(form_fields ((*(FORMS + form))->form) + i), 0, *(*(FORM_FIELD_DATA + form) + i)))
+                                                    continue;
+                                                }
+
+                                                if ((blank = (*(list + n) == ' ')))
+                                                    continue;
+
+                                                if (!(result =
+                                                          (iswdigit ((wint_t) (*(list + n))) ||
+                                                           isdigit ((unsigned char) (*(list + n))))))
+                                                    break;
+                                            }
+
+                                            free (list);
+                                        }
+                                    }
+
+                                    if (result) {
+                                        long v = atol (buf);
+
+                                        result = !(v < low || v > high);
+                                    }
+
+                                    result;
+                                })
+                              : ({
+                                    int      l;
+                                    int      n = 0;
+                                    unsigned nums [4];
+
+                                    if (isdigit (*buf))
+                                        n = sscanf (buf, "%u.%u.%u.%u%n", nums, nums + 1, nums + 2, nums + 3, &l);
+
+                                    n == 4 && !*(buf += l * (n == 4)) && *nums <= 255 && *(nums + 1) <= 255 &&
+                                        *(nums + 2) <= 255 && *(nums + 3) <= 255;
+                                })),
+                    i++)
+            if (set_field_buffer (
+                    *(form_fields ((*(FORMS + form))->form) + i), 0, buf = *(*(FORM_FIELD_DATA + form) + i)
+                ))
                 warning ("could not set contents of field buffer.");
-        }
 
         {
             int err = unpost_form ((*(FORMS + form))->form);
@@ -661,19 +731,42 @@ size_t
                       *(*(FORMS + form))->dims, *((*(FORMS + form))->dims + 1), *((*(FORMS + form))->dims + 2),
                       *((*(FORMS + form))->dims + 3)
                   )))
-                error ("could not create the menu deletion window.");
+                error ("could not create the invalid form window.");
 
             box (win, 0, 0);
 
             int r = 2;
-            for (size_t i = 0; i < (*(FORMS + form))->nfields;
-                 set_field_type (*(form_fields ((*(FORMS + form))->form) + i++), NULL))
+            for (size_t i = 0; i < (*(FORMS + form))->nfields; i++)
                 if (invalid & (UINT64_C (1) << i)) {
-                    if ((attrs + i)->type == TYPE_ALNUM || (attrs + i)->type == TYPE_ALPHA)
+                    if (!(attrs + i)->type)
                         mvwprintw (
                             win, r, 2, "Debe introducirse un mínimo de %d carácteres en el campo %zu.",
                             (attrs + i)->type_args.alnum.min, i + 1
                         );
+
+                    else if ((attrs + i)->type == TYPE_ALNUM)
+                        if ((attrs + i)->type_args.alnum.min)
+                            mvwprintw (
+                                win, r, 2,
+                                "El campo %zu sólo admite cadenas de carácteres alfanuméricos de al menos %d carácteres.",
+                                i + 1, (attrs + i)->type_args.alnum.min
+                            );
+
+                        else
+                            mvwprintw (
+                                win, r, 2, "El campo %zu sólo admite cadenas de carácteres alfanuméricos.", i + 1
+                            );
+
+                    else if ((attrs + i)->type == TYPE_ALPHA)
+                        if ((attrs + i)->type_args.alnum.min)
+                            mvwprintw (
+                                win, r, 2,
+                                "El campo %zu sólo admite cadenas de carácteres alfabéticos de al menos %d carácteres.",
+                                i + 1, (attrs + i)->type_args.alnum.min
+                            );
+
+                        else
+                            mvwprintw (win, r, 2, "El campo %zu sólo admite cadenas de carácteres alfabéticos.", i + 1);
 
                     else if ((attrs + i)->type == TYPE_INTEGER)
                         mvwprintw (
@@ -747,18 +840,29 @@ void set_form_data (const size_t form, const char *const *const restrict data) {
         for (size_t i = 0; i < (*(FORMS + form))->nfields; i++)
             set_field_buffer (
                 *(form_fields ((*(FORMS + form))->form) + i), 0,
-                memcpy (*(*(FORM_FIELD_DATA + form) + i), "", sizeof (""))
+                memset (*(*(FORM_FIELD_DATA + form) + i), 0, sizeof (**FORM_FIELD_DATA))
             );
 
         return;
     }
 
-    for (size_t i = 0; i < (*(FORMS + form))->nfields; i++)
+    const char *buf;
+    for (size_t i = 0, l; i < (*(FORMS + form))->nfields; i++) {
+        buf = *(data + i);
+        for (; isspace (*buf); buf++)
+            ;
+        for (l = strlen (buf); l && isspace (*(buf + l - 1)); l--)
+            ;
+
         set_field_buffer (
             *(form_fields ((*(FORMS + form))->form) + i), 0,
-            *(data + i) ? memcpy (*(*(FORM_FIELD_DATA + form) + i), *(data + i), strlen (*(data + i)) + 1)
-                        : memcpy (*(*(FORM_FIELD_DATA + form) + i), "", sizeof (""))
+            *(data + i) ? ({
+                *((char *) mempcpy (*(*(FORM_FIELD_DATA + form) + i), buf, l)) = '\0';
+                *(*(FORM_FIELD_DATA + form) + i);
+            })
+                        : memset (*(*(FORM_FIELD_DATA + form) + i), 0, sizeof (**FORM_FIELD_DATA))
         );
+    }
 }
 
 int get_form_exit_key (void) {

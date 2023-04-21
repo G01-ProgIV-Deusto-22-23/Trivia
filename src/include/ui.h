@@ -1,6 +1,8 @@
 #ifndef TRIVIA_UI_H
 #define TRIVIA_UI_H
 
+#define USE_WIDEC_SUPPORT
+
 // end_ui.c
 extern int end_ui (void);
 
@@ -20,11 +22,25 @@ extern int end_ui (void);
 
 extern field_attr_t impl_field_attrs (const size_t, const FIELDTYPE *const);
 
+#define generic_field(len, ...)                                                                                        \
+    (ct_error (NARGS (__VA_ARGS__) > 1, "the generic_field() macro accepts either one or two arguments."),             \
+     ct_error (                                                                                                        \
+         !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))),                                               \
+         "both arguments passed to the generic_field() macro must be integers."                                        \
+     ),                                                                                                                \
+     ({                                                                                                                \
+         field_attr_t __generic_field_fa__        = impl_field_attrs (len, NULL);                                      \
+         __generic_field_fa__.type_args.alnum.min = __builtin_choose_expr (                                            \
+             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                     \
+         );                                                                                                            \
+         __generic_field_fa__;                                                                                         \
+     }))
+
 #define alnum_field(len, ...)                                                                                          \
     (ct_error (NARGS (__VA_ARGS__) > 1, "the alnum_field() macro accepts either one or two arguments."),               \
      ct_error (                                                                                                        \
          !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))),                                               \
-         "both arguments passed to the alnum_field macro must be integers."                                            \
+         "both arguments passed to the alnum_field() macro must be integers."                                          \
      ),                                                                                                                \
      ({                                                                                                                \
          field_attr_t __alnum_field_fa__        = impl_field_attrs (len, TYPE_ALNUM);                                  \
@@ -38,10 +54,10 @@ extern field_attr_t impl_field_attrs (const size_t, const FIELDTYPE *const);
     (ct_error (NARGS (__VA_ARGS__) > 1, "the alpha_field() macro accepts either one or two arguments."),               \
      ct_error (                                                                                                        \
          !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))),                                               \
-         "both arguments passed to the alpha_field macro must be integers."                                            \
+         "both arguments passed to the alpha_field() macro must be integers."                                          \
      ),                                                                                                                \
      ({                                                                                                                \
-         field_attr_t __alpha_field_fa__        = impl_field_attrs (len, TYPE_ALNUM);                                  \
+         field_attr_t __alpha_field_fa__        = impl_field_attrs (len, TYPE_ALPHA);                                  \
          __alpha_field_fa__.type_args.alnum.min = __builtin_choose_expr (                                              \
              isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                     \
          );                                                                                                            \
@@ -49,10 +65,10 @@ extern field_attr_t impl_field_attrs (const size_t, const FIELDTYPE *const);
      }))
 
 #define passwd_field(len, ...)                                                                                         \
-    (ct_error (NARGS (__VA_ARGS__) > 1, "the alnum_field() macro accepts either one or two arguments."),               \
+    (ct_error (NARGS (__VA_ARGS__) > 1, "the passwd_field() macro accepts either one or two arguments."),              \
      ct_error (                                                                                                        \
          !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))),                                               \
-         "both arguments passed to the alnum_field macro must be integers."                                            \
+         "both arguments passed to the passwd_field() macro must be integers."                                         \
      ),                                                                                                                \
      ({                                                                                                                \
          field_attr_t __passwd_field_fa__           = impl_field_attrs (len, TYPE_ALNUM);                              \
@@ -68,7 +84,7 @@ extern field_attr_t impl_field_attrs (const size_t, const FIELDTYPE *const);
      ct_error (                                                                                                        \
          !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                              \
            isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0))),                                                           \
-         "all arguments passed to the alpha_field macro must be integers."                                             \
+         "all arguments passed to the int_field() macro must be integers."                                             \
      ),                                                                                                                \
      ({                                                                                                                \
          _Pragma ("GCC diagnostic push");                                                                              \
@@ -113,10 +129,15 @@ size_t
            __builtin_types_compatible_p (typeof (attrs), const field_attr_t [])),                                      \
          "the fifth argument passed to the create_form() macro must be a (const) field_attr_t []."                     \
      ),                                                                                                                \
-     ct_error (                                                                                                        \
-         __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) != pointer_type_class,                      \
-         "the sixth argument passed to the create_form() macro must be of pointer type."                               \
-     ),                                                                                                                \
+     ({                                                                                                                \
+         _Pragma ("GCC diagnostic push");                                                                              \
+         _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                \
+         ct_error (                                                                                                    \
+             __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) != pointer_type_class,                  \
+             "the sixth argument passed to the create_form() macro must be of pointer type."                           \
+         );                                                                                                            \
+         _Pragma ("GCC diagnostic pop");                                                                               \
+     }),                                                                                                               \
      impl_create_form (                                                                                                \
          __builtin_choose_expr (isint (w), w, 0), __builtin_choose_expr (isint (h), h, 0),                             \
          __builtin_choose_expr (isint (x), x, 0), __builtin_choose_expr (isint (y), y, 0),                             \
@@ -163,7 +184,10 @@ size_t
 
 #define form(w, h, x, y, attrs, ...)                                                                                   \
     (ct_error (NARGS (__VA_ARGS__) > 2, "the form() macro admits between 5 and 7 arguments."), ({                      \
+         _Pragma ("GCC diagnostic push");                                                                              \
+         _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                \
          size_t __form_form__ = create_form (w, h, x, y, attrs, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL));              \
+         _Pragma ("GCC diagnostic pop");                                                                               \
          display_form (__form_form__, ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", ""));                                      \
      }))
 
@@ -182,6 +206,36 @@ extern int         set_form_erase_key (const int, const char *const restrict);
 extern int         get_form_save_key (void);
 extern const char *get_form_save_message (void);
 extern int         set_form_save_key (const int, const char *const restrict);
+
+extern FORM_EXPORT (wchar_t *) _nc_Widen_String (char *, int *);
+
+#define Check_CTYPE_Field(result, buffer, width, ccheck)                                                               \
+    while (*buffer && *buffer == ' ')                                                                                  \
+        buffer++;                                                                                                      \
+    if (*buffer) {                                                                                                     \
+        bool     blank = FALSE;                                                                                        \
+        int      len;                                                                                                  \
+        int      n;                                                                                                    \
+        wchar_t *list = _nc_Widen_String ((char *) buffer, &len);                                                      \
+        if (list != 0) {                                                                                               \
+            result = TRUE;                                                                                             \
+            for (n = 0; n < len; ++n) {                                                                                \
+                if (blank) {                                                                                           \
+                    if (list [n] != ' ') {                                                                             \
+                        result = FALSE;                                                                                \
+                        break;                                                                                         \
+                    }                                                                                                  \
+                } else if (list [n] == ' ') {                                                                          \
+                    blank  = TRUE;                                                                                     \
+                    result = (n + 1 >= width);                                                                         \
+                } else if (!ccheck (list [n], NULL)) {                                                                 \
+                    result = FALSE;                                                                                    \
+                    break;                                                                                             \
+                }                                                                                                      \
+            }                                                                                                          \
+            free (list);                                                                                               \
+        }                                                                                                              \
+    }
 
 // halfdelay_secs.c
 

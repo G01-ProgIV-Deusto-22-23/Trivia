@@ -8,6 +8,7 @@
     #include <cstring>
     #include <cctype>
     #include <cwchar>
+    #include <cwctype>
     #include <clocale>
     #include <cinttypes>
     #include <csignal>
@@ -22,6 +23,7 @@
     #include <string.h>
     #include <ctype.h>
     #include <wchar.h>
+    #include <wctype.h>
     #include <locale.h>
     #include <stdbool.h>
     #include <inttypes.h>
