@@ -51,7 +51,7 @@ linux: BINDIR := $(BINDIR)/linux
 
 windows: CC     := $(GCC_WINDOWS)
 windows: LIBDIR := $(LIBDIR)/windows
-windows: CFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: CFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR) -lws2_32
 windows: OBJDIR := $(OBJDIR)/windows
 windows: BINDIR := $(BINDIR)/windows
 

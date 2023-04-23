@@ -740,7 +740,7 @@ size_t
                 if (invalid & (UINT64_C (1) << i)) {
                     if (!(attrs + i)->type)
                         mvwprintw (
-                            win, r, 2, "Debe introducirse un mínimo de %d carácteres en el campo %zu.",
+                            win, r, 2, "Debe introducirse un mínimo de %d carácteres en el campo %" PRI_SZ ".",
                             (attrs + i)->type_args.alnum.min, i + 1
                         );
 
@@ -748,34 +748,39 @@ size_t
                         if ((attrs + i)->type_args.alnum.min)
                             mvwprintw (
                                 win, r, 2,
-                                "El campo %zu sólo admite cadenas de carácteres alfanuméricos de al menos %d carácteres.",
+                                "El campo %" PRI_SZ
+                                " sólo admite cadenas de carácteres alfanuméricos de al menos %d carácteres.",
                                 i + 1, (attrs + i)->type_args.alnum.min
                             );
 
                         else
                             mvwprintw (
-                                win, r, 2, "El campo %zu sólo admite cadenas de carácteres alfanuméricos.", i + 1
+                                win, r, 2, "El campo %" PRI_SZ " sólo admite cadenas de carácteres alfanuméricos.",
+                                i + 1
                             );
 
                     else if ((attrs + i)->type == TYPE_ALPHA)
                         if ((attrs + i)->type_args.alnum.min)
                             mvwprintw (
                                 win, r, 2,
-                                "El campo %zu sólo admite cadenas de carácteres alfabéticos de al menos %d carácteres.",
+                                "El campo %" PRI_SZ
+                                " sólo admite cadenas de carácteres alfabéticos de al menos %d carácteres.",
                                 i + 1, (attrs + i)->type_args.alnum.min
                             );
 
                         else
-                            mvwprintw (win, r, 2, "El campo %zu sólo admite cadenas de carácteres alfabéticos.", i + 1);
+                            mvwprintw (
+                                win, r, 2, "El campo %" PRI_SZ " sólo admite cadenas de carácteres alfabéticos.", i + 1
+                            );
 
                     else if ((attrs + i)->type == TYPE_INTEGER)
                         mvwprintw (
-                            win, r, 2, "Debe introducirse un número entero entre %ld y %ld en el campo %zu.",
+                            win, r, 2, "Debe introducirse un número entero entre %ld y %ld en el campo %" PRI_SZ ".",
                             (attrs + i)->type_args.integer.min, (attrs + i)->type_args.integer.max, i + 1
                         );
 
                     else
-                        mvwprintw (win, r, 2, "IP no válida en el campo %zu.", i + 1);
+                        mvwprintw (win, r, 2, "IP no válida en el campo %" PRI_SZ ".", i + 1);
 
                     r++;
                 }

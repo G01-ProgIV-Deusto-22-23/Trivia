@@ -486,7 +486,7 @@ extern size_t impl_create_menu (
                                  *(__create_menu_lens__ + __create_menu_iter__ * 2) =                                                                   \
                                      (decplaces (__create_menu_iter__ + 1)) + 1                                                                         \
                              ),                                                                                                                         \
-                             "%zu", __create_menu_iter__ + 1                                                                                            \
+                             "%" PRI_SZ, __create_menu_iter__ + 1                                                                                       \
                          );                                                                                                                             \
                          *(__create_menu_lens__ + __create_menu_iter__ * 2 + 1) = strlen (                                                              \
                              *((const char **) __create_menu_choices__ + __create_menu_iter__ * 2 + 1) =                                                \
@@ -657,10 +657,13 @@ extern setdimsfunc_t impl_set_padding;
 
 // termdims.c
 
-#define MIN_TERM_WIDTH  UINT32_C (20)
-#define MIN_TERM_HEIGHT UINT32_C (30)
+#define MIN_TERM_WIDTH  UINT32_C (120)
+#define MIN_TERM_HEIGHT UINT32_C (50)
 
 extern getdimsfunc_t   get_term_dims;
+#ifdef _WIN32
+extern setdimsfunc_t   set_term_dims;
+#endif
 extern getwidthfunc_t  get_term_width;
 extern getheightfunc_t get_term_height;
 

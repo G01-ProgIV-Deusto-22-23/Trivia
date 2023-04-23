@@ -65,8 +65,6 @@ int impl_setup_ui (
     const int argc, const char *const *const restrict argv, const int cursor, const int en_cbreak, const int en_echo,
     const int en_keypad, const int en_halfdelay
 ) {
-    setbuf (stderr, NULL);
-
     for (int i = 0; i < argc; i++) {
         if (!(strcmp (*(argv + i), TRIVIA_USAGE_ARG_SHORT) && strcmp (*(argv + i), TRIVIA_USAGE_ARG_LONG))) {
             TRIVIA_WANTS_USAGE = true;
@@ -180,8 +178,47 @@ int impl_setup_ui (
         open_log_file ();
     }
 
-    if (get_term_width () < MIN_TERM_WIDTH || get_term_height () < MIN_TERM_HEIGHT)
-        error ("the terminal is not big enough to display a UI.");
+#ifdef _WIN32
+    {
+        bool checked = false;
+    checksz:
+#endif
+        if (get_term_width () < MIN_TERM_WIDTH || get_term_height () < MIN_TERM_HEIGHT) {
+#ifdef _WIN32
+            goto checked_lbl;
+
+        error_lbl:
+#endif
+
+            error ("the terminal is not big enough to display a UI.");
+        }
+
+        else
+            goto pass_lbl;
+#ifdef _WIN32
+
+    checked_lbl:
+        if (!checked) {
+            checked = set_term_dims (
+                get_term_width () < MIN_TERM_WIDTH ? MIN_TERM_WIDTH : 0,
+                get_term_height () < MIN_TERM_HEIGHT ? MIN_TERM_HEIGHT : 0
+            );
+
+            goto checksz;
+        }
+
+        else
+            goto error_lbl;
+
+    pass_lbl:;
+    }
+
+    HWND win;
+    if (!((win = GetConsoleWindow ()) &&
+          SetWindowLong (win, GWL_STYLE, GetWindowLong (win, GWL_STYLE) & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX) &&
+          SetWindowPos (win, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED)))
+        warning ("could not prevent users from resizing the window.");
+#endif
 
     setlocale (LC_ALL, "es_ES.UTF-8");
 

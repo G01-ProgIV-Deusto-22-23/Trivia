@@ -57,7 +57,7 @@ typedef uint64_t       getdimsfunc_t (void);
 typedef uint32_t       getwidthfunc_t (void);
 typedef getwidthfunc_t getheightfunc_t;
 
-typedef uint64_t       setdimsfunc_t (const uint32_t, uint32_t);
+typedef uint64_t       setdimsfunc_t (uint32_t, uint32_t);
 typedef uint32_t       setwidthfunc_t (const uint32_t);
 typedef setwidthfunc_t setheightfunc_t;
 
