@@ -1,4 +1,6 @@
 #include "form.h"
+#include "ncursesw/curses.h"
+#include "ncursesw/form.h"
 #include "window.h"
 
 form_t                *FORMS [MAX_FORM_FIELDS] = { 0 };
@@ -223,10 +225,11 @@ size_t
 
         *(fields + i) = new_field (1, (int) (attrs + i)->len, 5 + (int) i, (int) *strls, 0, 0);
 
-        set_field_back (*(fields + i), A_UNDERLINE);
-
-        if ((attrs + i)->type == TYPE_ALNUM && (attrs + i)->type_args.alnum.passwd)
+        if ((attrs + i)->type_args.alnum.passwd)
             field_opts_off (*(fields + i), O_PUBLIC);
+
+        else
+            set_field_back (*(fields + i), A_UNDERLINE);
     }
 
     if (!(*(FORMS + form) = malloc (
@@ -434,7 +437,12 @@ size_t
         warning ("could not set the current field to the first field.");
 
     else {
-        if (set_field_back (*form_fields ((*(FORMS + form))->form), A_STANDOUT) != E_OK)
+        if ((unsigned) field_opts (*form_fields ((*(FORMS + form))->form)) & O_PUBLIC) {
+            if (set_field_back (*form_fields ((*(FORMS + form))->form), A_STANDOUT) != E_OK)
+                warning ("could not set the field background.");
+        }
+
+        else if (set_field_back (*form_fields ((*(FORMS + form))->form), A_NORMAL) != E_OK)
             warning ("could not set the field background.");
 
         if (set_field_fore (*form_fields ((*(FORMS + form))->form), A_REVERSE) != E_OK)
@@ -444,188 +452,264 @@ size_t
     wrefresh (form_win ((*(FORMS + form))->form));
     wrefresh (form_sub ((*(FORMS + form))->form));
 
-    bool insert = false;
-    bool del    = false;
-    for (int c = 0, i = field_index (current_field ((*(FORMS + form))->form)),
-             pos = (int) ({
-                 char *buf = field_buffer (*form_fields ((*(FORMS + form))->form), 0);
-                 buf       += ({
-                     size_t j = 0;
-                     for (; isspace (*(buf + j)); j++)
+    {
+        bool insert       = false;
+        bool del          = false;
+        bool ispasswd     = false;
+        bool failedchange = false;
+        for (int c = 0, i = field_index (current_field ((*(FORMS + form))->form)),
+                 pos = (int) ({
+                     char *buf = field_buffer (*form_fields ((*(FORMS + form))->form), 0);
+                     buf       += ({
+                         size_t j = 0;
+                         for (; isspace (*(buf + j)); j++)
+                             ;
+                         j;
+                     });
+                     size_t j  = strlen (buf);
+                     for (; j && isspace (*(buf + j - 1)); j--)
                          ;
                      j;
                  });
-                 size_t j  = strlen (buf);
-                 for (; j && isspace (*(buf + j - 1)); j--)
-                     ;
-                 j;
-             });
-         (c = tolower (wgetch (form_win ((*(FORMS + form))->form)))) != get_form_exit_key ();
-         del = false, wrefresh (form_sub ((*(FORMS + form))->form)) == ERR ||
-                              wrefresh (form_win ((*(FORMS + form))->form)) == ERR
-                          ? warning ("could not update form display.")
-                          : (void) 0)
-        if (c == KEY_UP) {
-            i = field_index (current_field ((*(FORMS + form))->form));
+             (c = tolower (wgetch (form_win ((*(FORMS + form))->form)))) != get_form_exit_key ();
+             failedchange = ispasswd = del = false, ({
+                 FIELD *f;
+                 for (size_t j = 0, beg = *(size_t *) (*(FORMS + form))->data; j < (*(FORMS + form))->nfields; j++) {
+                     if ((unsigned) field_opts (f = *(form_fields ((*(FORMS + form))->form) + j)) & O_PUBLIC)
+                         continue;
 
-            if (set_field_back (current_field ((*(FORMS + form))->form), A_UNDERLINE) != E_OK)
-                warning ("could not set the field background.");
+                     char *buf = field_buffer (f, 0);
+                     for (; isspace (*buf); buf++)
+                         ;
+                     size_t l = strlen (buf);
+                     for (; l && isspace (*(buf + l - 1)); l--)
+                         ;
 
-            if (set_field_fore (current_field ((*(FORMS + form))->form), A_NORMAL) != E_OK)
-                warning ("could not set the field foreground.");
+                     for (size_t k = 0; k <= l;
+                          mvwdelch (form_sub ((*(FORMS + form))->form), 5 + (int) j, ((int) beg + (int) k++)))
+                         ;
 
-            set_current_field (
-                (*(FORMS + form))->form,
-                *(form_fields ((*(FORMS + form))->form) + (i = i ? i - 1 : (int) (*(FORMS + form))->nfields - 1))
-            );
+                     for (; l; mvwaddch (form_sub ((*(FORMS + form))->form), 5 + (int) j, ((int) beg + (int) --l), '*'))
+                         ;
+                 }
+             }),
+                 wrefresh (form_win ((*(FORMS + form))->form)) == ERR ||
+                         wrefresh (form_sub ((*(FORMS + form))->form)) == ERR
+                     ? warning ("could not update form display.")
+                     : (void) 0)
+            if (c == KEY_UP) {
+                ispasswd =
+                    !((unsigned) field_opts (
+                          *(form_fields ((*(FORMS + form))->form) +
+                            (i = field_index (current_field ((*(FORMS + form))->form))))
+                      ) &
+                      O_PUBLIC);
 
-            if (form_driver ((*(FORMS + form))->form, REQ_BEG_LINE) == E_OK)
-                pos = 0;
+            prev_up:
 
-            else
-                warning ("could not move the cursor to the beginning of the field.");
+                if (!ispasswd) {
+                    if (set_field_back (current_field ((*(FORMS + form))->form), A_UNDERLINE) != E_OK)
+                        warning ("could not set the field background.");
+                }
 
-            if (set_field_back (*(form_fields ((*(FORMS + form))->form) + i), A_STANDOUT) != E_OK)
-                warning ("could not set the field background.");
+                else if (set_field_back (current_field ((*(FORMS + form))->form), A_NORMAL) != E_OK)
+                    warning ("could not set the field background.");
 
-            if (set_field_fore (*(form_fields ((*(FORMS + form))->form) + i), A_REVERSE) != E_OK)
-                warning ("could not set the field foreground.");
-        }
+                if (set_field_fore (current_field ((*(FORMS + form))->form), A_NORMAL) != E_OK)
+                    warning ("could not set the field foreground.");
 
-        else if (c == KEY_DOWN) {
-            i = field_index (current_field ((*(FORMS + form))->form));
+                if (failedchange)
+                    continue;
 
-            if (set_field_back (current_field ((*(FORMS + form))->form), A_UNDERLINE) != E_OK)
-                warning ("could not set the field background.");
+                if ((failedchange =
+                         (set_current_field (
+                              (*(FORMS + form))->form, *(form_fields ((*(FORMS + form))->form) +
+                                                         (i = i ? i - 1 : (int) (*(FORMS + form))->nfields - 1))
+                          ) != E_OK))) {
+                    warning ("could not change fields");
 
-            if (set_field_fore (current_field ((*(FORMS + form))->form), A_NORMAL) != E_OK)
-                warning ("could not set the field foreground");
+                    i = i == (int) (*(FORMS + form))->nfields - 1 ? 0 : i + 1;
 
-            set_current_field (
-                (*(FORMS + form))->form,
-                *(form_fields ((*(FORMS + form))->form) + (i = i == (int) (*(FORMS + form))->nfields - 1 ? 0 : i + 1))
-            );
+                    goto prev_up;
+                }
 
-            if (form_driver ((*(FORMS + form))->form, REQ_BEG_LINE) == E_OK)
-                pos = 0;
+                if (form_driver ((*(FORMS + form))->form, REQ_BEG_LINE) == E_OK)
+                    pos = 0;
 
-            else
-                warning ("could not move the cursor to the beginning of the field.");
+                else
+                    warning ("could not move the cursor to the beginning of the field.");
 
-            if (set_field_back (*(form_fields ((*(FORMS + form))->form) + i), A_STANDOUT) != E_OK)
-                warning ("could not set the field background.");
+                if ((unsigned) field_opts (*(form_fields ((*(FORMS + form))->form) + i)) & O_PUBLIC) {
+                    if (set_field_back (*(form_fields ((*(FORMS + form))->form) + i), A_STANDOUT) != E_OK)
+                        warning ("could not set the field background.");
 
-            if (set_field_fore (*(form_fields ((*(FORMS + form))->form) + i), A_REVERSE))
-                warning ("could not set the field foreground.");
-        }
+                    if (set_field_fore (*(form_fields ((*(FORMS + form))->form) + i), A_REVERSE) != E_OK)
+                        warning ("could not set the field foreground.");
+                }
+            }
 
-        else if (c == KEY_LEFT) {
-        move_left:
-            bool jmp = false;
-            if (({
-                    int err = form_driver ((*(FORMS + form))->form, REQ_LEFT_CHAR);
-                    pos     -= (jmp = (pos && (err == E_OK || err == E_REQUEST_DENIED)));
-                    !(err == E_OK || err == E_REQUEST_DENIED);
-                }))
-                warning ("could not move left.");
+            else if (c == KEY_DOWN) {
+                ispasswd =
+                    !((unsigned) field_opts (
+                          *(form_fields ((*(FORMS + form))->form) +
+                            (i = field_index (current_field ((*(FORMS + form))->form))))
+                      ) &
+                      O_PUBLIC);
 
-            if (jmp && del)
-                goto del_char;
-        }
+            prev_down:
 
-        else if (c == KEY_RIGHT) {
-            if (({
-                    int err = form_driver ((*(FORMS + form))->form, REQ_RIGHT_CHAR);
-                    pos     += pos < ({
-                               int fl;
-                               field_info (
-                                   current_field ((*(FORMS + form))->form), &(int) { 0 }, &fl, &(int) { 0 },
-                                   &(int) { 0 }, &(int) { 0 }, &(int) { 0 }
-                               );
-                               fl - 1;
-                           }) &&
-                           (err == E_OK || err == E_REQUEST_DENIED);
-                    !(err == E_OK || err == E_REQUEST_DENIED);
-                }))
-                warning ("could not move right.");
-        }
+                if (!ispasswd) {
+                    if (set_field_back (current_field ((*(FORMS + form))->form), A_UNDERLINE) != E_OK)
+                        warning ("could not set the field background.");
+                }
 
-        else if (c == get_form_save_key ()) {
-            for (size_t j = 0; j < (*(FORMS + form))->nfields; j++)
-                *(*(FORM_FIELD_SAVEBUF + form) + j) = field_buffer (*(form_fields ((*(FORMS + form))->form) + j), 0);
+                else if (set_field_back (current_field ((*(FORMS + form))->form), A_NORMAL) != E_OK)
+                    warning ("could not set the field background.");
 
-            set_form_data (form, *(FORM_FIELD_SAVEBUF + form));
-        }
+                if (set_field_fore (current_field ((*(FORMS + form))->form), A_NORMAL) != E_OK)
+                    warning ("could not set the field foreground");
 
-        else if (c == get_form_erase_key ()) {
-            for (size_t j = (size_t) (pos = 0); j < (*(FORMS + form))->nfields;)
-                if (set_field_buffer (*(form_fields ((*(FORMS + form))->form) + j++), 0, "") != E_OK)
-                    warning ("could not erase field.");
-        }
+                if (failedchange)
+                    continue;
 
-        else if ((del = (c == KEY_BACKSPACE || c == '\b' || c == 127)))
-            goto move_left;
+                if ((failedchange =
+                         (set_current_field (
+                              (*(FORMS + form))->form, *(form_fields ((*(FORMS + form))->form) +
+                                                         (i = i == (int) (*(FORMS + form))->nfields - 1 ? 0 : i + 1))
+                          ) != E_OK))) {
+                    warning ("could not change fields");
 
-        else if (c == KEY_DC) {
-        del_char:
-            if (({
-                    int err = form_driver ((*(FORMS + form))->form, REQ_DEL_CHAR);
-                    if (err == E_OK) {
-                        FIELD *f;
-                        char  *buf = field_buffer (f = current_field ((*(FORMS + form))->form), 0);
-                        buf        += ({
-                            size_t j = 0;
-                            for (; isspace (*(buf + j)); j++)
-                                ;
-                            j;
-                        });
-                        *(char *) mempcpy (*(FORM_FIELD_TEMPBUF + form), buf, ({
-                            size_t j = strlen (buf);
-                            for (; j && isspace (*(buf + j - 1)); j--)
-                                ;
-                            j;
-                        }))        = '\0';
-                        memmove (
-                            *(FORM_FIELD_TEMPBUF + form) + pos, *(FORM_FIELD_TEMPBUF + form) + pos + 1,
-                            strlen (*(FORM_FIELD_TEMPBUF + form) + pos + 1) + 1
-                        );
-                        set_field_buffer (f, 0, *(FORM_FIELD_TEMPBUF + form));
-                        pos -= !del;
-                    }
-                    !(err == E_OK || err == E_REQUEST_DENIED);
-                }))
-                warning ("could not delete character.");
-        }
+                    i = i ? i - 1 : (int) (*(FORMS + form))->nfields - 1;
 
-        else if (c == KEY_IC) {
-            if (form_driver ((*(FORMS + form))->form, insert ? REQ_INS_MODE : REQ_OVL_MODE))
-                warning ("could not toggle insert mode");
-        }
+                    goto prev_down;
+                }
 
-        else if (({
-                     int err = form_driver ((*(FORMS + form))->form, c);
-                     if (err == E_OK) {
-                         FIELD *f;
-                         char  *buf = field_buffer (f = current_field ((*(FORMS + form))->form), 0);
-                         for (; isspace (*(buf)); buf++)
-                             ;
-                         *(char *) mempcpy (*(FORM_FIELD_TEMPBUF + form), buf, ({
-                             size_t j = strlen (buf);
-                             for (; j && isspace (*(buf + j - 1)); j--)
+                if (form_driver ((*(FORMS + form))->form, REQ_BEG_LINE) == E_OK)
+                    pos = 0;
+
+                else
+                    warning ("could not move the cursor to the beginning of the field.");
+
+                if ((unsigned) field_opts (*(form_fields ((*(FORMS + form))->form) + i)) & O_PUBLIC) {
+                    if (set_field_back (*(form_fields ((*(FORMS + form))->form) + i), A_STANDOUT) != E_OK)
+                        warning ("could not set the field background.");
+
+                    if (set_field_fore (*(form_fields ((*(FORMS + form))->form) + i), A_REVERSE) != E_OK)
+                        warning ("could not set the field foreground.");
+                }
+            }
+
+            else if (c == KEY_LEFT) {
+            move_left:
+                bool jmp = false;
+                if (({
+                        int err = form_driver ((*(FORMS + form))->form, REQ_LEFT_CHAR);
+                        pos     -= (jmp = (pos && (err == E_OK || err == E_REQUEST_DENIED)));
+                        !(err == E_OK || err == E_REQUEST_DENIED);
+                    }))
+                    warning ("could not move left.");
+
+                if (jmp && del)
+                    goto del_char;
+            }
+
+            else if (c == KEY_RIGHT) {
+                if (({
+                        int err = form_driver ((*(FORMS + form))->form, REQ_RIGHT_CHAR);
+                        pos     += pos < ({
+                                   int fl;
+                                   field_info (
+                                       current_field ((*(FORMS + form))->form), &(int) { 0 }, &fl, &(int) { 0 },
+                                       &(int) { 0 }, &(int) { 0 }, &(int) { 0 }
+                                   );
+                                   fl - 1;
+                               }) &&
+                               (err == E_OK || err == E_REQUEST_DENIED);
+                        !(err == E_OK || err == E_REQUEST_DENIED);
+                    }))
+                    warning ("could not move right.");
+            }
+
+            else if (c == get_form_save_key ()) {
+                for (size_t j = 0; j < (*(FORMS + form))->nfields; j++)
+                    *(*(FORM_FIELD_SAVEBUF + form) + j) =
+                        field_buffer (*(form_fields ((*(FORMS + form))->form) + j), 0);
+
+                set_form_data (form, *(FORM_FIELD_SAVEBUF + form));
+            }
+
+            else if (c == get_form_erase_key ()) {
+                for (size_t j = (size_t) (pos = 0); j < (*(FORMS + form))->nfields;)
+                    if (set_field_buffer (*(form_fields ((*(FORMS + form))->form) + j++), 0, "") != E_OK)
+                        warning ("could not erase field.");
+            }
+
+            else if ((del = (c == KEY_BACKSPACE || c == '\b' || c == 127)))
+                goto move_left;
+
+            else if (c == KEY_DC) {
+            del_char:
+                if (({
+                        int err = form_driver ((*(FORMS + form))->form, REQ_DEL_CHAR);
+                        if (err == E_OK) {
+                            FIELD *f;
+                            char  *buf = field_buffer (f = current_field ((*(FORMS + form))->form), 0);
+                            buf        += ({
+                                size_t j = 0;
+                                for (; isspace (*(buf + j)); j++)
+                                    ;
+                                j;
+                            });
+                            *(char *) mempcpy (*(FORM_FIELD_TEMPBUF + form), buf, ({
+                                size_t j = strlen (buf);
+                                for (; j && isspace (*(buf + j - 1)); j--)
+                                    ;
+                                j;
+                            }))        = '\0';
+                            memmove (
+                                *(FORM_FIELD_TEMPBUF + form) + pos, *(FORM_FIELD_TEMPBUF + form) + pos + 1,
+                                strlen (*(FORM_FIELD_TEMPBUF + form) + pos + 1) + 1
+                            );
+                            set_field_buffer (f, 0, *(FORM_FIELD_TEMPBUF + form));
+                            pos -= !del;
+                        }
+                        !(err == E_OK || err == E_REQUEST_DENIED);
+                    }))
+                    warning ("could not delete character.");
+            }
+
+            else if (c == KEY_IC) {
+                if (form_driver ((*(FORMS + form))->form, insert ? REQ_INS_MODE : REQ_OVL_MODE))
+                    warning ("could not toggle insert mode");
+            }
+
+            else if (({
+                         int err = form_driver ((*(FORMS + form))->form, c);
+                         if (err == E_OK) {
+                             FIELD *f;
+                             char  *buf = field_buffer (f = current_field ((*(FORMS + form))->form), 0);
+                             for (; isspace (*(buf)); buf++)
                                  ;
-                             j;
-                         }))  = '\0';
-                         *((char *) memmove (
-                               *(FORM_FIELD_TEMPBUF + form) + pos + 1, *(FORM_FIELD_TEMPBUF + form) + pos,
-                               strlen (*(FORM_FIELD_TEMPBUF + form) + pos) + 1
-                           ) -
-                           1) = (char) c;
-                         set_field_buffer (f, 0, *(FORM_FIELD_TEMPBUF + form));
-                         pos++;
-                     }
-                     !(err == E_OK || err == E_REQUEST_DENIED);
-                 }))
-            warning ("could not update the field with the entered character.");
+                             if (!isspace (*buf)) {
+                                 *(char *) mempcpy (*(FORM_FIELD_TEMPBUF + form), buf, ({
+                                     size_t j = strlen (buf);
+                                     for (; j && isspace (*(buf + j - 1)); j--)
+                                         ;
+                                     j;
+                                 }))  = '\0';
+                                 *((char *) memmove (
+                                       *(FORM_FIELD_TEMPBUF + form) + pos + 1, *(FORM_FIELD_TEMPBUF + form) + pos,
+                                       strlen (*(FORM_FIELD_TEMPBUF + form) + pos) + 1
+                                   ) -
+                                   1) = (char) c;
+                                 set_field_buffer (f, 0, *(FORM_FIELD_TEMPBUF + form));
+                                 pos++;
+                             }
+                         }
+                         !(err == E_OK || err == E_REQUEST_DENIED);
+                     }))
+                warning ("could not update the field with the entered character.");
+    }
 
     if (set_field_back (current_field ((*(FORMS + form))->form), A_UNDERLINE) != E_OK)
         warning ("could not set field background.");

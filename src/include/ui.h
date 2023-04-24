@@ -71,7 +71,7 @@ extern field_attr_t impl_field_attrs (const size_t, const FIELDTYPE *const);
          "both arguments passed to the passwd_field() macro must be integers."                                         \
      ),                                                                                                                \
      ({                                                                                                                \
-         field_attr_t __passwd_field_fa__           = impl_field_attrs (len, TYPE_ALNUM);                              \
+         field_attr_t __passwd_field_fa__           = impl_field_attrs (len, NULL);                                    \
          __passwd_field_fa__.type_args.alnum.passwd = true;                                                            \
          __passwd_field_fa__.type_args.alnum.min    = __builtin_choose_expr (                                          \
              isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                  \
@@ -660,9 +660,9 @@ extern setdimsfunc_t impl_set_padding;
 #define MIN_TERM_WIDTH  UINT32_C (120)
 #define MIN_TERM_HEIGHT UINT32_C (50)
 
-extern getdimsfunc_t   get_term_dims;
+extern getdimsfunc_t get_term_dims;
 #ifdef _WIN32
-extern setdimsfunc_t   set_term_dims;
+extern setdimsfunc_t set_term_dims;
 #endif
 extern getwidthfunc_t  get_term_width;
 extern getheightfunc_t get_term_height;

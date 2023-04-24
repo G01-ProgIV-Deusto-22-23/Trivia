@@ -8,7 +8,7 @@
         #define PR_SZ PRIu32
     #endif
 #else
-    #DEFINE PRI_SZ "zu"
+    #define PRI_SZ "zu"
 #endif
 
 #ifdef _WIN32

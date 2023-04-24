@@ -193,9 +193,10 @@ int impl_setup_ui (
             error ("the terminal is not big enough to display a UI.");
         }
 
+#ifdef _WIN32
+
         else
             goto pass_lbl;
-#ifdef _WIN32
 
     checked_lbl:
         if (!checked) {
