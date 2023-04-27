@@ -486,7 +486,7 @@ extern size_t impl_create_menu (
                                  *(__create_menu_lens__ + __create_menu_iter__ * 2) =                                                                   \
                                      (decplaces (__create_menu_iter__ + 1)) + 1                                                                         \
                              ),                                                                                                                         \
-                             "%" PRI_SZ, __create_menu_iter__ + 1                                                                                       \
+                             "%" PRISZ, __create_menu_iter__ + 1                                                                                        \
                          );                                                                                                                             \
                          *(__create_menu_lens__ + __create_menu_iter__ * 2 + 1) = strlen (                                                              \
                              *((const char **) __create_menu_choices__ + __create_menu_iter__ * 2 + 1) =                                                \

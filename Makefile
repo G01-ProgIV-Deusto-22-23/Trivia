@@ -34,7 +34,7 @@ DFLAGS := \
 UILIBS     := -lformw -lmenuw -lpanelw -lncursesw -lm
 OSLIBS     := -lbacktrace
 BDLIBS     := -lsqlite3
-TRIVIALIBS := -lui -los -lserver -lbd
+TRIVIALIBS := -ladt -lui -los -lserver -lbd
 LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(BDLIBS)
 
 ifeq ($(OS), Windows_NT)
@@ -78,6 +78,11 @@ else
 	@echo $(shell mkdir -p $(OBJDIR))
 endif
 
+ADTL     := $(LIBDIR)/linux/libadt.a
+ADTW     := $(LIBDIR)/windows/libadt.a
+ADTOBJSL := $(patsubst $(SRCDIR)/adt/%.c, $(OBJDIR)/linux/adt_%.o, $(wildcard $(SRCDIR)/adt/*.c))
+ADTOBJSW := $(patsubst $(SRCDIR)/adt/%.c, $(OBJDIR)/windows/adt_%.o, $(wildcard $(SRCDIR)/adt/*.c))
+
 UIL     := $(LIBDIR)/linux/libui.a
 UIW     := $(LIBDIR)/windows/libui.a
 UIOBJSL := $(patsubst $(SRCDIR)/ui/%.c, $(OBJDIR)/linux/ui_%.o, $(wildcard $(SRCDIR)/ui/*.c))
@@ -107,6 +112,18 @@ LOCALOBJSW := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/windows/local_ui_%.o,
 
 linux:   init $(LOCALL)
 windows: init $(LOCALW)
+
+$(ADTL): $(ADTOBJSL)
+	ar rcs $@ $^
+
+$(ADTW): $(ADTOBJSW)
+	ar rcs $@ $^
+
+$(OBJDIR)/linux/adt_%.o: $(SRCDIR)/adt/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(OBJDIR)/windows/adt_%.o: $(SRCDIR)/adt/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
 $(UIL): $(UIOBJSL)
 	ar rcs $@ $^
@@ -162,10 +179,10 @@ $(OBJDIR)/linux/bd_%.o: $(SRCDIR)/local/bd/%.c
 $(OBJDIR)/windows/bd_%.o: $(SRCDIR)/local/bd/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(LOCALL): $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
+$(LOCALL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
 
-$(LOCALW): $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
+$(LOCALW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS)
 
 $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c

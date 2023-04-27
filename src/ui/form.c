@@ -32,6 +32,8 @@ static char FORM_ERASE_MESSAGE [BUFSIZ >> 2] = DEFAULT_FORM_ERASE_MESSAGE;
 static int  FORM_SAVE_KEY                   = DEFAULT_FORM_SAVE_KEY;
 static char FORM_SAVE_MESSAGE [BUFSIZ >> 2] = DEFAULT_FORM_SAVE_MESSAGE;
 
+static bool FORM_SAVEONEXIT = false;
+
 #ifdef _WIN32
 static unsigned long impl_trivia_free_form (void *__form__) {
 #else
@@ -272,15 +274,16 @@ size_t
         }
     }
 
+    add_window ((void *) (uintptr_t) form, 3);
+    (*(FORMS + form))->saveexit = FORM_SAVEONEXIT;
+
+    keypad (form_win ((*(FORMS + form))->form), true);
+
 #ifdef _WIN32
     ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1L, NULL);
 #else
     sem_post (FREE_FORM_SEMS + form);
 #endif
-
-    add_window ((void *) (uintptr_t) form, 3);
-
-    keypad (form_win ((*(FORMS + form))->form), true);
 
     return form;
 }
@@ -824,7 +827,7 @@ size_t
                 if (invalid & (UINT64_C (1) << i)) {
                     if (!(attrs + i)->type)
                         mvwprintw (
-                            win, r, 2, "Debe introducirse un mínimo de %d carácteres en el campo %" PRI_SZ ".",
+                            win, r, 2, "Debe introducirse un mínimo de %d carácteres en el campo %" PRISZ ".",
                             (attrs + i)->type_args.alnum.min, i + 1
                         );
 
@@ -832,39 +835,38 @@ size_t
                         if ((attrs + i)->type_args.alnum.min)
                             mvwprintw (
                                 win, r, 2,
-                                "El campo %" PRI_SZ
+                                "El campo %" PRISZ
                                 " sólo admite cadenas de carácteres alfanuméricos de al menos %d carácteres.",
                                 i + 1, (attrs + i)->type_args.alnum.min
                             );
 
                         else
                             mvwprintw (
-                                win, r, 2, "El campo %" PRI_SZ " sólo admite cadenas de carácteres alfanuméricos.",
-                                i + 1
+                                win, r, 2, "El campo %" PRISZ " sólo admite cadenas de carácteres alfanuméricos.", i + 1
                             );
 
                     else if ((attrs + i)->type == TYPE_ALPHA)
                         if ((attrs + i)->type_args.alnum.min)
                             mvwprintw (
                                 win, r, 2,
-                                "El campo %" PRI_SZ
+                                "El campo %" PRISZ
                                 " sólo admite cadenas de carácteres alfabéticos de al menos %d carácteres.",
                                 i + 1, (attrs + i)->type_args.alnum.min
                             );
 
                         else
                             mvwprintw (
-                                win, r, 2, "El campo %" PRI_SZ " sólo admite cadenas de carácteres alfabéticos.", i + 1
+                                win, r, 2, "El campo %" PRISZ " sólo admite cadenas de carácteres alfabéticos.", i + 1
                             );
 
                     else if ((attrs + i)->type == TYPE_INTEGER)
                         mvwprintw (
-                            win, r, 2, "Debe introducirse un número entero entre %ld y %ld en el campo %" PRI_SZ ".",
+                            win, r, 2, "Debe introducirse un número entero entre %ld y %ld en el campo %" PRISZ ".",
                             (attrs + i)->type_args.integer.min, (attrs + i)->type_args.integer.max, i + 1
                         );
 
                     else
-                        mvwprintw (win, r, 2, "IP no válida en el campo %" PRI_SZ ".", i + 1);
+                        mvwprintw (win, r, 2, "IP no válida en el campo %" PRISZ ".", i + 1);
 
                     r++;
                 }
@@ -1024,4 +1026,8 @@ int set_form_save_key (const int key, const char *const restrict message) {
     }
 
     return FORM_SAVE_KEY = key ? key : DEFAULT_FORM_SAVE_KEY;
+}
+
+void form_saveonexit (bool enable) {
+    FORM_SAVEONEXIT = enable;
 }

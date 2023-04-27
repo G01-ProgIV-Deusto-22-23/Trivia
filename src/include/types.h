@@ -63,6 +63,15 @@ typedef setwidthfunc_t setheightfunc_t;
 
 typedef enum { server_off, server_on, server_starting } server_status_t;
 
+typedef int cmpfunc_t (void *, void *);
+
+typedef struct __linkedlist_struct *linkedlist_t;
+typedef struct __map_struct        *map_t;
+
+typedef void freefunc_t (void *);
+
+typedef enum { u32_key, u64_key, str_key } key_type_t;
+
 typedef struct {
         int  ID_Usuario;
         char nombreVisible [21];

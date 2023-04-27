@@ -3,12 +3,12 @@
 
 #ifdef _WIN32
     #ifdef _WIN64
-        #define PRI_SZ PRIu64
+        #define PRISZ PRIu64
     #else
         #define PR_SZ PRIu32
     #endif
 #else
-    #define PRI_SZ "zu"
+    #define PRISZ "zu"
 #endif
 
 #ifdef _WIN32
