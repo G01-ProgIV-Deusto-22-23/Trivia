@@ -17,10 +17,10 @@
     #endif
 #else
     #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
-        #define trivia_main int main (int [[unused]] argc, char **[[unused]] argv)
+        #define trivia_main int main (int [[unused]] argc, char [[unused]] * *argv)
 
     #else
-        #define trivia_main int main (int __attribute__ ((unused)) argc, char **__attribute__ ((unused)) argv)
+        #define trivia_main int main (int __attribute__ ((unused)) argc, char __attribute__ ((unused)) * *argv)
     #endif
 #endif
 

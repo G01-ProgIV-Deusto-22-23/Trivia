@@ -123,8 +123,8 @@ bool impl_destroy_map (restrict map_t *const restrict m) {
     if (!(m && *m))
         return false;
 
-    for (; (*m)->cap; destroy_linkedlist ((*m)->data + --(*m)->cap))
-        ;
+    for (linkedlist_t *l; (*m)->cap; destroy_linkedlist (l))
+        l = (*m)->data + --(*m)->cap;
 
     free (*m);
     *m = NULL;
@@ -136,7 +136,7 @@ size_t capacity_map (const restrict map_t m) {
     return m->cap;
 }
 
-map_t impl_resize_map (map_t *const restrict m, size_t capacity) {
+__attribute__ ((optimize (0))) map_t impl_resize_map (map_t *const restrict m, size_t capacity) {
     if (!m)
         return NULL;
 
@@ -146,41 +146,43 @@ map_t impl_resize_map (map_t *const restrict m, size_t capacity) {
     if (!capacity)
         capacity = DEFAULT_MAP_CAPACITY;
 
-    size_t oldcap = (*m)->cap;
-
-    if (oldcap == capacity)
+    size_t oldcap;
+    if ((oldcap = (*m)->cap) == capacity)
         return *m;
 
     size_t    nkv = 0;
     keyval_t *kvs;
     {
         char *_kvs;
-        if (!(_kvs = malloc ((sizeof (size_t) + sizeof (keyval_t *)) * oldcap)))
+        if (!(_kvs = calloc (oldcap, sizeof (size_t) + sizeof (keyval_t *))))
             return impl_destroy_map (m), *m;
 
-        for (size_t i = 0; i < oldcap; nkv += *((size_t *) (void *) _kvs + i++)) {
-            if (*((*m)->data + i)) {
-                if (!(*((keyval_t **) (void *) (_kvs + sizeof (size_t) * oldcap) + i) =
-                          toarray_linkedlist (*((*m)->data + i), (size_t *) (void *) _kvs + i))) {
-                    i--;
-                    for (size_t j, c; i != (size_t) -1;
-                         free (*((keyval_t **) (void *) (_kvs + sizeof (size_t) * oldcap) + i--)))
-                        for (j = 0, c = *(size_t *) (void *) _kvs + i; j < c;
-                             dealloc_keyval (*(*((keyval_t **) (void *) (_kvs + sizeof (size_t) * oldcap) + i) + j++)))
-                            ;
-                    free (_kvs);
+        {
+            linkedlist_t *l;
+            for (size_t i = 0; i < oldcap; nkv += *((size_t *) (void *) _kvs + i++))
+                if (*((*m)->data + i)) {
+                    if (!(*((keyval_t **) (void *) (_kvs + sizeof (size_t) * oldcap) + i) =
+                              toarray_linkedlist (*((*m)->data + i), (size_t *) (void *) _kvs + i))) {
+                        i--;
+                        for (size_t j, c; i != (size_t) -1;
+                             free (*((keyval_t **) (void *) (_kvs + sizeof (size_t) * oldcap) + i--)))
+                            for (j = 0, c = *((size_t *) (void *) _kvs + i); j < c; dealloc_keyval (
+                                     *(*((keyval_t **) (void *) (_kvs + sizeof (size_t) * oldcap) + i) + j++)
+                                 ))
+                                ;
+                        free (_kvs);
 
-                    return impl_destroy_map (m), *m;
+                        return impl_destroy_map (m), *m = NULL;
+                    }
+
+                    freedata_linkedlist (*(l = ((*m)->data + i)), NULL);
+                    destroy_linkedlist (l);
                 }
-
-                freedata_linkedlist (*((*m)->data + i), NULL);
-                destroy_linkedlist ((*m)->data + i);
-            }
         }
 
-        if (!(kvs = malloc (sizeof (keyval_t) * nkv))) {
+        if (!(kvs = calloc (nkv, sizeof (keyval_t)))) {
             for (size_t i = 0, j, c; i < oldcap; i++) {
-                for (j = 0, c = *(size_t *) (void *) _kvs + i; j < c;
+                for (j = 0, c = *((size_t *) (void *) _kvs + i); j < c;
                      dealloc_keyval (*(*((keyval_t **) (void *) (_kvs + sizeof (size_t) * oldcap) + i) + j++)))
                     ;
 
@@ -202,19 +204,21 @@ map_t impl_resize_map (map_t *const restrict m, size_t capacity) {
     }
 
     if (!(*m = realloc (*m, sizeof (struct __map_struct) + sizeof (linkedlist_t) * capacity))) {
+        if (errno == ENOMEM)
+            free (*m);
+
         for (size_t i = 0; i < nkv; dealloc_keyval (*(kvs + i++)))
             ;
         free (kvs);
 
-        return *m;
+        return *m = NULL;
     }
 
-    if (capacity > oldcap)
+    if (((*m)->cap = capacity) > oldcap)
         memset ((*m)->data + oldcap, 0, (capacity - oldcap) * sizeof (linkedlist_t));
-    (*m)->cap = capacity;
 
     for (size_t i = 0; i < nkv; dealloc_keyval (*(kvs + i++)))
-        if ((*(kvs + i))->key && !impl_put_map (*m, (*(kvs + i))->key, (*(kvs + i))->kt, (*(kvs + i))->val))
+        if (*(kvs + i) && !impl_put_map (*m, (*(kvs + i))->key, (*(kvs + i))->kt, (*(kvs + i))->val))
             warning ("could not reinsert key-value pair in the map.");
     free (kvs);
 
@@ -226,7 +230,7 @@ void *impl_get_map (const restrict map_t m, void *const k, const key_type_t kt) 
         keyval_t kv = find_linkedlist (
             *(m->data + ((size_t
                         ) (kt == u32_key   ? u32_hash ((uint32_t) (uintptr_t) k)
-                           : kt == u64_key ? u64_hash ((uint64_t) (uintptr_t) k)
+                           : kt == u64_key ? u64_hash ((uint64_t) k)
                                            : str_hash ((const char *) k))) %
                             m->cap),
             k, *(((cmpfunc_t *[]) { u32_keycmp, u64_keycmp, str_keycmp }) + kt)
@@ -241,7 +245,7 @@ bool impl_set_map (const restrict map_t m, void *const k, const key_type_t kt, v
         keyval_t kv = find_linkedlist (
             *(m->data + ((size_t
                         ) (kt == u32_key   ? u32_hash ((uint32_t) (uintptr_t) k)
-                           : kt == u64_key ? u64_hash ((uint64_t) (uintptr_t) k)
+                           : kt == u64_key ? u64_hash ((uint64_t) k)
                                            : str_hash ((const char *) k))) %
                             m->cap),
             k, *(((cmpfunc_t *[]) { u32_keycmp, u64_keycmp, str_keycmp }) + kt)
@@ -262,11 +266,11 @@ bool impl_put_map (const restrict map_t m, void *const k, const key_type_t kt, v
     if (!(kv = alloc_keyval (k, v, kt)))
         return false;
 
-    size_t i = ((size_t
-               ) (kt == u32_key   ? u32_hash ((uint32_t) (uintptr_t) k)
-                  : kt == u64_key ? u64_hash ((uint64_t) (uintptr_t) k)
-                                  : str_hash ((const char *) k))) %
-               m->cap;
+    const size_t i = ((size_t
+                     ) (kt == u32_key   ? u32_hash ((uint32_t) (uintptr_t) k)
+                        : kt == u64_key ? u64_hash ((uint64_t) k)
+                                        : str_hash ((const char *) k))) %
+                     m->cap;
 
     if (!*(m->data + i)) {
         if (!(*(m->data + i) = create_linkedlist (kv))) {
@@ -289,24 +293,16 @@ bool impl_put_map (const restrict map_t m, void *const k, const key_type_t kt, v
 
 bool impl_remove_map (const restrict map_t m, void *const k, const key_type_t kt) {
     return m ? ({
-        const size_t i = indexof_linkedlist (
-            *(m->data + ((size_t
-                        ) (kt == u32_key   ? u32_hash ((uint32_t) (uintptr_t) k)
-                           : kt == u64_key ? u64_hash ((uint64_t) (uintptr_t) k)
-                                           : str_hash ((const char *) k))) %
-                            m->cap),
-            k, *(((cmpfunc_t *[]) { u32_keycmp, u64_keycmp, str_keycmp }) + kt)
-        );
+        const size_t l = ((size_t
+                         ) (kt == u32_key   ? u32_hash ((uint32_t) (uintptr_t) k)
+                            : kt == u64_key ? u64_hash ((uint64_t) k)
+                                            : str_hash ((const char *) k))) %
+                         m->cap;
+        const size_t i =
+            indexof_linkedlist (*(m->data + l), k, *(((cmpfunc_t *[]) { u32_keycmp, u64_keycmp, str_keycmp }) + kt));
 
         if (i != (size_t) -1)
-            remove_linkedlist (
-                *(m->data + ((size_t
-                            ) (kt == u32_key   ? u32_hash ((uint32_t) (uintptr_t) k)
-                               : kt == u64_key ? u64_hash ((uint64_t) (uintptr_t) k)
-                                               : str_hash ((const char *) k))) %
-                                m->cap),
-                i
-            );
+            remove_linkedlist (*(m->data + l), i);
 
         i != (size_t) -1;
     })

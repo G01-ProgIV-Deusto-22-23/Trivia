@@ -24,83 +24,63 @@ extern bool   impl_remove_map (const restrict map_t, void *const, const key_type
          __builtin_choose_expr (isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0) \
      ))
 
-#define destroy_map(m)                                                                                                           \
-    ({                                                                                                                           \
-        _Pragma ("GCC diagnostic push");                                                                                         \
-        _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                   \
-        _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                        \
-        auto __destroy_map_m__ = m;                                                                                              \
-        _Pragma ("GCC diagnostic pop");                                                                                          \
-        ct_error (                                                                                                               \
-            !(__builtin_types_compatible_p (typeof (__destroy_map_m__), map_t) ||                                                \
-              __builtin_types_compatible_p (typeof (__destroy_map_m__), map_t *) ||                                              \
-              __builtin_types_compatible_p (typeof (__destroy_map_m__), map_t [])),                                              \
-            "the type of the first argument passed to the remove_map() macro must be compatile with map_t, map_t * or map_t []." \
-        );                                                                                                                       \
-        impl_destroy_map (__builtin_choose_expr (                                                                                \
-            __builtin_types_compatible_p (typeof (__destroy_map_m__), map_t), &__destroy_map_m__, __destroy_map_m__              \
-        ));                                                                                                                      \
-    })
+#define destroy_map(m)                                                                                                        \
+    (ct_error (                                                                                                               \
+         !(__builtin_types_compatible_p (typeof ((m)), map_t) ||                                                              \
+           __builtin_types_compatible_p (typeof ((m)), map_t *) ||                                                            \
+           __builtin_types_compatible_p (typeof ((m)), map_t [])),                                                            \
+         "the type of the first argument passed to the remove_map() macro must be compatile with map_t, map_t * or map_t []." \
+     ),                                                                                                                       \
+     impl_destroy_map (__builtin_choose_expr (__builtin_types_compatible_p (typeof ((m)), map_t), &(m), (m))))
 
-#define resize_map(m, ...)                                                                                                       \
-    ({                                                                                                                           \
-        _Pragma ("GCC diagnostic push");                                                                                         \
-        _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                   \
-        _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                        \
-        auto __resize_map_m__ = m;                                                                                               \
-        _Pragma ("GCC diagnostic pop");                                                                                          \
-        ct_error (                                                                                                               \
-            NARGS (__VA_ARGS__) > 1, "the create_map() macro accepts either a single argument or no arguments at all."           \
-        );                                                                                                                       \
-        ct_error (                                                                                                               \
-            !(__builtin_types_compatible_p (typeof (__resize_map_m__), map_t) ||                                                 \
-              __builtin_types_compatible_p (typeof (__resize_map_m__), map_t *) ||                                               \
-              __builtin_types_compatible_p (typeof (__resize_map_m__), map_t [])),                                               \
-            "the type of the first argument passed to the remove_map() macro must be compatile with map_t, map_t * or map_t []." \
-        );                                                                                                                       \
-        ct_error (                                                                                                               \
-            !isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)),                                                                       \
-            "the argument passed to the create_map() macro must be of integral type."                                            \
-        );                                                                                                                       \
-        impl_resize_map (                                                                                                        \
-            __builtin_choose_expr (                                                                                              \
-                __builtin_types_compatible_p (typeof (__resize_map_m__), map_t), &__resize_map_m__, __resize_map_m__             \
-            ),                                                                                                                   \
-            __builtin_choose_expr (                                                                                              \
-                isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                            \
-            )                                                                                                                    \
-        );                                                                                                                       \
-    })
+#define resize_map(m, ...)                                                                                                    \
+    (ct_error (                                                                                                               \
+         NARGS (__VA_ARGS__) > 1, "the create_map() macro accepts either a single argument or no arguments at all."           \
+     ),                                                                                                                       \
+     ct_error (                                                                                                               \
+         !(__builtin_types_compatible_p (typeof ((m)), map_t) ||                                                              \
+           __builtin_types_compatible_p (typeof ((m)), map_t *) ||                                                            \
+           __builtin_types_compatible_p (typeof ((m)), map_t [])),                                                            \
+         "the type of the first argument passed to the remove_map() macro must be compatile with map_t, map_t * or map_t []." \
+     ),                                                                                                                       \
+     ct_error (                                                                                                               \
+         !isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)),                                                                       \
+         "the argument passed to the create_map() macro must be of integral type."                                            \
+     ),                                                                                                                       \
+     impl_resize_map (                                                                                                        \
+         __builtin_choose_expr (__builtin_types_compatible_p (typeof ((m)), map_t), &(m), (m)),                               \
+         __builtin_choose_expr (isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0)        \
+     ))
 
 #define get_map(m, k)                                                                                                              \
     (ct_error (                                                                                                                    \
-         !__builtin_types_compatible_p (typeof (m), map_t),                                                                        \
+         !__builtin_types_compatible_p (typeof ((m)), map_t),                                                                      \
          "the type of the first argument passed to the put_map() macro must be compatible with map_t."                             \
      ),                                                                                                                            \
      ct_error (                                                                                                                    \
-         !(isint (k) || __builtin_types_compatible_p (typeof (k), char *) ||                                                       \
-           __builtin_types_compatible_p (typeof (k), const char *) ||                                                              \
-           __builtin_types_compatible_p (typeof (k), char []) ||                                                                   \
-           __builtin_types_compatible_p (typeof (k), const char [])),                                                              \
+         !(isint ((k)) || __builtin_types_compatible_p (typeof ((k)), char *) ||                                                   \
+           __builtin_types_compatible_p (typeof ((k)), const char *) ||                                                            \
+           __builtin_types_compatible_p (typeof ((k)), char []) ||                                                                 \
+           __builtin_types_compatible_p (typeof ((k)), const char [])),                                                            \
          "the second argument passed to the put_map() macro must be either of integral type or compatible with (const) char */[]." \
      ),                                                                                                                            \
      impl_get_map (                                                                                                                \
-         m, (void *) (uintptr_t) k,                                                                                                \
+         (m), (void *) (uintptr_t) (k),                                                                                            \
          __builtin_choose_expr (                                                                                                   \
-             isint (k), __builtin_choose_expr (sizeof (k) * __CHAR_BIT__ <= 32, u32_key, u64_key), str_key                         \
+             isint ((k)), __builtin_choose_expr (sizeof ((k)) * __CHAR_BIT__ <= 32, u32_key, u64_key), str_key                     \
          )                                                                                                                         \
      ))
 
 #define put_map(m, k, v)                                                                                                           \
     (ct_error (                                                                                                                    \
-         !__builtin_types_compatible_p (typeof (m), map_t),                                                                        \
+         !__builtin_types_compatible_p (typeof ((m)), map_t),                                                                      \
          "the type of the first argument passed to the put_map() macro must be compatible with map_t."                             \
      ),                                                                                                                            \
      ct_error (                                                                                                                    \
-         !(isint (k) || __builtin_types_compatible_p (typeof (k), char *) ||                                                       \
-           __builtin_types_compatible_p (typeof (k), const char *) ||                                                              \
-           __builtin_types_compatible_p (typeof (k), char []) ||                                                                   \
-           __builtin_types_compatible_p (typeof (k), const char [])),                                                              \
+         !(isint ((k)) || __builtin_types_compatible_p (typeof ((k)), char *) ||                                                   \
+           __builtin_types_compatible_p (typeof ((k)), const char *) ||                                                            \
+           __builtin_types_compatible_p (typeof ((k)), char []) ||                                                                 \
+           __builtin_types_compatible_p (typeof ((k)), const char [])),                                                            \
          "the second argument passed to the put_map() macro must be either of integral type or compatible with (const) char */[]." \
      ),                                                                                                                            \
      ct_error (                                                                                                                    \
@@ -108,29 +88,29 @@ extern bool   impl_remove_map (const restrict map_t, void *const, const key_type
          "the third argument passed to the put_map() macro must be of pointer or array type."                                      \
      ),                                                                                                                            \
      impl_put_map (                                                                                                                \
-         m, (void *) (uintptr_t) k,                                                                                                \
+         (m), (void *) (uintptr_t) (k),                                                                                            \
          __builtin_choose_expr (                                                                                                   \
-             isint (k), __builtin_choose_expr (sizeof (k) * __CHAR_BIT__ <= 32, u32_key, u64_key), str_key                         \
+             isint (k), __builtin_choose_expr (sizeof ((k)) * __CHAR_BIT__ <= 32, u32_key, u64_key), str_key                       \
          ),                                                                                                                        \
-         v                                                                                                                         \
+         (v)                                                                                                                       \
      ))
 
 #define remove_map(m, k)                                                                                                           \
     (ct_error (                                                                                                                    \
-         !__builtin_types_compatible_p (typeof (m), map_t),                                                                        \
+         !__builtin_types_compatible_p (typeof ((m)), map_t),                                                                      \
          "the type of the first argument passed to the put_map() macro must be compatible with map_t."                             \
      ),                                                                                                                            \
      ct_error (                                                                                                                    \
-         !(isint (k) || __builtin_types_compatible_p (typeof (k), char *) ||                                                       \
-           __builtin_types_compatible_p (typeof (k), const char *) ||                                                              \
-           __builtin_types_compatible_p (typeof (k), char []) ||                                                                   \
-           __builtin_types_compatible_p (typeof (k), const char [])),                                                              \
+         !(isint ((k)) || __builtin_types_compatible_p (typeof ((k)), char *) ||                                                   \
+           __builtin_types_compatible_p (typeof ((k)), const char *) ||                                                            \
+           __builtin_types_compatible_p (typeof ((k)), char []) ||                                                                 \
+           __builtin_types_compatible_p (typeof ((k)), const char [])),                                                            \
          "the second argument passed to the put_map() macro must be either of integral type or compatible with (const) char */[]." \
      ),                                                                                                                            \
      impl_put_map (                                                                                                                \
-         m, (void *) (uintptr_t) k,                                                                                                \
+         (m), (void *) (uintptr_t) (k),                                                                                            \
          __builtin_choose_expr (                                                                                                   \
-             isint (k), __builtin_choose_expr (sizeof (k) * __CHAR_BIT__ <= 32, u32_key, u64_key), str_key                         \
+             isint ((k)), __builtin_choose_expr (sizeof (k) * __CHAR_BIT__ <= 32, u32_key, u64_key), str_key                       \
          )                                                                                                                         \
      ))
 
