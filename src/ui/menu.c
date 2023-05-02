@@ -1,5 +1,4 @@
 #include "menu.h"
-#include "ncursesw/menu.h"
 #include "window.h"
 
 MENU                  *MENUS [__WORDSIZE] = { 0 };
@@ -12,12 +11,13 @@ HANDLE FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
 sem_t            FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #endif
 
-static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
-static menutype_t MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)]     = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
-                                                                            actionmenu };
-static size_t    *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]      = { 0 };
-static bool       FREE_MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
+static char        **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
+static menutype_t    MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)] = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
+                                                                           actionmenu };
+static size_t       *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]  = { 0 };
+static title_color_t MENU_TITLE_COLORS [sizeof (MENUS) / sizeof (*MENUS)] = { title_no_color };
 
+static bool FREE_MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
 #ifdef _WIN32
 static HANDLE FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 #else
@@ -86,7 +86,9 @@ static void     *impl_trivia_free_menu (void *__menu__) {
     refresh ();
 
     atomic_fetch_xor (&MENU_CONTROL, ((size_t) 1) << menu);
-    *(MENUS + menu) = (void *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = 0));
+    *(MENUS + menu) =
+        (void
+             *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = (*(MENU_TITLE_COLORS + menu) = 0)));
 
 #ifdef _WIN32
     ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1, NULL);
@@ -264,6 +266,38 @@ size_t
     return impl_create_menu2 (menu, t, w, h, x, y, n, choices, lens, funcs);
 }
 
+title_color_t get_menu_title_color (const size_t menu) {
+    if (menu >=
+#ifdef _WIN32
+        sizeof (MENUS) / sizeof (*MENUS)
+#else
+        arrsize (MENUS)
+#endif
+    )
+        error ("not a valid menu index.");
+
+    return *(MENU_TITLE_COLORS + menu);
+}
+
+title_color_t set_menu_title_color (const size_t menu, const title_color_t color) {
+    if (menu >=
+#ifdef _WIN32
+        sizeof (MENUS) / sizeof (*MENUS)
+#else
+        arrsize (MENUS)
+#endif
+    )
+        error ("not a valid menu index.");
+
+    if (!*(MENUS + menu)) {
+        warning ("cannot change the title color of a nonexistent menu.");
+
+        return title_no_color;
+    }
+
+    return *(MENU_TITLE_COLORS + menu) = color;
+}
+
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
 [[nonnull (2)]]
 #else
@@ -271,6 +305,24 @@ __attribute__ ((nonnull (2)))
 #endif
 static void
     print_menu_title (const size_t menu, const char *const restrict title) {
+    if (wattron (menu_win (*(MENUS + menu)), A_BOLD) == ERR)
+        warning ("could not set menu title to bold.");
+
+    if (*(MENU_TITLE_COLORS + menu) != title_no_color &&
+        ((*(MENU_TITLE_COLORS + menu) == title_red &&
+          wattron (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 1)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_green &&
+          wattron (menu_win (*(MENUS + menu)), COLOR_PAIR (log_message + 1)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_blue &&
+          wattron (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 2)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_yellow &&
+          wattron (menu_win (*(MENUS + menu)), COLOR_PAIR (log_warning + 1)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_magenta &&
+          wattron (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 3)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_cyan &&
+          wattron (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 4)) == ERR)))
+        warning ("could not set the menu color.");
+
     if (mvwprintw (
             menu_win (*(MENUS + menu)), 2,
             (getmaxx (menu_win (*(MENUS + menu))) - getbegx (menu_win (*(MENUS + menu))) - (int) strlen (title)) / 2,
@@ -291,6 +343,24 @@ static void
             })
         ) == ERR)
         warning ("could not print the title's horizontal line.");
+
+    if (wattroff (menu_win (*(MENUS + menu)), A_BOLD) == ERR)
+        warning ("could not restore the font weight of the menu window.");
+
+    if (*(MENU_TITLE_COLORS + menu) != title_no_color &&
+        ((*(MENU_TITLE_COLORS + menu) == title_red &&
+          wattroff (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 1)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_green &&
+          wattroff (menu_win (*(MENUS + menu)), COLOR_PAIR (log_message + 1)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_blue &&
+          wattroff (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 2)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_yellow &&
+          wattroff (menu_win (*(MENUS + menu)), COLOR_PAIR (log_warning + 1)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_magenta &&
+          wattroff (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 3)) == ERR) ||
+         (*(MENU_TITLE_COLORS + menu) == title_cyan &&
+          wattroff (menu_win (*(MENUS + menu)), COLOR_PAIR (log_error + 4)) == ERR)))
+        warning ("could not restore the menu color.");
 }
 
 static size_t impl_display_menu2 (

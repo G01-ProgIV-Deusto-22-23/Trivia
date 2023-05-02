@@ -1,16 +1,18 @@
 #ifndef TRIVIA_MAP_H
 #define TRIVIA_MAP_H
 
-#define DEFAULT_MAP_CAPACITY 100UL
+#define DEFAULT_MAP_CAPACITY 100
 
 extern map_t  impl_create_map (size_t);
 extern bool   impl_destroy_map (restrict map_t *const);
 extern size_t capacity_map (const restrict map_t);
-extern map_t  impl_resize_map (map_t *const restrict, size_t);
+extern map_t  impl_resize_map (restrict map_t *const restrict, size_t);
 extern void  *impl_get_map (const restrict map_t, void *const, const key_type_t);
 extern bool   impl_set_map (const restrict map_t, void *const, const key_type_t, void *const);
 extern bool   impl_put_map (const restrict map_t, void *const, const key_type_t, void *const);
 extern bool   impl_remove_map (const restrict map_t, void *const, const key_type_t);
+extern void  *keys_map (const restrict map_t, size_t *const restrict);
+extern void  *values_map (const restrict map_t, size_t *const restrict);
 
 #define create_map(...)                                                                                                \
     (ct_error (                                                                                                        \

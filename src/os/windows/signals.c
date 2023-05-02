@@ -1,4 +1,4 @@
-static HANDLE abort_thread = NULL;
+static HANDLE ABORT_THREAD = NULL;
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
 [[__noreturn__]] static void impl_trivia_abort (void [[unused]] * unused) {
@@ -24,13 +24,13 @@ static void sigsegv_handler (int [[unused]] signum) {
 #else
 static void                                sigsegv_handler (const int __attribute__ ((unused)) signum) {
 #endif
-    ResumeThread (abort_thread);
+    ResumeThread (ABORT_THREAD);
     Sleep (INFINITE);
 }
 
 void handle_signals (void) {
-    if (!abort_thread &&
-        !(abort_thread = CreateThread (
+    if (!ABORT_THREAD &&
+        !(ABORT_THREAD = CreateThread (
               &(SECURITY_ATTRIBUTES
               ) { .nLength = sizeof (SECURITY_ATTRIBUTES), .lpSecurityDescriptor = NULL, .bInheritHandle = TRUE },
               0, NULL, trivia_abort, CREATE_SUSPENDED, NULL

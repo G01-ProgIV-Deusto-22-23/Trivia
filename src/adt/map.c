@@ -133,10 +133,10 @@ bool impl_destroy_map (restrict map_t *const restrict m) {
 }
 
 size_t capacity_map (const restrict map_t m) {
-    return m->cap;
+    return m ? m->cap : 0;
 }
 
-__attribute__ ((optimize (0))) map_t impl_resize_map (map_t *const restrict m, size_t capacity) {
+map_t impl_resize_map (restrict map_t *const restrict m, size_t capacity) {
     if (!m)
         return NULL;
 
@@ -259,8 +259,8 @@ bool impl_put_map (const restrict map_t m, void *const k, const key_type_t kt, v
     if (!m)
         return false;
 
-    if (impl_get_map (m, k, kt))
-        return impl_set_map (m, k, kt, v);
+    if (impl_set_map (m, k, kt, v))
+        return true;
 
     keyval_t kv;
     if (!(kv = alloc_keyval (k, v, kt)))
@@ -307,4 +307,93 @@ bool impl_remove_map (const restrict map_t m, void *const k, const key_type_t kt
         i != (size_t) -1;
     })
              : false;
+}
+
+void *keys_map (const restrict map_t m, size_t *const restrict len) {
+    if (!m)
+        return len ? (void *) (*len = 0) : NULL;
+
+    void **k;
+    {
+        const size_t cap = m->cap;
+        size_t       nk  = 0;
+        char        *_k;
+        if (!(_k = calloc (cap, sizeof (size_t) + sizeof (keyval_t *))))
+            return NULL;
+
+        for (size_t i = 0; i < cap; nk += *((size_t *) (void *) _k + i++))
+            if (*(m->data + i))
+                if (!(*((keyval_t **) (void *) (_k + sizeof (size_t) * cap) + i) =
+                          toarray_linkedlist (*(m->data + i), (size_t *) (void *) _k + i))) {
+                    for (; i != (size_t) -1; free (*((keyval_t **) (void *) (_k + sizeof (size_t) * cap) + --i)))
+                        ;
+                    free (_k);
+
+                    return len ? (void *) (*len = 0) : NULL;
+                }
+
+        if (!(k = malloc (sizeof (void *) * nk * 2))) {
+            for (size_t i = 0; i < cap; free (*((keyval_t **) (void *) (_k + sizeof (size_t) * cap) + i++)))
+                ;
+            free (_k);
+
+            return len ? (void *) (*len = 0) : NULL;
+        }
+
+        for (size_t i = 0, j; i < cap; free (*((keyval_t **) (void *) (_k + sizeof (size_t) * cap) + i++)))
+            for (j = 0; j < *((size_t *) (void *) _k + i); j++) {
+                *(k + i * cap + j) = (*(*((keyval_t **) (void *) (_k + sizeof (size_t) * cap) + i) + j))->key;
+                *(k + i * cap + nk + j) =
+                    (void *) (uintptr_t) (*(*((keyval_t **) (void *) (_k + sizeof (size_t) * cap) + i) + j))->kt;
+            }
+        free (_k);
+
+        if (len)
+            *len = nk;
+    }
+
+    return k;
+}
+
+void *values_map (const restrict map_t m, size_t *const restrict len) {
+    if (!m)
+        return len ? (void *) (*len = 0) : NULL;
+
+    void **v;
+    {
+        const size_t cap = m->cap;
+        size_t       nv  = 0;
+        char        *_v;
+        if (!(_v = calloc (cap, sizeof (size_t) + sizeof (keyval_t *))))
+            return NULL;
+
+        for (size_t i = 0; i < cap; nv += *((size_t *) (void *) _v + i++))
+            if (*(m->data + i))
+                if (!(*((keyval_t **) (void *) (_v + sizeof (size_t) * cap) + i) =
+                          toarray_linkedlist (*(m->data + i), (size_t *) (void *) _v + i))) {
+                    for (; i != (size_t) -1; free (*((keyval_t **) (void *) (_v + sizeof (size_t) * cap) + --i)))
+                        ;
+                    free (_v);
+
+                    return len ? (void *) (*len = 0) : NULL;
+                }
+
+        if (!(v = malloc (sizeof (void *) * nv))) {
+            for (size_t i = 0; i < cap; free (*((keyval_t **) (void *) (_v + sizeof (size_t) * cap) + i++)))
+                ;
+            free (_v);
+
+            return len ? (void *) (*len = 0) : NULL;
+        }
+
+        for (size_t i = 0, j; i < cap; free (*((keyval_t **) (void *) (_v + sizeof (size_t) * cap) + i++)))
+            for (j = 0; j < *((size_t *) (void *) _v + i); j++)
+                *(v + i * cap + j) = (*(*((keyval_t **) (void *) (_v + sizeof (size_t) * cap) + i) + j))->val;
+        free (_v);
+
+        if (len)
+            *len = nv;
+    }
+
+    return v;
 }

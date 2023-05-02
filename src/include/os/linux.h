@@ -2,6 +2,7 @@
 #define TRIVIA_OS_LINUX_H
 
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <byteswap.h>
 

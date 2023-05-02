@@ -41,7 +41,7 @@ void freedata_linkedlist (const restrict linkedlist_t l, freefunc_t *const free)
 }
 
 bool insert_linkedlist (linkedlist_t l, void *const data) {
-    if (!l && l->len == SIZE_MAX - 1)
+    if (!l || l->len == SIZE_MAX - 1)
         return false;
 
     for (; l->next; l = l->next)

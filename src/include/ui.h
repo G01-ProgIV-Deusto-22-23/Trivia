@@ -263,45 +263,50 @@ extern int close_log_file (void);
                    __builtin_types_compatible_p (typeof (x), const char []) || isint (x)),                                                                                \
                  "the set_log_file() macro must receive either a (const) char pointer/array that represents a file path or an integer that represents a file descriptor." \
              ),                                                                                                                                                           \
-             impl_set_log_file (                                                                                                                                          \
-                 ({                                                                                                                                                       \
-                     _Pragma ("GCC diagnostic push");                                                                                                                     \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                                               \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                    \
-                     FILE *const __set_log_file_file__ = __builtin_choose_expr (                                                                                          \
-                         isint (x), _fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                             \
-                         fopen (                                                                                                                                          \
-                             __builtin_choose_expr (                                                                                                                      \
-                                 __builtin_types_compatible_p (typeof (x), char *) ||                                                                                     \
-                                     __builtin_types_compatible_p (typeof (x), const char *) ||                                                                           \
-                                     __builtin_types_compatible_p (typeof (x), char []) ||                                                                                \
-                                     __builtin_types_compatible_p (typeof (x), const char []),                                                                            \
-                                 x, ""                                                                                                                                    \
-                             ),                                                                                                                                           \
-                             "w+"                                                                                                                                         \
-                         )                                                                                                                                                \
-                     );                                                                                                                                                   \
-                     _Pragma ("GCC diagnostic pop");                                                                                                                      \
-                     __set_log_file_file__ ? _fileno (__set_log_file_file__) : _fileno (stderr);                                                                          \
-                 }),                                                                                                                                                      \
-                 !(x || strlen (                                                                                                                                          \
-                            __builtin_choose_expr (                                                                                                                       \
-                                __builtin_types_compatible_p (typeof (x), char *) ||                                                                                      \
-                                    __builtin_types_compatible_p (typeof (x), const char *) ||                                                                            \
-                                    __builtin_types_compatible_p (typeof (x), char []) ||                                                                                 \
-                                    __builtin_types_compatible_p (typeof (x), const char []),                                                                             \
-                                x, ""                                                                                                                                     \
-                            )                                                                                                                                             \
-                                ? __builtin_choose_expr (                                                                                                                 \
-                                      __builtin_types_compatible_p (typeof (x), char *) ||                                                                                \
-                                          __builtin_types_compatible_p (typeof (x), const char *) ||                                                                      \
-                                          __builtin_types_compatible_p (typeof (x), char []) ||                                                                           \
-                                          __builtin_types_compatible_p (typeof (x), const char []),                                                                       \
-                                      x, ""                                                                                                                               \
-                                  )                                                                                                                                       \
-                                : ""                                                                                                                                      \
-                        ))                                                                                                                                                \
-             ))
+             ({                                                                                                                                                           \
+                 _Pragma ("GCC diagnostic push");                                                                                                                         \
+                 _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                                                   \
+                 _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                        \
+                 _Pragma ("GCC diagnostic ignored \"-Waddress\"");                                                                                                        \
+                 _Pragma ("GCC diagnostic ignored \"-Wnull-dereference\"");                                                                                               \
+                 int __set_log_file_ret__ = impl_set_log_file (                                                                                                           \
+                     ({                                                                                                                                                   \
+                         FILE *const __impl_set_log_file__ = __builtin_choose_expr (                                                                                      \
+                             isint (x), _fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                         \
+                             fopen (                                                                                                                                      \
+                                 __builtin_choose_expr (                                                                                                                  \
+                                     __builtin_types_compatible_p (typeof (x), char *) ||                                                                                 \
+                                         __builtin_types_compatible_p (typeof (x), const char *) ||                                                                       \
+                                         __builtin_types_compatible_p (typeof (x), char []) ||                                                                            \
+                                         __builtin_types_compatible_p (typeof (x), const char []),                                                                        \
+                                     x, ""                                                                                                                                \
+                                 ),                                                                                                                                       \
+                                 "w+"                                                                                                                                     \
+                             )                                                                                                                                            \
+                         );                                                                                                                                               \
+                         __impl_set_log_file__ ? _fileno (__impl_set_log_file__) : _fileno (stderr);                                                                      \
+                     }),                                                                                                                                                  \
+                     !(x && strlen (                                                                                                                                      \
+                                __builtin_choose_expr (                                                                                                                   \
+                                    __builtin_types_compatible_p (typeof (x), char *) ||                                                                                  \
+                                        __builtin_types_compatible_p (typeof (x), const char *) ||                                                                        \
+                                        __builtin_types_compatible_p (typeof (x), char []) ||                                                                             \
+                                        __builtin_types_compatible_p (typeof (x), const char []),                                                                         \
+                                    x, ""                                                                                                                                 \
+                                )                                                                                                                                         \
+                                    ? __builtin_choose_expr (                                                                                                             \
+                                          __builtin_types_compatible_p (typeof (x), char *) ||                                                                            \
+                                              __builtin_types_compatible_p (typeof (x), const char *) ||                                                                  \
+                                              __builtin_types_compatible_p (typeof (x), char []) ||                                                                       \
+                                              __builtin_types_compatible_p (typeof (x), const char []),                                                                   \
+                                          x, ""                                                                                                                           \
+                                      )                                                                                                                                   \
+                                    : ""                                                                                                                                  \
+                            ))                                                                                                                                            \
+                 );                                                                                                                                                       \
+                 _Pragma ("GCC diagnostic pop");                                                                                                                          \
+                 __set_log_file_ret__;                                                                                                                                    \
+             }))
     #else
         #define set_log_file(x)                                                                                                                                           \
             (ct_error (                                                                                                                                                   \
@@ -311,45 +316,50 @@ extern int close_log_file (void);
                    __builtin_types_compatible_p (typeof (x), const char []) || isint (x)),                                                                                \
                  "the set_log_file() macro must receive either a (const) char pointer/array that represents a file path or an integer that represents a file descriptor." \
              ),                                                                                                                                                           \
-             impl_set_log_file (                                                                                                                                          \
-                 ({                                                                                                                                                       \
-                     _Pragma ("GCC diagnostic push");                                                                                                                     \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                                               \
-                     _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                    \
-                     FILE *const __impl_set_log_file__ = __builtin_choose_expr (                                                                                          \
-                         isint (x), fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                              \
-                         fopen (                                                                                                                                          \
-                             __builtin_choose_expr (                                                                                                                      \
-                                 __builtin_types_compatible_p (typeof (x), char *) ||                                                                                     \
-                                     __builtin_types_compatible_p (typeof (x), const char *) ||                                                                           \
-                                     __builtin_types_compatible_p (typeof (x), char []) ||                                                                                \
-                                     __builtin_types_compatible_p (typeof (x), const char []),                                                                            \
-                                 x, ""                                                                                                                                    \
-                             ),                                                                                                                                           \
-                             "w+"                                                                                                                                         \
-                         )                                                                                                                                                \
-                     );                                                                                                                                                   \
-                     _Pragma ("GCC diagnostic pop");                                                                                                                      \
-                     __impl_set_log_file__ ? fileno (__impl_set_log_file__) : -1;                                                                                         \
-                 }),                                                                                                                                                      \
-                 !(x || strlen (                                                                                                                                          \
-                            __builtin_choose_expr (                                                                                                                       \
-                                __builtin_types_compatible_p (typeof (x), char *) ||                                                                                      \
-                                    __builtin_types_compatible_p (typeof (x), const char *) ||                                                                            \
-                                    __builtin_types_compatible_p (typeof (x), char []) ||                                                                                 \
-                                    __builtin_types_compatible_p (typeof (x), const char []),                                                                             \
-                                x, ""                                                                                                                                     \
-                            )                                                                                                                                             \
-                                ? __builtin_choose_expr (                                                                                                                 \
-                                      __builtin_types_compatible_p (typeof (x), char *) ||                                                                                \
-                                          __builtin_types_compatible_p (typeof (x), const char *) ||                                                                      \
-                                          __builtin_types_compatible_p (typeof (x), char []) ||                                                                           \
-                                          __builtin_types_compatible_p (typeof (x), const char []),                                                                       \
-                                      x, ""                                                                                                                               \
-                                  )                                                                                                                                       \
-                                : ""                                                                                                                                      \
-                        ))                                                                                                                                                \
-             ))
+             ({                                                                                                                                                           \
+                 _Pragma ("GCC diagnostic push");                                                                                                                         \
+                 _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                                                   \
+                 _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                                                        \
+                 _Pragma ("GCC diagnostic ignored \"-Waddress\"");                                                                                                        \
+                 _Pragma ("GCC diagnostic ignored \"-Wnull-dereference\"");                                                                                               \
+                 int __set_log_file_ret__ = impl_set_log_file (                                                                                                           \
+                     ({                                                                                                                                                   \
+                         FILE *const __impl_set_log_file__ = __builtin_choose_expr (                                                                                      \
+                             isint (x), fdopen (__builtin_choose_expr (isint (x), x, -1), "w+"),                                                                          \
+                             fopen (                                                                                                                                      \
+                                 __builtin_choose_expr (                                                                                                                  \
+                                     __builtin_types_compatible_p (typeof (x), char *) ||                                                                                 \
+                                         __builtin_types_compatible_p (typeof (x), const char *) ||                                                                       \
+                                         __builtin_types_compatible_p (typeof (x), char []) ||                                                                            \
+                                         __builtin_types_compatible_p (typeof (x), const char []),                                                                        \
+                                     x, ""                                                                                                                                \
+                                 ),                                                                                                                                       \
+                                 "w+"                                                                                                                                     \
+                             )                                                                                                                                            \
+                         );                                                                                                                                               \
+                         __impl_set_log_file__ ? fileno (__impl_set_log_file__) : -1;                                                                                     \
+                     }),                                                                                                                                                  \
+                     !(x && strlen (                                                                                                                                      \
+                                __builtin_choose_expr (                                                                                                                   \
+                                    __builtin_types_compatible_p (typeof (x), char *) ||                                                                                  \
+                                        __builtin_types_compatible_p (typeof (x), const char *) ||                                                                        \
+                                        __builtin_types_compatible_p (typeof (x), char []) ||                                                                             \
+                                        __builtin_types_compatible_p (typeof (x), const char []),                                                                         \
+                                    x, ""                                                                                                                                 \
+                                )                                                                                                                                         \
+                                    ? __builtin_choose_expr (                                                                                                             \
+                                          __builtin_types_compatible_p (typeof (x), char *) ||                                                                            \
+                                              __builtin_types_compatible_p (typeof (x), const char *) ||                                                                  \
+                                              __builtin_types_compatible_p (typeof (x), char []) ||                                                                       \
+                                              __builtin_types_compatible_p (typeof (x), const char []),                                                                   \
+                                          x, ""                                                                                                                           \
+                                      )                                                                                                                                   \
+                                    : ""                                                                                                                                  \
+                            ))                                                                                                                                            \
+                 );                                                                                                                                                       \
+                 _Pragma ("GCC diagnostic pop");                                                                                                                          \
+                 __set_log_file_ret__;                                                                                                                                    \
+             }))
     #endif
 #endif
 
@@ -690,37 +700,7 @@ extern int
              _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                       \
              _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                               \
              FreeConsole ();                                                                                                              \
-             if (!AttachConsole (ATTACH_PARENT_PROCESS))                                                                                  \
-                 if (!AllocConsole ())                                                                                                    \
-                     trap (), unreachable ();                                                                                             \
-             {                                                                                                                            \
-                 FILE *__setup_ui_f__;                                                                                                    \
-                 freopen_s (&__setup_ui_f__, "CONIN$", "r", stdin);                                                                       \
-                 fclose (__setup_ui_f__);                                                                                                 \
-                 freopen_s (&__setup_ui_f__, "CONOUT$", "w", stdout);                                                                     \
-                 fclose (__setup_ui_f__);                                                                                                 \
-                 freopen_s (&__setup_ui_f__, "CONOUT$", "w", stderr);                                                                     \
-                 fclose (__setup_ui_f__);                                                                                                 \
-             }                                                                                                                            \
-             if (_dup2 (                                                                                                                  \
-                     _fileno (_fdopen (_open_osfhandle ((intptr_t) GetStdHandle (STD_INPUT_HANDLE), _O_U8TEXT), "r")),                    \
-                     _fileno (stdin)                                                                                                      \
-                 ) == -1 ||                                                                                                               \
-                 _dup2 (                                                                                                                  \
-                     _fileno (_fdopen (_open_osfhandle ((intptr_t) GetStdHandle (STD_OUTPUT_HANDLE), _O_U8TEXT), "w")                     \
-                     ),                                                                                                                   \
-                     _fileno (stdout)                                                                                                     \
-                 ) == -1 ||                                                                                                               \
-                 _dup2 (                                                                                                                  \
-                     _fileno (_fdopen (_open_osfhandle ((intptr_t) GetStdHandle (STD_ERROR_HANDLE), _O_U8TEXT), "w")),                    \
-                     _fileno (stderr)                                                                                                     \
-                 ) == -1)                                                                                                                 \
-                 trap (), unreachable ();                                                                                                 \
-             setvbuf (stdin, NULL, _IONBF, 0);                                                                                            \
-             setvbuf (stdout, NULL, _IONBF, 0);                                                                                           \
-             setvbuf (stderr, NULL, _IONBF, 0);                                                                                           \
-             SetConsoleCP (CP_UTF8);                                                                                                      \
-             SetConsoleOutputCP (CP_UTF8);                                                                                                \
+             int       __setup_ui_ret__   = 0;                                                                                            \
              int       __setup_ui_argc__  = 0;                                                                                            \
              char    **__setup_ui_argv__  = NULL;                                                                                         \
              wchar_t **__setup_ui_wargv__ = NULL;                                                                                         \
@@ -765,57 +745,111 @@ extern int
                              error ("failed to retrieve the program arguments.");                                                         \
                  }                                                                                                                        \
              }                                                                                                                            \
-             {                                                                                                                            \
-                 char __setup_ui_path__ [MAX_PATH + 1];                                                                                   \
-                 if (!strcmp (                                                                                                            \
-                         basename (({                                                                                                     \
-                             if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))                                             \
-                                 error ("could not get the executable filename.");                                                        \
-                             __setup_ui_path__;                                                                                           \
-                         })),                                                                                                             \
-                         "local.exe"                                                                                                      \
-                     ))                                                                                                                   \
-                     if (!SetWindowTextW (                                                                                                \
-                             ({                                                                                                           \
-                                 HWND __setup_ui_window_handle__ = GetConsoleWindow ();                                                   \
-                                 if (!__setup_ui_window_handle__)                                                                         \
-                                     error ("could not retrieve a handle to the console window.");                                        \
-                                 __setup_ui_window_handle__;                                                                              \
-                             }),                                                                                                          \
-                             L"Trivia: servidor local"                                                                                    \
+             if (__setup_ui_argc__ <= 1 || strncmp (*__setup_ui_argv__, get_game_arg (), strlen (get_game_arg ()))) {                     \
+                 if (!AttachConsole (ATTACH_PARENT_PROCESS))                                                                              \
+                     if (!AllocConsole ())                                                                                                \
+                         trap (), unreachable ();                                                                                         \
+                 {                                                                                                                        \
+                     FILE *__setup_ui_f__;                                                                                                \
+                     freopen_s (&__setup_ui_f__, "CONIN$", "r", stdin);                                                                   \
+                     fclose (__setup_ui_f__);                                                                                             \
+                     freopen_s (&__setup_ui_f__, "CONOUT$", "w", stdout);                                                                 \
+                     fclose (__setup_ui_f__);                                                                                             \
+                     freopen_s (&__setup_ui_f__, "CONOUT$", "w", stderr);                                                                 \
+                     fclose (__setup_ui_f__);                                                                                             \
+                 }                                                                                                                        \
+                 if (_dup2 (                                                                                                              \
+                         _fileno (                                                                                                        \
+                             _fdopen (_open_osfhandle ((intptr_t) GetStdHandle (STD_INPUT_HANDLE), _O_U8TEXT), "r")                       \
+                         ),                                                                                                               \
+                         _fileno (stdin)                                                                                                  \
+                     ) == -1 ||                                                                                                           \
+                     _dup2 (                                                                                                              \
+                         _fileno (                                                                                                        \
+                             _fdopen (_open_osfhandle ((intptr_t) GetStdHandle (STD_OUTPUT_HANDLE), _O_U8TEXT), "w")                      \
+                         ),                                                                                                               \
+                         _fileno (stdout)                                                                                                 \
+                     ) == -1 ||                                                                                                           \
+                     _dup2 (                                                                                                              \
+                         _fileno (                                                                                                        \
+                             _fdopen (_open_osfhandle ((intptr_t) GetStdHandle (STD_ERROR_HANDLE), _O_U8TEXT), "w")                       \
+                         ),                                                                                                               \
+                         _fileno (stderr)                                                                                                 \
+                     ) == -1)                                                                                                             \
+                     trap (), unreachable ();                                                                                             \
+                 setvbuf (stdin, NULL, _IONBF, 0);                                                                                        \
+                 setvbuf (stdout, NULL, _IONBF, 0);                                                                                       \
+                 setvbuf (stderr, NULL, _IONBF, 0);                                                                                       \
+                 SetConsoleCP (CP_UTF8);                                                                                                  \
+                 SetConsoleOutputCP (CP_UTF8);                                                                                            \
+                 {                                                                                                                        \
+                     char __setup_ui_path__ [MAX_PATH + 1];                                                                               \
+                     if (!strcmp (                                                                                                        \
+                             basename (({                                                                                                 \
+                                 if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))                                         \
+                                     error ("could not get the executable filename.");                                                    \
+                                 __setup_ui_path__;                                                                                       \
+                             })),                                                                                                         \
+                             "local.exe"                                                                                                  \
                          ))                                                                                                               \
-                         warning ("could not change the window's name");                                                                  \
+                         if (!SetWindowTextW (                                                                                            \
+                                 ({                                                                                                       \
+                                     HWND __setup_ui_window_handle__ = GetConsoleWindow ();                                               \
+                                     if (!__setup_ui_window_handle__)                                                                     \
+                                         error ("could not retrieve a handle to the console window.");                                    \
+                                     __setup_ui_window_handle__;                                                                          \
+                                 }),                                                                                                      \
+                                 L"Trivia: servidor local"                                                                                \
+                             ))                                                                                                           \
+                             warning ("could not change the window's name");                                                              \
+                 }                                                                                                                        \
+                 __setup_ui_ret__ = impl_setup_ui (                                                                                       \
+                     __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                                          \
+                     __builtin_choose_expr (                                                                                              \
+                         isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                            \
+                     ),                                                                                                                   \
+                     __builtin_choose_expr (                                                                                              \
+                         isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0), 0                      \
+                     ),                                                                                                                   \
+                     __builtin_choose_expr (                                                                                              \
+                         isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)),                                                              \
+                         ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                                                                    \
+                     ),                                                                                                                   \
+                     __builtin_choose_expr (                                                                                              \
+                         isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                                           \
+                         ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                                                 \
+                     ),                                                                                                                   \
+                     __builtin_choose_expr (                                                                                              \
+                         isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                                        \
+                         ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                              \
+                     )                                                                                                                    \
+                 );                                                                                                                       \
+                 if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain"))) {                    \
+                     for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                               \
+                          _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                                            \
+                         ;                                                                                                                \
+                     _freea (__setup_ui_argv__);                                                                                          \
+                     _freea (__setup_ui_wargl__);                                                                                         \
+                     if (strcmp (__func__, "wmain"))                                                                                      \
+                         LocalFree (__setup_ui_wargv__);                                                                                  \
+                 }                                                                                                                        \
+             } else {                                                                                                                     \
+                 __setup_ui_ret__ = (int) strtol (*__setup_ui_argv__ + strlen (get_game_arg ()), NULL, 10);                               \
+                 if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain"))) {                    \
+                     for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                               \
+                          _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                                            \
+                         ;                                                                                                                \
+                     _freea (__setup_ui_argv__);                                                                                          \
+                     _freea (__setup_ui_wargl__);                                                                                         \
+                     if (strcmp (__func__, "wmain"))                                                                                      \
+                         LocalFree (__setup_ui_wargv__);                                                                                  \
+                 }                                                                                                                        \
+                 game_server (                                                                                                            \
+                     __setup_ui_ret__,                                                                                                    \
+                     (size_t) strtol (__setup_ui_argc__ > 1 ? *(__setup_ui_argv__ + 1) : "", NULL, 10)                                    \
+                 );                                                                                                                       \
              }                                                                                                                            \
-             int __setup_ui_ret__ = impl_setup_ui (                                                                                       \
-                 __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                                              \
-                 __builtin_choose_expr (                                                                                                  \
-                     isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                                \
-                 ),                                                                                                                       \
-                 __builtin_choose_expr (                                                                                                  \
-                     isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0), 0                          \
-                 ),                                                                                                                       \
-                 __builtin_choose_expr (                                                                                                  \
-                     isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)), ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                    \
-                 ),                                                                                                                       \
-                 __builtin_choose_expr (                                                                                                  \
-                     isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                                               \
-                     ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                                                     \
-                 ),                                                                                                                       \
-                 __builtin_choose_expr (                                                                                                  \
-                     isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                                            \
-                     ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                                  \
-                 )                                                                                                                        \
-             );                                                                                                                           \
              _Pragma ("GCC diagnostic pop");                                                                                              \
-             if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain"))) {                        \
-                 for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                                   \
-                      _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                                                \
-                     ;                                                                                                                    \
-                 _freea (__setup_ui_argv__);                                                                                              \
-                 _freea (__setup_ui_wargl__);                                                                                             \
-                 if (strcmp (__func__, "wmain"))                                                                                          \
-                     LocalFree (__setup_ui_wargv__);                                                                                      \
-             }                                                                                                                            \
              __setup_ui_ret__;                                                                                                            \
          }))
 #else

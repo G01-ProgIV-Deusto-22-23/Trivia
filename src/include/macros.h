@@ -6,6 +6,7 @@
 #include "macros/auto.h"
 #include "macros/decplaces.h"
 #include "macros/diag.h"
+#include "macros/dword.h"
 #include "macros/fitwin.h"
 #include "macros/fprintf.h"
 #include "macros/isarr.h"

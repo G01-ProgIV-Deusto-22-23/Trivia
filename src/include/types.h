@@ -32,6 +32,16 @@ typedef void errorfunc_t (void *const restrict);
 
 typedef enum { actionmenu, choicemenu, multimenu } menutype_t;
 
+typedef enum {
+    title_no_color = 0,
+    title_red,
+    title_green,
+    title_blue,
+    title_yellow,
+    title_magenta,
+    title_cyan
+} title_color_t;
+
 typedef void choicefunc_t (void);
 
 typedef struct {
@@ -61,7 +71,7 @@ typedef uint64_t       setdimsfunc_t (uint32_t, uint32_t);
 typedef uint32_t       setwidthfunc_t (const uint32_t);
 typedef setwidthfunc_t setheightfunc_t;
 
-typedef enum { server_off, server_on, server_starting } server_status_t;
+typedef enum { server_off, server_on, server_starting, server_restarting, server_error } server_status_t;
 
 typedef int cmpfunc_t (void *, void *);
 

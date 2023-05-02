@@ -1,3 +1,4 @@
+#include "ncursesw/curses.h"
 static int INIT_CURS_VAR;
 
 #define TRIVIA_USAGE_ARG_SHORT       "-u"
@@ -228,16 +229,44 @@ int impl_setup_ui (
         warning ("could not retrieve the initial state of the cursor.");
 
     if (has_colors ()) {
-        use_default_colors ();
-        start_color ();
+        if (use_default_colors () == ERR) {
+            warning ("could not reset color.");
+
+            goto color_end;
+        }
+
+        if (start_color () == ERR) {
+            warning ("could not enable colors.");
+
+            goto color_end;
+        }
 
         short term_bckgd;
 
-        init_pair (log_message + 1, COLOR_GREEN, (pair_content (0, &(short) { 0 }, &term_bckgd), term_bckgd));
-        init_pair (log_warning + 1, COLOR_YELLOW, term_bckgd);
-        init_pair (log_error + 1, COLOR_RED, term_bckgd);
+        if (init_pair (log_message + 1, COLOR_GREEN, (pair_content (0, &(short) { 0 }, &term_bckgd), term_bckgd)) ==
+            ERR)
+            warning ("could not start color pair (green).");
+
+        if (init_pair (log_warning + 1, COLOR_YELLOW, term_bckgd) == ERR)
+            warning ("could not start color pair (yellow).");
+
+        if (init_pair (log_error + 1, COLOR_RED, term_bckgd) == ERR)
+            warning ("could not start color pair (red).");
+
+        if (init_pair (log_error + 2, COLOR_BLUE, term_bckgd) == ERR)
+            warning ("could not start color pair (blue).");
+
+        if (init_pair (log_error + 3, COLOR_MAGENTA, term_bckgd) == ERR)
+            warning ("could not start color pair (magenta).");
+
+        if (init_pair (log_error + 4, COLOR_CYAN, term_bckgd) == ERR)
+            warning ("could not start color pair (cyan).");
     }
 
+    else
+        warning ("the terminal lacks color support.");
+
+color_end:
     create_log_window ();
 
     int settings = set_ui_settings (cursor, en_cbreak, en_echo, en_keypad, en_halfdelay);

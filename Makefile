@@ -28,13 +28,14 @@ ifeq ($(RUNTIME_DIAGS), false)
 endif
 
 DFLAGS := \
-	-g3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
-	-Wshadow=local -Wstrict-prototypes -Wwrite-strings -Wconversion -Wcast-align
+	-ggdb3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
+	-Wshadow=local -Wstrict-prototypes -Wwrite-strings -Wconversion \
+	-Wcast-align -Wnull-dereference -Wformat=2 -Wno-format-y2k
 
 UILIBS     := -lformw -lmenuw -lpanelw -lncursesw -lm
 OSLIBS     := -lbacktrace
 BDLIBS     := -lsqlite3
-TRIVIALIBS := -ladt -lui -los -lserver -lbd
+TRIVIALIBS := -lui -los -lserver -lbd -ladt
 LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(BDLIBS)
 
 ifeq ($(OS), Windows_NT)
@@ -51,7 +52,7 @@ linux: BINDIR := $(BINDIR)/linux
 
 windows: CC     := $(GCC_WINDOWS)
 windows: LIBDIR := $(LIBDIR)/windows
-windows: CFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR) -lws2_32
+windows: CFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
 windows: OBJDIR := $(OBJDIR)/windows
 windows: BINDIR := $(BINDIR)/windows
 
@@ -183,7 +184,7 @@ $(LOCALL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
 
 $(LOCALW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
-	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS)
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
 
 $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@

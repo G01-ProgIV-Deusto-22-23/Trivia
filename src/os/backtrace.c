@@ -88,8 +88,14 @@ static void bt_error_func (void *f, const char __attribute__ ((unused)) * unused
         if (!f)
             error ("an error was encountered when trying to set up the backtrace sytem.");
 
-        else
+        else {
+            write (
+                BT_FD, "an error was encountered when trying to print a backtrace.",
+                sizeof ("an error was encountered when trying to print a backtrace.") - 1
+            );
+
             error ("an error was encountered when trying to print a backtrace.");
+        }
     }
 
     warning ("there is not enough debug information to set up the backtrace system.");

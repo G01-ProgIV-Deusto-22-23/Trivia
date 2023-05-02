@@ -1,6 +1,4 @@
 #include "form.h"
-#include "ncursesw/curses.h"
-#include "ncursesw/form.h"
 #include "window.h"
 
 form_t                *FORMS [MAX_FORM_FIELDS] = { 0 };
@@ -15,7 +13,9 @@ sem_t            FREE_FORM_SEMS [sizeof (FORMS) / sizeof (*FORMS)];
 
 static char        FORM_FIELD_DATA [sizeof (FORMS) / sizeof (*FORMS)][MAX_FORM_FIELDS][MAX_FORM_FIELD_LEN + 1];
 static const char *FORM_FIELD_SAVEBUF [sizeof (FORMS) / sizeof (*FORMS)][MAX_FORM_FIELDS];
-static char        FORM_FIELD_TEMPBUF [sizeof (FORMS) / sizeof (*(FORMS))][MAX_FORM_FIELD_LEN + 1];
+static char        FORM_FIELD_TEMPBUF [sizeof (FORMS) / sizeof (*FORMS)][MAX_FORM_FIELD_LEN + 1];
+
+static title_color_t FORM_TITLE_COLORS [sizeof (FORMS) / sizeof (*FORMS)] = { title_no_color };
 
 #ifdef _WIN32
 static HANDLE FREE_FORM_THREADS [sizeof (FORMS) / sizeof (*FORMS)];
@@ -288,6 +288,38 @@ size_t
     return form;
 }
 
+title_color_t get_form_title_color (const size_t form) {
+    if (form >=
+#ifdef _WIN32
+        sizeof (FORMS) / sizeof (*FORMS)
+#else
+        arrsize (FORMS)
+#endif
+    )
+        error ("not a valid form index.");
+
+    return *(FORM_TITLE_COLORS + form);
+}
+
+title_color_t set_form_title_color (const size_t form, const title_color_t color) {
+    if (form >=
+#ifdef _WIN32
+        sizeof (FORMS) / sizeof (*FORMS)
+#else
+        arrsize (FORMS)
+#endif
+    )
+        error ("not a valid form index.");
+
+    if (!*(FORMS + form)) {
+        warning ("cannot change the title color of a nonexistent form.");
+
+        return title_no_color;
+    }
+
+    return *(FORM_TITLE_COLORS + form) = color;
+}
+
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
 [[nonnull (2)]]
 #else
@@ -296,6 +328,19 @@ __attribute__ ((nonnull (2)))
 static void
     print_form_title (const size_t form, const char *const restrict title) {
     WINDOW *w = form_win ((*(FORMS + form))->form);
+
+    if (wattron (w, A_BOLD) == ERR)
+        warning ("could not set menu title to bold.");
+
+    if (*(FORM_TITLE_COLORS + form) != title_no_color &&
+        ((*(FORM_TITLE_COLORS + form) == title_red && wattron (w, COLOR_PAIR (log_error + 1)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_green && wattron (w, COLOR_PAIR (log_message + 1)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_blue && wattron (w, COLOR_PAIR (log_error + 2)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_yellow && wattron (w, COLOR_PAIR (log_warning + 1)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_magenta && wattron (w, COLOR_PAIR (log_error + 3)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_cyan && wattron (w, COLOR_PAIR (log_error + 4)) == ERR)))
+        warning ("could not set the menu color.");
+
     if (mvwprintw (w, 2, (getmaxx (w) - getbegx (w) - (int) strlen (title)) / 2, "%s", title) == ERR)
         warning ("could not print the title.");
 
@@ -308,6 +353,18 @@ static void
                       len;
                   })) == ERR)
         warning ("could not print the title's horizontal line.");
+
+    if (wattroff (w, A_BOLD) == ERR)
+        warning ("could not restore the font weight of the menu window.");
+
+    if (*(FORM_TITLE_COLORS + form) != title_no_color &&
+        ((*(FORM_TITLE_COLORS + form) == title_red && wattroff (w, COLOR_PAIR (log_error + 1)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_green && wattroff (w, COLOR_PAIR (log_message + 1)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_blue && wattroff (w, COLOR_PAIR (log_error + 2)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_yellow && wattroff (w, COLOR_PAIR (log_warning + 1)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_magenta && wattroff (w, COLOR_PAIR (log_error + 3)) == ERR) ||
+         (*(FORM_TITLE_COLORS + form) == title_cyan && wattroff (w, COLOR_PAIR (log_error + 4)) == ERR)))
+        warning ("could not restore the menu color.");
 }
 
 static bool checkAlnumChar (
@@ -536,11 +593,7 @@ size_t
                     goto prev_up;
                 }
 
-                if (form_driver ((*(FORMS + form))->form, REQ_BEG_LINE) == E_OK)
-                    pos = 0;
-
-                else
-                    warning ("could not move the cursor to the beginning of the field.");
+                pos = 0;
 
                 if ((unsigned) field_opts (*(form_fields ((*(FORMS + form))->form) + i)) & O_PUBLIC) {
                     if (set_field_back (*(form_fields ((*(FORMS + form))->form) + i), A_STANDOUT) != E_OK)
@@ -587,11 +640,7 @@ size_t
                     goto prev_down;
                 }
 
-                if (form_driver ((*(FORMS + form))->form, REQ_BEG_LINE) == E_OK)
-                    pos = 0;
-
-                else
-                    warning ("could not move the cursor to the beginning of the field.");
+                pos = 0;
 
                 if ((unsigned) field_opts (*(form_fields ((*(FORMS + form))->form) + i)) & O_PUBLIC) {
                     if (set_field_back (*(form_fields ((*(FORMS + form))->form) + i), A_STANDOUT) != E_OK)

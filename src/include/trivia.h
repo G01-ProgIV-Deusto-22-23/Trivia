@@ -32,8 +32,10 @@
     #include <errno.h>
     #include <time.h>
     #include <stdatomic.h>
+    #include <limits.h>
 #endif
 
+#include <sys/time.h>
 #include <libgen.h>
 
 #include <backtrace.h>
