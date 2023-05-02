@@ -156,11 +156,14 @@ static int delmenufunc (void *const restrict menu) {
     trivia_free_menu ((size_t) (uintptr_t) menu);
 
     if (!IS_DELETE_WINDOWS)
+        if (
 #ifdef _WIN32
-        WaitForSingleObject (*(FREE_MENU_SEMS + (size_t) (uintptr_t) menu), 0L);
+            WaitForSingleObject (*(FREE_MENU_SEMS + (size_t) (uintptr_t) menu), 0L) == WAIT_FAILED
 #else
-        sem_wait (FREE_MENU_SEMS + (uintptr_t) menu);
+            sem_wait (FREE_MENU_SEMS + (uintptr_t) menu) == -1
 #endif
+        )
+            error ("could not wait for the menu to be freed.");
 
     return atomic_load (&FREE_MENU_ERR);
 }
@@ -169,11 +172,14 @@ static int delformfunc (void *const restrict form) {
     trivia_free_form ((size_t) (uintptr_t) form);
 
     if (!IS_DELETE_WINDOWS)
+        if (
 #ifdef _WIN32
-        WaitForSingleObject (*(FREE_FORM_SEMS + (size_t) (uintptr_t) form), 0L);
+            WaitForSingleObject (*(FREE_FORM_SEMS + (size_t) (uintptr_t) form), 0L) == WAIT_FAILED
 #else
-        sem_wait (FREE_FORM_SEMS + (uintptr_t) form);
+            sem_wait (FREE_FORM_SEMS + (uintptr_t) form) == WAIT_FAILED
 #endif
+        )
+            error ("could not wait for the form to be freed.");
 
     return atomic_load (&FREE_FORM_ERR);
 }

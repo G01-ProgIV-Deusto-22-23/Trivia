@@ -84,11 +84,14 @@ static void     *impl_trivia_free_form (void *__form__) {
 
     FORM_CONTROL ^= ((size_t) 1) << form;
 
+    if (
 #ifdef _WIN32
-    ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1, NULL);
+        !ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1, NULL)
 #else
-    sem_post (FREE_FORM_SEMS + form);
+        sem_post (FREE_FORM_SEMS + form) == -1
 #endif
+    )
+        error ("could not post the semaphore after freeing the form.");
 
     return
 #ifdef _WIN32
@@ -114,18 +117,29 @@ void trivia_free_form (const size_t form) {
 }
 
 void start_form_gc (void) {
+#ifdef _WIN32
+    static CHAR FREE_FORM_SEM_NAMES [sizeof (FORMS) / sizeof (*FORMS)]
+                                    [sizeof ("TRIVIA_FREE_FORM_SEM__") + sizeof (STRINGIFY (DWORD_MAX)) +
+                                     sizeof (STRINGIFY (sizeof (FORMS) / sizeof (*FORMS))) - 2];
+#endif
+
     for (size_t i = 0; i <
 #ifdef _WIN32
                        sizeof (FREE_FORM_SEMS) / sizeof (*FREE_FORM_SEMS)
 #else
                        arrsize (FREE_FORM_SEMS)
 #endif
-             ;)
+             ;
+         i++)
         if (
 #ifdef _WIN32
-            !(*(FREE_FORM_SEMS + i++) = CreateSemaphore (NULL, 0, 1, NULL))
+            !(sprintf (*(FREE_FORM_SEM_NAMES + i), "TRIVIA_FREE_FORM_SEM_%lu_%" PRISZ, GetCurrentProcessId (), i) !=
+                  -1 &&
+              CreateSemaphoreA (NULL, 1L, 1L, *(FREE_FORM_SEM_NAMES + i)) &&
+              (*(FREE_FORM_SEMS + i) =
+                   OpenSemaphoreA (SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, TRUE, *(FREE_FORM_SEM_NAMES + i))))
 #else
-            sem_init (FREE_FORM_SEMS + i++, 0, 1)
+            sem_init (FREE_FORM_SEMS + i, 0, 1)
 #endif
         )
             error ("could not start the form garbage collector.");
@@ -139,11 +153,14 @@ void stop_form_gc (void) {
                        arrsize (FREE_FORM_SEMS)
 #endif
              ;) {
+        if (
 #ifdef _WIN32
-        WaitForSingleObject (*(FREE_FORM_SEMS + i), 0L);
+            WaitForSingleObject (*(FREE_FORM_SEMS + i), 0L) == WAIT_FAILED
 #else
-        sem_wait (FREE_FORM_SEMS + i);
+            sem_wait (FREE_FORM_SEMS + i) == WAIT_FAILED
 #endif
+        )
+            warning ("could not wait for a semaphore.");
 
         if (
 #ifdef _WIN32
@@ -195,11 +212,14 @@ size_t
 
     atomic_fetch_or (&FORM_CONTROL, 1 << form);
 
+    if (
 #ifdef _WIN32
-    WaitForSingleObject (*(FREE_FORM_SEMS + form), 0L);
+        WaitForSingleObject (*(FREE_FORM_SEMS + form), 0L) == WAIT_FAILED
 #else
-    sem_wait (FREE_FORM_SEMS + form);
+        sem_wait (FREE_FORM_SEMS + form) == -1
 #endif
+    )
+        error ("could not wait for the semaphore when creating the form.");
 
     FIELD **fields;
     if (!(fields = malloc (sizeof (FIELD *) * (n + 1))))
@@ -279,11 +299,14 @@ size_t
 
     keypad (form_win ((*(FORMS + form))->form), true);
 
+    if (
 #ifdef _WIN32
-    ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1L, NULL);
+        !ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1L, NULL)
 #else
-    sem_post (FREE_FORM_SEMS + form);
+        sem_post (FREE_FORM_SEMS + form) == -1
 #endif
+    )
+        error ("could not post the semaphore after creating the form.");
 
     return form;
 }
@@ -330,7 +353,7 @@ static void
     WINDOW *w = form_win ((*(FORMS + form))->form);
 
     if (wattron (w, A_BOLD) == ERR)
-        warning ("could not set menu title to bold.");
+        warning ("could not set form title to bold.");
 
     if (*(FORM_TITLE_COLORS + form) != title_no_color &&
         ((*(FORM_TITLE_COLORS + form) == title_red && wattron (w, COLOR_PAIR (log_error + 1)) == ERR) ||
@@ -339,7 +362,7 @@ static void
          (*(FORM_TITLE_COLORS + form) == title_yellow && wattron (w, COLOR_PAIR (log_warning + 1)) == ERR) ||
          (*(FORM_TITLE_COLORS + form) == title_magenta && wattron (w, COLOR_PAIR (log_error + 3)) == ERR) ||
          (*(FORM_TITLE_COLORS + form) == title_cyan && wattron (w, COLOR_PAIR (log_error + 4)) == ERR)))
-        warning ("could not set the menu color.");
+        warning ("could not set the form color.");
 
     if (mvwprintw (w, 2, (getmaxx (w) - getbegx (w) - (int) strlen (title)) / 2, "%s", title) == ERR)
         warning ("could not print the title.");
@@ -355,7 +378,7 @@ static void
         warning ("could not print the title's horizontal line.");
 
     if (wattroff (w, A_BOLD) == ERR)
-        warning ("could not restore the font weight of the menu window.");
+        warning ("could not restore the font weight of the form window.");
 
     if (*(FORM_TITLE_COLORS + form) != title_no_color &&
         ((*(FORM_TITLE_COLORS + form) == title_red && wattroff (w, COLOR_PAIR (log_error + 1)) == ERR) ||
@@ -364,7 +387,7 @@ static void
          (*(FORM_TITLE_COLORS + form) == title_yellow && wattroff (w, COLOR_PAIR (log_warning + 1)) == ERR) ||
          (*(FORM_TITLE_COLORS + form) == title_magenta && wattroff (w, COLOR_PAIR (log_error + 3)) == ERR) ||
          (*(FORM_TITLE_COLORS + form) == title_cyan && wattroff (w, COLOR_PAIR (log_error + 4)) == ERR)))
-        warning ("could not restore the menu color.");
+        warning ("could not restore the form color.");
 }
 
 static bool checkAlnumChar (

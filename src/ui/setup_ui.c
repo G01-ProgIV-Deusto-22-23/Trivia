@@ -229,11 +229,8 @@ int impl_setup_ui (
         warning ("could not retrieve the initial state of the cursor.");
 
     if (has_colors ()) {
-        if (use_default_colors () == ERR) {
+        if (use_default_colors () == ERR)
             warning ("could not reset color.");
-
-            goto color_end;
-        }
 
         if (start_color () == ERR) {
             warning ("could not enable colors.");

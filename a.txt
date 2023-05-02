@@ -1,3 +1,0 @@
-Warning in function impl_setup_ui (src/ui/setup_ui.c: line 190): could not retrieve the initial state of the cursor.
-Message in function impl_setup_ui (src/ui/setup_ui.c: line 209): UI set up completed.
-Warning in function impl_display_form (src/ui/form.c: line 628): could not update the field with the entered character.

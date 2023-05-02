@@ -1,5 +1,8 @@
 #include "menu.h"
 #include "window.h"
+#include <processthreadsapi.h>
+#include <synchapi.h>
+#include <winnt.h>
 
 MENU                  *MENUS [__WORDSIZE] = { 0 };
 volatile atomic_size_t MENU_CONTROL       = 0;
@@ -90,11 +93,14 @@ static void     *impl_trivia_free_menu (void *__menu__) {
         (void
              *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = (*(MENU_TITLE_COLORS + menu) = 0)));
 
+    if (
 #ifdef _WIN32
-    ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1, NULL);
+        !ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1, NULL)
 #else
-    sem_post (FREE_MENU_SEMS + menu);
+        sem_post (FREE_MENU_SEMS + menu) == -1
 #endif
+    )
+        error ("could not post the semaphore after freeing the menu.");
 
     return
 #ifdef _WIN32
@@ -120,18 +126,29 @@ void trivia_free_menu (const size_t menu) {
 }
 
 void start_menu_gc (void) {
+#ifdef _WIN32
+    static CHAR FREE_MENU_SEM_NAMES [sizeof (MENUS) / sizeof (*MENUS)]
+                                    [sizeof ("TRIVIA_FREE_MENU_SEM__") + sizeof (STRINGIFY (DWORD_MAX)) +
+                                     sizeof (STRINGIFY (sizeof (MENUS) / sizeof (*MENUS))) - 2];
+#endif
+
     for (size_t i = 0; i <
 #ifdef _WIN32
                        sizeof (FREE_MENU_SEMS) / sizeof (*FREE_MENU_SEMS)
 #else
                        arrsize (FREE_MENU_SEMS)
 #endif
-             ;)
+             ;
+         i++)
         if (
 #ifdef _WIN32
-            !(*(FREE_MENU_SEMS + i++) = CreateSemaphore (NULL, 0, 1, NULL))
+            !(sprintf (*(FREE_MENU_SEM_NAMES + i), "TRIVIA_FREE_MENU_SEM_%lu_%" PRISZ, GetCurrentProcessId (), i) !=
+                  -1 &&
+              CreateSemaphoreA (NULL, 1L, LONG_MAX, *(FREE_MENU_SEM_NAMES + i)) &&
+              (*(FREE_MENU_SEMS + i) =
+                   OpenSemaphoreA (SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, *(FREE_MENU_SEM_NAMES + i))))
 #else
-            sem_init (FREE_MENU_SEMS + i++, 0, 1)
+            sem_init (FREE_MENU_SEMS + i, 0, 1)
 #endif
         )
             error ("could not start the menu garbage collector.");
@@ -145,11 +162,14 @@ void stop_menu_gc (void) {
                        arrsize (FREE_MENU_SEMS)
 #endif
              ;) {
+        if (
 #ifdef _WIN32
-        WaitForSingleObject (*(FREE_MENU_SEMS + i), 0L);
+            WaitForSingleObject (*(FREE_MENU_SEMS + i), 0L) == WAIT_FAILED
 #else
-        sem_wait (FREE_MENU_SEMS + i);
+            sem_wait (FREE_MENU_SEMS + i) == WAIT_FAILED
 #endif
+        )
+            warning ("could not wait for a semaphore.");
 
         if (
 #ifdef _WIN32
@@ -166,11 +186,14 @@ static size_t impl_create_menu2 (
     const size_t menu, const menutype_t t, uint32_t w, uint32_t h, uint32_t x, uint32_t y, const size_t n,
     const char *const (*const choices) [2], const size_t (*const lens) [2], choicefunc_t *const *const funcs
 ) {
+    if (
 #ifdef _WIN32
-    WaitForSingleObject (*(FREE_MENU_SEMS + menu), 0L);
+        WaitForSingleObject (*(FREE_MENU_SEMS + menu), INFINITE) == WAIT_FAILED
 #else
-    sem_wait (FREE_MENU_SEMS + menu);
+        sem_wait (FREE_MENU_SEMS + menu) == -1
 #endif
+    )
+        error ("could not wait for the menu to be freed.");
 
     atomic_fetch_or (&MENU_CONTROL, 1 << menu);
 
@@ -218,17 +241,20 @@ static size_t impl_create_menu2 (
         }
     }
 
-#ifdef _WIN32
-    ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1L, 0);
-#else
-        sem_post (FREE_MENU_SEMS + menu);
-#endif
-
     add_window ((void *) (uintptr_t) menu, 2);
 
     keypad (menu_win (*(MENUS + menu)), true);
     *(MENU_TYPES + menu) = t;
     set_menu_ret (menu, NULL);
+
+    if (
+#ifdef _WIN32
+        !ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1L, 0)
+#else
+        sem_post (FREE_MENU_SEMS + menu) == -1
+#endif
+    )
+        error ("could not post the semaphore after creating the menu.");
 
     return menu;
 }

@@ -82,17 +82,18 @@ static bt_error_func (void *f, const char [[unused]] * unused2, int errnum) {
 #else
 static void bt_error_func (void *f, const char __attribute__ ((unused)) * unused2, int errnum) {
 #endif
-    close_backtrace_file ();
-
     if (errnum != -1) {
-        if (!f)
+        if (!f) {
             error ("an error was encountered when trying to set up the backtrace sytem.");
+            close_backtrace_file ();
+        }
 
         else {
             write (
-                BT_FD, "an error was encountered when trying to print a backtrace.",
-                sizeof ("an error was encountered when trying to print a backtrace.") - 1
+                BT_FD, "An error was encountered when trying to print a backtrace.",
+                sizeof ("An error was encountered when trying to print a backtrace.") - 1
             );
+            close_backtrace_file ();
 
             error ("an error was encountered when trying to print a backtrace.");
         }
