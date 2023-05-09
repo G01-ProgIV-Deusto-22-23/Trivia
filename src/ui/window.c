@@ -158,7 +158,7 @@ static int delmenufunc (void *const restrict menu) {
     if (!IS_DELETE_WINDOWS)
         if (
 #ifdef _WIN32
-            WaitForSingleObject (*(FREE_MENU_SEMS + (size_t) (uintptr_t) menu), 0L) == WAIT_FAILED
+            WaitForSingleObject (*(FREE_MENU_SEMS + (size_t) (uintptr_t) menu), INFINITE) == WAIT_FAILED
 #else
             sem_wait (FREE_MENU_SEMS + (uintptr_t) menu) == -1
 #endif
@@ -174,9 +174,9 @@ static int delformfunc (void *const restrict form) {
     if (!IS_DELETE_WINDOWS)
         if (
 #ifdef _WIN32
-            WaitForSingleObject (*(FREE_FORM_SEMS + (size_t) (uintptr_t) form), 0L) == WAIT_FAILED
+            WaitForSingleObject (*(FREE_FORM_SEMS + (size_t) (uintptr_t) form), INFINITE) == WAIT_FAILED
 #else
-            sem_wait (FREE_FORM_SEMS + (uintptr_t) form) == WAIT_FAILED
+            sem_wait (FREE_FORM_SEMS + (uintptr_t) form) == -1
 #endif
         )
             error ("could not wait for the form to be freed.");

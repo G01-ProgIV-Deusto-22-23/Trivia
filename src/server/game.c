@@ -291,7 +291,7 @@ void game_server (const int port, const size_t players) {
 #ifdef _WIN32
             PRIu32
 #else
-            "%d"
+            "d"
 #endif
             ".log",
             port,

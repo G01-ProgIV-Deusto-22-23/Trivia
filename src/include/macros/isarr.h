@@ -2,7 +2,6 @@
 #define TRIVIA_MACROS_ISARR_H
 
 #ifdef __cplusplus
-
     #define isarr(x, ...)                                                                                              \
         (ct_error (                                                                                                    \
              !isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1)),                                                            \
@@ -17,9 +16,7 @@
              "the second argument passed to the isarr() macro must be an integer between 1 and 5."                     \
          ),                                                                                                            \
          std::rank<decltype (x)>::value >= ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1))
-
 #else
-
     #ifdef _WIN32
         #define isarr_helper(x)                                                                                        \
             ({                                                                                                         \
@@ -247,7 +244,6 @@
          __builtin_choose_expr (                                                                                       \
              ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 1) == 1, isarr_helper (x), isarr_eval (x __VA_OPT__ (, ) __VA_ARGS__)   \
          ))
-
 #endif
 
 #endif

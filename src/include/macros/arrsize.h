@@ -69,7 +69,7 @@ template <typename T> static constexpr size_t ARRSIZE_HELPER_FUNC (T, size_t N1,
 
 #else
     #ifdef _WIN32
-        #define arrsize(x, ...) (sizeof (x) / sizeof (*x))
+        #define arrsize(x) (sizeof (x) / sizeof (*x))
     #else
         #define arrsize(x, ...)                                                                                        \
             (ct_error (                                                                                                \

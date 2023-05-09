@@ -1,902 +1,923 @@
 [
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Cuál fue el primer país en aprobar el sufragio femenino?",
-        "opciones": [
-            {"respuesta":"Nueva Zelanda", "correcta": true},
-            {"respuesta":"Francia","correcta": false},
-            {"respuesta":"El Vaticano","correcta": false},
-            {"respuesta":"Estados Unidos","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿En qué año llegó el hombre a la Luna?",
-        "opciones": [
-            {"respuesta":"1969", "correcta": true},
-            {"respuesta":"1888","correcta": false},
-            {"respuesta":"1945","correcta": false},
-            {"respuesta":"1983","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Qué importante batalla tuvo lugar en 1815?",
-        "opciones": [
-            {"respuesta":"Waterloo", "correcta": true},
-            {"respuesta":"Trafalgar","correcta": false},
-            {"respuesta":"Normandía","correcta": false},
-            {"respuesta":"Guerra de Orleans","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Cuál era la ciudad hogar de Marco Polo?",
-        "opciones": [
-            {"respuesta":"Venecia", "correcta": true},
-            {"respuesta":"Madrid","correcta": false},
-            {"respuesta":"Roma","correcta": false},
-            {"respuesta":"Oporto","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿En qué año tuvo lugar el genocidio de Ruanda?",
-        "opciones": [
-            {"respuesta":"1994", "correcta": true},
-            {"respuesta":"1995","correcta": false},
-            {"respuesta":"1990","correcta": false},
-            {"respuesta":"1973","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Quién fue el primer presidente de la democracia española después del franquismo?",
-        "opciones": [
-            {"respuesta":"Adolfo Suárez", "correcta": true},
-            {"respuesta":"Cánovas del Castillo","correcta": false},
-            {"respuesta":"Sagasta","correcta": false},
-            {"respuesta":"Zapatero","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Qué reina británica fue hija de los Reyes Católicos?",
-        "opciones": [
-            {"respuesta":"Catalina de Aragón", "correcta": true},
-            {"respuesta":"Isabel de león","correcta": false},
-            {"respuesta":"Isabel de Asturias","correcta": false},
-            {"respuesta":"Cristina de Aragón","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Por qué nombre se conocía a la traductora e intérprete del conquistador Hernán Cortés en tierras aztecas?",
-        "opciones": [
-            {"respuesta":"Malinche", "correcta": true},
-            {"respuesta":"Trujamán","correcta": false},
-            {"respuesta":"Dragomán","correcta": false},
-            {"respuesta":"Metiche","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿En qué año se disolvió la Unión Soviética?",
-        "opciones": [
-            {"respuesta":"1991", "correcta": true},
-            {"respuesta":"1974","correcta": false},
-            {"respuesta":"1993","correcta": false},
-            {"respuesta":"1990","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Qué suceso marca el final de la Edad Antigua y el inicio de la Edad Media?",
-        "opciones": [
-            {"respuesta":"La caída del imperio romano de Occidente", "correcta": true},
-            {"respuesta":"Nacimiento de 'Jesús de Nazaret'","correcta": false},
-            {"respuesta":"Creación de aleaciones de Estaño y Cobre","correcta": false},
-            {"respuesta":"Descubrimiento de 'La fosa de las Marianas'","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿En qué ciudad se entrevistaron Hitler y Franco?",
-        "opciones": [
-            {"respuesta":"Hendaya", "correcta": true},
-            {"respuesta":"Bayona","correcta": false},
-            {"respuesta":"Berlín","correcta": false},
-            {"respuesta":"París","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿De qué país se independizó Eslovenia?",
-        "opciones": [
-            {"respuesta":"Yugoslavia", "correcta": true},
-            {"respuesta":"Eslovaquia","correcta": false},
-            {"respuesta":"Estonia","correcta": false},
-            {"respuesta":"Letonia","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Qué presidente de la Unión Soviética instauró la Perestroika?",
-        "opciones": [
-            {"respuesta":"Mijaíl Gorbachov", "correcta": true},
-            {"respuesta":"Vladimir Lenin","correcta": false},
-            {"respuesta":"Nikita Khrushchev","correcta": false},
-            {"respuesta":"Petro Simonenko","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Qué carabela no regresó del primer viaje de Colón al Nuevo Mundo?",
-        "opciones": [
-            {"respuesta":"La Santa María", "correcta": true},
-            {"respuesta":"La Niña","correcta": false},
-            {"respuesta":"La Pinta","correcta": false},
-            {"respuesta":"La Perla Negra","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Historia",
-        "pregunta": "¿Qué país africano fue fundado por esclavos americanos liberados en 1847?",
-        "opciones": [
-            {"respuesta":"Liberia", "correcta": true},
-            {"respuesta":"Congo","correcta": false},
-            {"respuesta":"Marruecos","correcta": false},
-            {"respuesta":"Madagascar","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Cuál es la capital de Filipinas?",
-        "opciones": [
-            {"respuesta":"Manila", "correcta": true},
-            {"respuesta":"Cebú","correcta": false},
-            {"respuesta":"Dávao","correcta": false},
-            {"respuesta":"Makati","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Cuál es el río más caudaloso del mundo?",
-        "opciones": [
-            {"respuesta":"El Amazonas", "correcta": true},
-            {"respuesta":"El Nilo","correcta": false},
-            {"respuesta":"El Elba","correcta": false},
-            {"respuesta":"El Missouri","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Qué país está entre Perú y Colombia?",
-        "opciones": [
-            {"respuesta":"Ecuador", "correcta": true},
-            {"respuesta":"Argentina","correcta": false},
-            {"respuesta":"Bolivia","correcta": false},
-            {"respuesta":"México","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿En qué país se encuentra el río Po?",
-        "opciones": [
-            {"respuesta":"Italia", "correcta": true},
-            {"respuesta":"España","correcta": false},
-            {"respuesta":"Francia","correcta": false},
-            {"respuesta":"Grecia","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Cuál es la montaña más alta de Europa?",
-        "opciones": [
-            {"respuesta":"Elbrús", "correcta": true},
-            {"respuesta":"Mont Blanc","correcta": false},
-            {"respuesta":"Teide","correcta": false},
-            {"respuesta":"Chimberazo","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Dónde se encuentra la Casa Rosada?",
-        "opciones": [
-            {"respuesta":"En Argentina", "correcta": true},
-            {"respuesta":"En Filipinas","correcta": false},
-            {"respuesta":"En Brasil","correcta": false},
-            {"respuesta":"En Venezuela","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿A qué país pertenece la isla de Creta?",
-        "opciones": [
-            {"respuesta":"Grecia", "correcta": true},
-            {"respuesta":"Italia","correcta": false},
-            {"respuesta":"Argentina","correcta": false},
-            {"respuesta":"Australia","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Qué océano baña las aguas de Sri Lanka?",
-        "opciones": [
-            {"respuesta":"El océano Índico", "correcta": true},
-            {"respuesta":"El océano Pacífico","correcta": false},
-            {"respuesta":"El océano Atlántico","correcta": false},
-            {"respuesta":"El océano Antártico","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Cómo se llama a día de hoy la antigua ciudad de Stalingrado?",
-        "opciones": [
-            {"respuesta":"Volvogrado", "correcta": true},
-            {"respuesta":"Leningrado","correcta": false},
-            {"respuesta":"Moscú","correcta": false},
-            {"respuesta":"Vladivostok","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Cómo se llama la línea vertical imaginaria que divide el mundo en dos mitades?",
-        "opciones": [
-            {"respuesta":"El meridiano de Greenwich", "correcta": true},
-            {"respuesta":"El meridiano de Cáncer","correcta": false},
-            {"respuesta":"El meridiano de Capricornio","correcta": false},
-            {"respuesta":"El meridiano central","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿En qué país de Europa se habla el magyar?",
-        "opciones": [
-            {"respuesta":"Hungría", "correcta": true},
-            {"respuesta":"Ucrania","correcta": false},
-            {"respuesta":"Chequia","correcta": false},
-            {"respuesta":"Eslovenia","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿En qué país se encuentra el pico Aconcagua?",
-        "opciones": [
-            {"respuesta":"Argentina", "correcta": true},
-            {"respuesta":"Perú","correcta": false},
-            {"respuesta":"Chile","correcta": false},
-            {"respuesta":"Ecuador","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Cuál es el país más visitado del mundo?",
-        "opciones": [
-            {"respuesta":"Francia", "correcta": true},
-            {"respuesta":"España","correcta": false},
-            {"respuesta":"Japón","correcta": false},
-            {"respuesta":"Estados Unidos","correcta": false}
-        ]
-    },
-     {
-        "tipo":"Geografía",
-        "pregunta": "¿Por cuántos estados está formado Estados Unidos?",
-        "opciones": [
-            {"respuesta":"50", "correcta": true},
-            {"respuesta":"47","correcta": false},
-            {"respuesta":"55","correcta": false},
-            {"respuesta":"53","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Geografía",
-        "pregunta": "¿Dónde se encuentran las ruinas de Angkor?",
-        "opciones": [
-            {"respuesta":"Camboya", "correcta": true},
-            {"respuesta":"Argentina","correcta": false},
-            {"respuesta":"Chile","correcta": false},
-            {"respuesta":"Perú","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Quién pintó el 'Guernica'?",
-        "opciones": [
-            {"respuesta":"Picasso", "correcta": true},
-            {"respuesta":"Goya","correcta": false},
-            {"respuesta":"Van gogh","correcta": false},
-            {"respuesta":"El Greco","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Quién escribió 'La Guerra de los Mundos'?",
-        "opciones": [
-            {"respuesta":"H.G. Wells", "correcta": true},
-            {"respuesta":"J.K. Rowling","correcta": false},
-            {"respuesta":"Brandom Sanderson","correcta": false},
-            {"respuesta":"Francisco Martín","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Qué italiano puso música al Othelo de Shakespeare?",
-        "opciones": [
-            {"respuesta":"Verdi", "correcta": true},
-            {"respuesta":"Mikel Pintado","correcta": false},
-            {"respuesta":"Vivaldi","correcta": false},
-            {"respuesta":"Mozart","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Con qué nombre firmaba Van Gogh sus obras?",
-        "opciones": [
-            {"respuesta":"Vincent", "correcta": true},
-            {"respuesta":"Albert","correcta": false},
-            {"respuesta":"Anónimo","correcta": false},
-            {"respuesta":"Humbert","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Qué tipo de instrumento es una cítara?",
-        "opciones": [
-            {"respuesta":"De cuerda", "correcta": true},
-            {"respuesta":"De percusión","correcta": false},
-            {"respuesta":"De viento (metal)","correcta": false},
-            {"respuesta":"De viento (Madera)","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Qué filósofo creó 'El mito de la caverna'?",
-        "opciones": [
-            {"respuesta":"Platón", "correcta": true},
-            {"respuesta":"Aristóteles","correcta": false},
-            {"respuesta":"Hericles","correcta": false},
-            {"respuesta":"Matutano","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Quién escribió 'La colmena'?",
-        "opciones": [
-            {"respuesta":"Camilo José Cela", "correcta": true},
-            {"respuesta":"Iker Arrien Martín","correcta": false},
-            {"respuesta":"Faulkner","correcta": false},
-            {"respuesta":"Bergareche","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Qué tiene en Segovia 128 arcos?",
-        "opciones": [
-            {"respuesta":"El acueducto de Segovia", "correcta": true},
-            {"respuesta":"El Puente Santo","correcta": false},
-            {"respuesta":"El Coliseo de Segovia","correcta": false},
-            {"respuesta":"La catedral de Segovia","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Quién escribió 'Poeta en Nueva York'?",
-        "opciones": [
-            {"respuesta":"Federico García Lorca", "correcta": true},
-            {"respuesta":"Manuel Cañete","correcta": false},
-            {"respuesta":"Marian Aguiló","correcta": false},
-            {"respuesta":"Leandro Fernández Moratín","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Quién escribió 'Sueño de una noche de verano'?",
-        "opciones": [
-            {"respuesta":"William Shakespeare", "correcta": true},
-            {"respuesta":"José Bergamín","correcta": false},
-            {"respuesta":"Juan Ramón Jiménez","correcta": false},
-            {"respuesta":"Salvador González Anaya","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Cómo se llama el caballo de Don Quijote de la Mancha?",
-        "opciones": [
-            {"respuesta":"Rocinante", "correcta": true},
-            {"respuesta":"Bolt","correcta": false},
-            {"respuesta":"Rayo","correcta": false},
-            {"respuesta":"Ernesto","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Qué escritor español era conocido como 'el manco de Lepanto'?",
-        "opciones": [
-            {"respuesta":"Miguel de Cervantes", "correcta": true},
-            {"respuesta":"Federico García Lorca","correcta": false},
-            {"respuesta":"William Shakespeare","correcta": false},
-            {"respuesta":"Eneko De Miguel","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Qué animal mitológico da nombre a un libro de Thomas Hobbe?",
-        "opciones": [
-            {"respuesta":"Leviatán", "correcta": true},
-            {"respuesta":"Grifo","correcta": false},
-            {"respuesta":"Esfinge","correcta": false},
-            {"respuesta":"Guiverno","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Quién escribió las aventuras de Sandokán?",
-        "opciones": [
-            {"respuesta":"Emilio Salgari", "correcta": true},
-            {"respuesta":"Camilo José Cela","correcta": false},
-            {"respuesta":"MarrJosé Bergamínuecos","correcta": false},
-            {"respuesta":"Federico García Lorca","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Arte",
-        "pregunta": "¿Qué pintor realizó la obra de 'La joven de la perla'?",
-        "opciones": [
-            {"respuesta":"Johannes Vermeer", "correcta": true},
-            {"respuesta":"El Greco","correcta": false},
-            {"respuesta":"Caravaggio","correcta": false},
-            {"respuesta":"Francisco de Goya","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿En qué mes el Sol está más cerca de la Tierra?",
-        "opciones": [
-            {"respuesta":"Diciembre", "correcta": true},
-            {"respuesta":"Agosto","correcta": false},
-            {"respuesta":"Enero","correcta": false},
-            {"respuesta":"Mayo","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿En qué lado del cuerpo está el hígado?",
-        "opciones": [
-            {"respuesta":"En el derecho", "correcta": true},
-            {"respuesta":"En el izquierdo","correcta": false},
-            {"respuesta":"En el posterior","correcta": false},
-            {"respuesta":"En el anterior","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Qué número viene después del 14 en los decimales del Pi?",
-        "opciones": [
-            {"respuesta":"El 1", "correcta": true},
-            {"respuesta":"El 5","correcta": false},
-            {"respuesta":"El 3","correcta": false},
-            {"respuesta":"El 7","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Cuántos elementos tiene la tabla periódica?",
-        "opciones": [
-            {"respuesta":"118", "correcta": true},
-            {"respuesta":"120","correcta": false},
-            {"respuesta":"115","correcta": false},
-            {"respuesta":"125","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Qué gas de la atmósfera nos protege de la radiación ultravioleta?",
-        "opciones": [
-            {"respuesta":"El ozono", "correcta": true},
-            {"respuesta":"El Helio","correcta": false},
-            {"respuesta":"El Carbono dioxido","correcta": false},
-            {"respuesta":"El Metano","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Cuáles son las bases nitrogenadas del ADN?",
-        "opciones": [
-            {"respuesta":"Adenina, timina, guanina y citosina", "correcta": true},
-            {"respuesta":"Adenina, clorofila, guanina y citosina","correcta": false},
-            {"respuesta":"Adenina, timina, clorofila y citosina","correcta": false},
-            {"respuesta":"Adenina, timina, guanina y clorofila","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Cuál es la velocidad de la luz?",
-        "opciones": [
-            {"respuesta":"300.000 kilómetros por segundo", "correcta": true},
-            {"respuesta":"300.000 metros por segundo","correcta": false},
-            {"respuesta":"300.000 kilómetros por minuto","correcta": false},
-            {"respuesta":"300.000 kilómetros por hora","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "De los cinco sentidos, ¿cuál es el que se desarrolla primero?",
-        "opciones": [
-            {"respuesta":"El olfato", "correcta": true},
-            {"respuesta":"El gusto","correcta": false},
-            {"respuesta":"El tacto","correcta": false},
-            {"respuesta":"La vista","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Qué elemento está presente en absolutamente todas las moléculas orgánicas?",
-        "opciones": [
-            {"respuesta":"El carbono", "correcta": true},
-            {"respuesta":"El oxígeno","correcta": false},
-            {"respuesta":"El mercurio","correcta": false},
-            {"respuesta":"El hierro","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Cómo se llama el proceso celular en el que una célula se divide para dar lugar a dos células hijas iguales?",
-        "opciones": [
-            {"respuesta":"Mitosis", "correcta": true},
-            {"respuesta":"Meiosis","correcta": false},
-            {"respuesta":"Fagocitosis","correcta": false},
-            {"respuesta":"Fision","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Qué ciencia estudia la sangre?",
-        "opciones": [
-            {"respuesta":"La hematología", "correcta": true},
-            {"respuesta":"La homotología","correcta": false},
-            {"respuesta":"La sangrología","correcta": false},
-            {"respuesta":"La homeopatía","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Cuál es el único mes que puede tener menos de 4 fases lunares?",
-        "opciones": [
-            {"respuesta":"Febrero", "correcta": true},
-            {"respuesta":"Diciembre","correcta": false},
-            {"respuesta":"Enero","correcta": false},
-            {"respuesta":"Abril","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Qué significan las siglas ADN?",
-        "opciones": [
-            {"respuesta":"Ácido desoxirribonucleico", "correcta": true},
-            {"respuesta":"Ácido desintegranizador","correcta": false},
-            {"respuesta":"Ácido desoxirribonatorio","correcta": false},
-            {"respuesta":"Ácido desoxirribonacional","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Cuál es el elemento más abundante de la Tierra?",
-        "opciones": [
-            {"respuesta":"El hidrógeno", "correcta": true},
-            {"respuesta":"El oxígeno","correcta": false},
-            {"respuesta":"El xenón","correcta": false},
-            {"respuesta":"El cobalto","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Ciencia",
-        "pregunta": "¿Cuál es el animal más venenoso del mundo?",
-        "opciones": [
-            {"respuesta":"La medusa avispa de mar", "correcta": true},
-            {"respuesta":"La mamba negra","correcta": false},
-            {"respuesta":"La viuda negra","correcta": false},
-            {"respuesta":"La cobra rey","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Quién interpretó a Hitler en 'El gran dictador'?",
-        "opciones": [
-            {"respuesta":"Charles Chaplin", "correcta": true},
-            {"respuesta":"Brad Pitt","correcta": false},
-            {"respuesta":"Al Pacino","correcta": false},
-            {"respuesta":"Anthony Hopkins","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Quién dirigió 'Ciudadano Kane'?",
-        "opciones": [
-            {"respuesta":"Orson Welles", "correcta": true},
-            {"respuesta":"Roman Polanski","correcta": false},
-            {"respuesta":"Stanley Kubrick","correcta": false},
-            {"respuesta":"Quentin Tarantino","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Cuál fue la primera película de Disney?",
-        "opciones": [
-            {"respuesta":"Blancanieves", "correcta": true},
-            {"respuesta":"Bella y Bestia","correcta": false},
-            {"respuesta":"Toy Story","correcta": false},
-            {"respuesta":"Pinoccio","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Qué artista ha ganado más premios Grammy?",
-        "opciones": [
-            {"respuesta":"Georg Solti", "correcta": true},
-            {"respuesta":"Harry Styles","correcta": false},
-            {"respuesta":"Ava Max","correcta": false},
-            {"respuesta":"Bad Bunny","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Cómo se llama la madre de Simba en la película de 'El rey león'?",
-        "opciones": [
-            {"respuesta":"Sarabi", "correcta": true},
-            {"respuesta":"Sara","correcta": false},
-            {"respuesta":"Simona","correcta": false},
-            {"respuesta":"Sandra","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Qué banda publicó el álbum 'Master of Puppets'?",
-        "opciones": [
-            {"respuesta":"Metallica", "correcta": true},
-            {"respuesta":"Beast in Black","correcta": false},
-            {"respuesta":"Guns n Roses","correcta": false},
-            {"respuesta":"Aerosmith","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿En qué ciudad vive el mago de Oz?",
-        "opciones": [
-            {"respuesta":"La ciudad Esmeralda", "correcta": true},
-            {"respuesta":"La ciudad Diamante","correcta": false},
-            {"respuesta":"La ciudad Dorada","correcta": false},
-            {"respuesta":"La ciudad Arcoíris","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿En qué año se emitió el último episodio de la serie 'The Office'?",
-        "opciones": [
-            {"respuesta":"2013", "correcta": true},
-            {"respuesta":"2014","correcta": false},
-            {"respuesta":"2010","correcta": false},
-            {"respuesta":"2015","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿En qué calle ficticia vivía Sherlock Holmes?",
-        "opciones": [
-            {"respuesta":"Baker Street", "correcta": true},
-            {"respuesta":"Smith Street","correcta": false},
-            {"respuesta":"Anton Street","correcta": false},
-            {"respuesta":"Pure Street","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Cómo se llama el protagonista de la saga de videojuegos 'La Leyenda de Zelda'?",
-        "opciones": [
-            {"respuesta":"Link", "correcta": true},
-            {"respuesta":"Zelda","correcta": false},
-            {"respuesta":"Mario","correcta": false},
-            {"respuesta":"Pit","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Quién escribió la novela gráfica 'Watchmen'?",
-        "opciones": [
-            {"respuesta":"Alan Moore", "correcta": true},
-            {"respuesta":"Akira Toriyama","correcta": false},
-            {"respuesta":"Satoru Noda","correcta": false},
-            {"respuesta":"Dayo Script","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Qué actor interpreta a Leonard Hofstadter en la popular serie 'The Big Bang Theory'?",
-        "opciones": [
-            {"respuesta":"Johnny Galecki", "correcta": true},
-            {"respuesta":"Jim Parsons","correcta": false},
-            {"respuesta":"Kunal Nayyar","correcta": false},
-            {"respuesta":"Kevin Sussmar","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Cuál de los actores que ha interpretado a James Bond luchó contra el Dr. No?",
-        "opciones": [
-            {"respuesta":"Sean Connery", "correcta": true},
-            {"respuesta":"Barry Nelson","correcta": false},
-            {"respuesta":"Roger Moore","correcta": false},
-            {"respuesta":"Daniel Craig","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Cuál fue la primera película en ganar el Óscar a 'Mejor película'?",
-        "opciones": [
-            {"respuesta":"Wings", "correcta": true},
-            {"respuesta":"The Broadway Melody","correcta": false},
-            {"respuesta":"All Quiet on the Western Front","correcta": false},
-            {"respuesta":"Cimarron","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Entretenimiento",
-        "pregunta": "¿Qué dúo musical participó en la banda sonora de la película 'Tron: Legacy'?",
-        "opciones": [
-            {"respuesta":"Daft Punk", "correcta": true},
-            {"respuesta":"Eminem y Elton John","correcta": false},
-            {"respuesta":"Roberta Flack y Donny Hathaway","correcta": false},
-            {"respuesta":"Santana y Rob Thomas","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Quién fue la primera mujer en ganar una medalla olímpica en el año 1900?",
-        "opciones": [
-            {"respuesta":"Charlotte Cooper", "correcta": true},
-            {"respuesta":"Ariarne Titmus","correcta": false},
-            {"respuesta":"Elaine Thompson-Herah","correcta": false},
-            {"respuesta":"Simone Biles","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Cómo se llaman los deportistas que practican Judo?",
-        "opciones": [
-            {"respuesta":"Judokas", "correcta": true},
-            {"respuesta":"Juderos","correcta": false},
-            {"respuesta":"Judistas","correcta": false},
-            {"respuesta":"Judios","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Cuáles son los colores de los cinco anillos olímpicos?",
-        "opciones": [
-            {"respuesta":"Amarillo, azul, negro, rojo y verde", "correcta": true},
-            {"respuesta":"Amarillo, naranja, negro, rojo y verde","correcta": false},
-            {"respuesta":"Naranja, azul, negro, rojo y verde","correcta": false},
-            {"respuesta":"Amarillo, azul, negro, rojo y naranja","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿En qué deporte destacó Carl Lewis?",
-        "opciones": [
-            {"respuesta":"Atletismo", "correcta": true},
-            {"respuesta":"Ciclismo","correcta": false},
-            {"respuesta":"Baloncesto","correcta": false},
-            {"respuesta":"Fútbol","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Dónde se inventó el Ping-Pong?",
-        "opciones": [
-            {"respuesta":"Inglaterra", "correcta": true},
-            {"respuesta":"China","correcta": false},
-            {"respuesta":"España","correcta": false},
-            {"respuesta":"Dinamarka","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Qué atleta ostenta el récord de los 100 metros lisos?",
-        "opciones": [
-            {"respuesta":"Usain Bolt", "correcta": true},
-            {"respuesta":"Hicham El Guerrouj","correcta": false},
-            {"respuesta":"Kenenisa Bekele","correcta": false},
-            {"respuesta":"Jacob Kiplimo","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Qué jugador de fútbol inventó un movimiento conocido como la 'Gravesinha'?",
-        "opciones": [
-            {"respuesta":"Thomas Gravessen", "correcta": true},
-            {"respuesta":"Peter Graveson","correcta": false},
-            {"respuesta":"Graves Tombston","correcta": false},
-            {"respuesta":"Gerardo Pérez","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Cómo se llamaba Muhammad Ali antes de adoptar este nombre?",
-        "opciones": [
-            {"respuesta":"Cassius Clay", "correcta": true},
-            {"respuesta":"Casio Clay","correcta": false},
-            {"respuesta":"Muhammad Al Isma","correcta": false},
-            {"respuesta":"Muhammad Clay","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Quién fue el campeón del mundo de Moto GP en 2017?",
-        "opciones": [
-            {"respuesta":"Marc Márquez", "correcta": true},
-            {"respuesta":"Francesco Bagnaia","correcta": false},
-            {"respuesta":"Johann Zarco","correcta": false},
-            {"respuesta":"Miguel Oliveira","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿En qué equipo de béisbol jugó el famoso Derek Jeter?",
-        "opciones": [
-            {"respuesta":"Yankees", "correcta": true},
-            {"respuesta":"Nuggets","correcta": false},
-            {"respuesta":"Lakers","correcta": false},
-            {"respuesta":"Heat","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Quién es el máximo goleador histórico de los mundiales de fútbol?",
-        "opciones": [
-            {"respuesta":"Miroslav Klose", "correcta": true},
-            {"respuesta":"Lionel Messi","correcta": false},
-            {"respuesta":"Cristiano ronaldo","correcta": false},
-            {"respuesta":"Pelé","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Cuál es el equipo de la NBA con más títulos?",
-        "opciones": [
-            {"respuesta":"Celtics", "correcta": true},
-            {"respuesta":"Lakers","correcta": false},
-            {"respuesta":"Raptors","correcta": false},
-            {"respuesta":"Bulls","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Quién fue la primera alpinista en llegar a la cima del Everest?",
-        "opciones": [
-            {"respuesta":"Junko Tabei", "correcta": true},
-            {"respuesta":"Yue Yu Fei","correcta": false},
-            {"respuesta":"André Livital","correcta": false},
-            {"respuesta":"Iker Arrien","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿En qué equipo jugaba David Beckham en el año 2007?",
-        "opciones": [
-            {"respuesta":"En Los Angeles Galaxy", "correcta": true},
-            {"respuesta":"Manchester City","correcta": false},
-            {"respuesta":"Manchester United","correcta": false},
-            {"respuesta":"Chelsea","correcta": false}
-        ]
-    },
-    {
-        "tipo":"Deporte",
-        "pregunta": "¿Cuántos jugadores hay en un equipo de voleibol?",
-        "opciones": [
-            {"respuesta":"6", "correcta": true},
-            {"respuesta":"8","correcta": false},
-            {"respuesta":"5","correcta": false},
-            {"respuesta":"7","correcta": false}
-        ]
-    }
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Cuál fue el primer país en aprobar el sufragio femenino?",
+    "opciones": [
+      { "respuesta": "Nueva Zelanda", "correcta": true },
+      { "respuesta": "Francia", "correcta": false },
+      { "respuesta": "El Vaticano", "correcta": false },
+      { "respuesta": "Estados Unidos", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿En qué año llegó el hombre a la Luna?",
+    "opciones": [
+      { "respuesta": "1969", "correcta": true },
+      { "respuesta": "1888", "correcta": false },
+      { "respuesta": "1945", "correcta": false },
+      { "respuesta": "1983", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Qué importante batalla tuvo lugar en 1815?",
+    "opciones": [
+      { "respuesta": "Waterloo", "correcta": true },
+      { "respuesta": "Trafalgar", "correcta": false },
+      { "respuesta": "Normandía", "correcta": false },
+      { "respuesta": "Guerra de Orleans", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Cuál era la ciudad hogar de Marco Polo?",
+    "opciones": [
+      { "respuesta": "Venecia", "correcta": true },
+      { "respuesta": "Madrid", "correcta": false },
+      { "respuesta": "Roma", "correcta": false },
+      { "respuesta": "Oporto", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿En qué año tuvo lugar el genocidio de Ruanda?",
+    "opciones": [
+      { "respuesta": "1994", "correcta": true },
+      { "respuesta": "1995", "correcta": false },
+      { "respuesta": "1990", "correcta": false },
+      { "respuesta": "1973", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Quién fue el primer presidente de la democracia española después del franquismo?",
+    "opciones": [
+      { "respuesta": "Adolfo Suárez", "correcta": true },
+      { "respuesta": "Cánovas del Castillo", "correcta": false },
+      { "respuesta": "Sagasta", "correcta": false },
+      { "respuesta": "Zapatero", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Qué reina británica fue hija de los Reyes Católicos?",
+    "opciones": [
+      { "respuesta": "Catalina de Aragón", "correcta": true },
+      { "respuesta": "Isabel de león", "correcta": false },
+      { "respuesta": "Isabel de Asturias", "correcta": false },
+      { "respuesta": "Cristina de Aragón", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Por qué nombre se conocía a la traductora e intérprete del conquistador Hernán Cortés en tierras aztecas?",
+    "opciones": [
+      { "respuesta": "Malinche", "correcta": true },
+      { "respuesta": "Trujamán", "correcta": false },
+      { "respuesta": "Dragomán", "correcta": false },
+      { "respuesta": "Metiche", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿En qué año se disolvió la Unión Soviética?",
+    "opciones": [
+      { "respuesta": "1991", "correcta": true },
+      { "respuesta": "1974", "correcta": false },
+      { "respuesta": "1993", "correcta": false },
+      { "respuesta": "1990", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Qué suceso marca el final de la Edad Antigua y el inicio de la Edad Media?",
+    "opciones": [
+      {
+        "respuesta": "La caída del imperio romano de Occidente",
+        "correcta": true
+      },
+      { "respuesta": "Nacimiento de 'Jesús de Nazaret'", "correcta": false },
+      {
+        "respuesta": "Creación de aleaciones de Estaño y Cobre",
+        "correcta": false
+      },
+      {
+        "respuesta": "Descubrimiento de 'La fosa de las Marianas'",
+        "correcta": false
+      }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿En qué ciudad se entrevistaron Hitler y Franco?",
+    "opciones": [
+      { "respuesta": "Hendaya", "correcta": true },
+      { "respuesta": "Bayona", "correcta": false },
+      { "respuesta": "Berlín", "correcta": false },
+      { "respuesta": "París", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿De qué país se independizó Eslovenia?",
+    "opciones": [
+      { "respuesta": "Yugoslavia", "correcta": true },
+      { "respuesta": "Eslovaquia", "correcta": false },
+      { "respuesta": "Estonia", "correcta": false },
+      { "respuesta": "Letonia", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Qué presidente de la Unión Soviética instauró la Perestroika?",
+    "opciones": [
+      { "respuesta": "Mijaíl Gorbachov", "correcta": true },
+      { "respuesta": "Vladimir Lenin", "correcta": false },
+      { "respuesta": "Nikita Khrushchev", "correcta": false },
+      { "respuesta": "Petro Simonenko", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Qué carabela no regresó del primer viaje de Colón al Nuevo Mundo?",
+    "opciones": [
+      { "respuesta": "La Santa María", "correcta": true },
+      { "respuesta": "La Niña", "correcta": false },
+      { "respuesta": "La Pinta", "correcta": false },
+      { "respuesta": "La Perla Negra", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Qué país africano fue fundado por esclavos americanos liberados en 1847?",
+    "opciones": [
+      { "respuesta": "Liberia", "correcta": true },
+      { "respuesta": "Congo", "correcta": false },
+      { "respuesta": "Marruecos", "correcta": false },
+      { "respuesta": "Madagascar", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Cuál es la capital de Filipinas?",
+    "opciones": [
+      { "respuesta": "Manila", "correcta": true },
+      { "respuesta": "Cebú", "correcta": false },
+      { "respuesta": "Dávao", "correcta": false },
+      { "respuesta": "Makati", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Cuál es el río más caudaloso del mundo?",
+    "opciones": [
+      { "respuesta": "El Amazonas", "correcta": true },
+      { "respuesta": "El Nilo", "correcta": false },
+      { "respuesta": "El Elba", "correcta": false },
+      { "respuesta": "El Missouri", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Qué país está entre Perú y Colombia?",
+    "opciones": [
+      { "respuesta": "Ecuador", "correcta": true },
+      { "respuesta": "Argentina", "correcta": false },
+      { "respuesta": "Bolivia", "correcta": false },
+      { "respuesta": "México", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿En qué país se encuentra el río Po?",
+    "opciones": [
+      { "respuesta": "Italia", "correcta": true },
+      { "respuesta": "España", "correcta": false },
+      { "respuesta": "Francia", "correcta": false },
+      { "respuesta": "Grecia", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Cuál es la montaña más alta de Europa?",
+    "opciones": [
+      { "respuesta": "Elbrús", "correcta": true },
+      { "respuesta": "Mont Blanc", "correcta": false },
+      { "respuesta": "Teide", "correcta": false },
+      { "respuesta": "Chimberazo", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Dónde se encuentra la Casa Rosada?",
+    "opciones": [
+      { "respuesta": "En Argentina", "correcta": true },
+      { "respuesta": "En Filipinas", "correcta": false },
+      { "respuesta": "En Brasil", "correcta": false },
+      { "respuesta": "En Venezuela", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿A qué país pertenece la isla de Creta?",
+    "opciones": [
+      { "respuesta": "Grecia", "correcta": true },
+      { "respuesta": "Italia", "correcta": false },
+      { "respuesta": "Argentina", "correcta": false },
+      { "respuesta": "Australia", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Qué océano baña las aguas de Sri Lanka?",
+    "opciones": [
+      { "respuesta": "El océano Índico", "correcta": true },
+      { "respuesta": "El océano Pacífico", "correcta": false },
+      { "respuesta": "El océano Atlántico", "correcta": false },
+      { "respuesta": "El océano Antártico", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Cómo se llama a día de hoy la antigua ciudad de Stalingrado?",
+    "opciones": [
+      { "respuesta": "Volvogrado", "correcta": true },
+      { "respuesta": "Leningrado", "correcta": false },
+      { "respuesta": "Moscú", "correcta": false },
+      { "respuesta": "Vladivostok", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Cómo se llama la línea vertical imaginaria que divide el mundo en dos mitades?",
+    "opciones": [
+      { "respuesta": "El meridiano de Greenwich", "correcta": true },
+      { "respuesta": "El meridiano de Cáncer", "correcta": false },
+      { "respuesta": "El meridiano de Capricornio", "correcta": false },
+      { "respuesta": "El meridiano central", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿En qué país de Europa se habla el magyar?",
+    "opciones": [
+      { "respuesta": "Hungría", "correcta": true },
+      { "respuesta": "Ucrania", "correcta": false },
+      { "respuesta": "Chequia", "correcta": false },
+      { "respuesta": "Eslovenia", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿En qué país se encuentra el pico Aconcagua?",
+    "opciones": [
+      { "respuesta": "Argentina", "correcta": true },
+      { "respuesta": "Perú", "correcta": false },
+      { "respuesta": "Chile", "correcta": false },
+      { "respuesta": "Ecuador", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Cuál es el país más visitado del mundo?",
+    "opciones": [
+      { "respuesta": "Francia", "correcta": true },
+      { "respuesta": "España", "correcta": false },
+      { "respuesta": "Japón", "correcta": false },
+      { "respuesta": "Estados Unidos", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Por cuántos estados está formado Estados Unidos?",
+    "opciones": [
+      { "respuesta": "50", "correcta": true },
+      { "respuesta": "47", "correcta": false },
+      { "respuesta": "55", "correcta": false },
+      { "respuesta": "53", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Dónde se encuentran las ruinas de Angkor?",
+    "opciones": [
+      { "respuesta": "Camboya", "correcta": true },
+      { "respuesta": "Argentina", "correcta": false },
+      { "respuesta": "Chile", "correcta": false },
+      { "respuesta": "Perú", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Quién pintó el 'Guernica'?",
+    "opciones": [
+      { "respuesta": "Picasso", "correcta": true },
+      { "respuesta": "Goya", "correcta": false },
+      { "respuesta": "Van gogh", "correcta": false },
+      { "respuesta": "El Greco", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Quién escribió 'La Guerra de los Mundos'?",
+    "opciones": [
+      { "respuesta": "H.G. Wells", "correcta": true },
+      { "respuesta": "J.K. Rowling", "correcta": false },
+      { "respuesta": "Brandom Sanderson", "correcta": false },
+      { "respuesta": "Francisco Martín", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Qué italiano puso música al Othelo de Shakespeare?",
+    "opciones": [
+      { "respuesta": "Verdi", "correcta": true },
+      { "respuesta": "Mikel Pintado", "correcta": false },
+      { "respuesta": "Vivaldi", "correcta": false },
+      { "respuesta": "Mozart", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Con qué nombre firmaba Van Gogh sus obras?",
+    "opciones": [
+      { "respuesta": "Vincent", "correcta": true },
+      { "respuesta": "Albert", "correcta": false },
+      { "respuesta": "Anónimo", "correcta": false },
+      { "respuesta": "Humbert", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Qué tipo de instrumento es una cítara?",
+    "opciones": [
+      { "respuesta": "De cuerda", "correcta": true },
+      { "respuesta": "De percusión", "correcta": false },
+      { "respuesta": "De viento (metal)", "correcta": false },
+      { "respuesta": "De viento (Madera)", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Qué filósofo creó 'El mito de la caverna'?",
+    "opciones": [
+      { "respuesta": "Platón", "correcta": true },
+      { "respuesta": "Aristóteles", "correcta": false },
+      { "respuesta": "Hericles", "correcta": false },
+      { "respuesta": "Matutano", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Quién escribió 'La colmena'?",
+    "opciones": [
+      { "respuesta": "Camilo José Cela", "correcta": true },
+      { "respuesta": "Iker Arrien Martín", "correcta": false },
+      { "respuesta": "Faulkner", "correcta": false },
+      { "respuesta": "Bergareche", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Qué tiene en Segovia 128 arcos?",
+    "opciones": [
+      { "respuesta": "El acueducto de Segovia", "correcta": true },
+      { "respuesta": "El Puente Santo", "correcta": false },
+      { "respuesta": "El Coliseo de Segovia", "correcta": false },
+      { "respuesta": "La catedral de Segovia", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Quién escribió 'Poeta en Nueva York'?",
+    "opciones": [
+      { "respuesta": "Federico García Lorca", "correcta": true },
+      { "respuesta": "Manuel Cañete", "correcta": false },
+      { "respuesta": "Marian Aguiló", "correcta": false },
+      { "respuesta": "Leandro Fernández Moratín", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Quién escribió 'Sueño de una noche de verano'?",
+    "opciones": [
+      { "respuesta": "William Shakespeare", "correcta": true },
+      { "respuesta": "José Bergamín", "correcta": false },
+      { "respuesta": "Juan Ramón Jiménez", "correcta": false },
+      { "respuesta": "Salvador González Anaya", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Cómo se llama el caballo de Don Quijote de la Mancha?",
+    "opciones": [
+      { "respuesta": "Rocinante", "correcta": true },
+      { "respuesta": "Bolt", "correcta": false },
+      { "respuesta": "Rayo", "correcta": false },
+      { "respuesta": "Ernesto", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Qué escritor español era conocido como 'el manco de Lepanto'?",
+    "opciones": [
+      { "respuesta": "Miguel de Cervantes", "correcta": true },
+      { "respuesta": "Federico García Lorca", "correcta": false },
+      { "respuesta": "William Shakespeare", "correcta": false },
+      { "respuesta": "Eneko De Miguel", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Qué animal mitológico da nombre a un libro de Thomas Hobbe?",
+    "opciones": [
+      { "respuesta": "Leviatán", "correcta": true },
+      { "respuesta": "Grifo", "correcta": false },
+      { "respuesta": "Esfinge", "correcta": false },
+      { "respuesta": "Guiverno", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Quién escribió las aventuras de Sandokán?",
+    "opciones": [
+      { "respuesta": "Emilio Salgari", "correcta": true },
+      { "respuesta": "Camilo José Cela", "correcta": false },
+      { "respuesta": "MarrJosé Bergamínuecos", "correcta": false },
+      { "respuesta": "Federico García Lorca", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Arte",
+    "pregunta": "¿Qué pintor realizó la obra de 'La joven de la perla'?",
+    "opciones": [
+      { "respuesta": "Johannes Vermeer", "correcta": true },
+      { "respuesta": "El Greco", "correcta": false },
+      { "respuesta": "Caravaggio", "correcta": false },
+      { "respuesta": "Francisco de Goya", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿En qué mes el Sol está más cerca de la Tierra?",
+    "opciones": [
+      { "respuesta": "Diciembre", "correcta": true },
+      { "respuesta": "Agosto", "correcta": false },
+      { "respuesta": "Enero", "correcta": false },
+      { "respuesta": "Mayo", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿En qué lado del cuerpo está el hígado?",
+    "opciones": [
+      { "respuesta": "En el derecho", "correcta": true },
+      { "respuesta": "En el izquierdo", "correcta": false },
+      { "respuesta": "En el posterior", "correcta": false },
+      { "respuesta": "En el anterior", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Qué número viene después del 14 en los decimales del Pi?",
+    "opciones": [
+      { "respuesta": "El 1", "correcta": true },
+      { "respuesta": "El 5", "correcta": false },
+      { "respuesta": "El 3", "correcta": false },
+      { "respuesta": "El 7", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuántos elementos tiene la tabla periódica?",
+    "opciones": [
+      { "respuesta": "118", "correcta": true },
+      { "respuesta": "120", "correcta": false },
+      { "respuesta": "115", "correcta": false },
+      { "respuesta": "125", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Qué gas de la atmósfera nos protege de la radiación ultravioleta?",
+    "opciones": [
+      { "respuesta": "El ozono", "correcta": true },
+      { "respuesta": "El Helio", "correcta": false },
+      { "respuesta": "El Carbono dioxido", "correcta": false },
+      { "respuesta": "El Metano", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuáles son las bases nitrogenadas del ADN?",
+    "opciones": [
+      { "respuesta": "Adenina, timina, guanina y citosina", "correcta": true },
+      {
+        "respuesta": "Adenina, clorofila, guanina y citosina",
+        "correcta": false
+      },
+      {
+        "respuesta": "Adenina, timina, clorofila y citosina",
+        "correcta": false
+      },
+      { "respuesta": "Adenina, timina, guanina y clorofila", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuál es la velocidad de la luz?",
+    "opciones": [
+      { "respuesta": "300.000 kilómetros por segundo", "correcta": true },
+      { "respuesta": "300.000 metros por segundo", "correcta": false },
+      { "respuesta": "300.000 kilómetros por minuto", "correcta": false },
+      { "respuesta": "300.000 kilómetros por hora", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "De los cinco sentidos, ¿cuál es el que se desarrolla primero?",
+    "opciones": [
+      { "respuesta": "El olfato", "correcta": true },
+      { "respuesta": "El gusto", "correcta": false },
+      { "respuesta": "El tacto", "correcta": false },
+      { "respuesta": "La vista", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Qué elemento está presente en absolutamente todas las moléculas orgánicas?",
+    "opciones": [
+      { "respuesta": "El carbono", "correcta": true },
+      { "respuesta": "El oxígeno", "correcta": false },
+      { "respuesta": "El mercurio", "correcta": false },
+      { "respuesta": "El hierro", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cómo se llama el proceso celular en el que una célula se divide para dar lugar a dos células hijas iguales?",
+    "opciones": [
+      { "respuesta": "Mitosis", "correcta": true },
+      { "respuesta": "Meiosis", "correcta": false },
+      { "respuesta": "Fagocitosis", "correcta": false },
+      { "respuesta": "Fision", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Qué ciencia estudia la sangre?",
+    "opciones": [
+      { "respuesta": "La hematología", "correcta": true },
+      { "respuesta": "La homotología", "correcta": false },
+      { "respuesta": "La sangrología", "correcta": false },
+      { "respuesta": "La homeopatía", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuál es el único mes que puede tener menos de 4 fases lunares?",
+    "opciones": [
+      { "respuesta": "Febrero", "correcta": true },
+      { "respuesta": "Diciembre", "correcta": false },
+      { "respuesta": "Enero", "correcta": false },
+      { "respuesta": "Abril", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Qué significan las siglas ADN?",
+    "opciones": [
+      { "respuesta": "Ácido desoxirribonucleico", "correcta": true },
+      { "respuesta": "Ácido desintegranizador", "correcta": false },
+      { "respuesta": "Ácido desoxirribonatorio", "correcta": false },
+      { "respuesta": "Ácido desoxirribonacional", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuál es el elemento más abundante de la Tierra?",
+    "opciones": [
+      { "respuesta": "El hidrógeno", "correcta": true },
+      { "respuesta": "El oxígeno", "correcta": false },
+      { "respuesta": "El xenón", "correcta": false },
+      { "respuesta": "El cobalto", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuál es el animal más venenoso del mundo?",
+    "opciones": [
+      { "respuesta": "La medusa avispa de mar", "correcta": true },
+      { "respuesta": "La mamba negra", "correcta": false },
+      { "respuesta": "La viuda negra", "correcta": false },
+      { "respuesta": "La cobra rey", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Quién interpretó a Hitler en 'El gran dictador'?",
+    "opciones": [
+      { "respuesta": "Charles Chaplin", "correcta": true },
+      { "respuesta": "Brad Pitt", "correcta": false },
+      { "respuesta": "Al Pacino", "correcta": false },
+      { "respuesta": "Anthony Hopkins", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Quién dirigió 'Ciudadano Kane'?",
+    "opciones": [
+      { "respuesta": "Orson Welles", "correcta": true },
+      { "respuesta": "Roman Polanski", "correcta": false },
+      { "respuesta": "Stanley Kubrick", "correcta": false },
+      { "respuesta": "Quentin Tarantino", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Cuál fue la primera película de Disney?",
+    "opciones": [
+      { "respuesta": "Blancanieves", "correcta": true },
+      { "respuesta": "Bella y Bestia", "correcta": false },
+      { "respuesta": "Toy Story", "correcta": false },
+      { "respuesta": "Pinoccio", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Qué artista ha ganado más premios Grammy?",
+    "opciones": [
+      { "respuesta": "Georg Solti", "correcta": true },
+      { "respuesta": "Harry Styles", "correcta": false },
+      { "respuesta": "Ava Max", "correcta": false },
+      { "respuesta": "Bad Bunny", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Cómo se llama la madre de Simba en la película de 'El rey león'?",
+    "opciones": [
+      { "respuesta": "Sarabi", "correcta": true },
+      { "respuesta": "Sara", "correcta": false },
+      { "respuesta": "Simona", "correcta": false },
+      { "respuesta": "Sandra", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Qué banda publicó el álbum 'Master of Puppets'?",
+    "opciones": [
+      { "respuesta": "Metallica", "correcta": true },
+      { "respuesta": "Beast in Black", "correcta": false },
+      { "respuesta": "Guns n Roses", "correcta": false },
+      { "respuesta": "Aerosmith", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿En qué ciudad vive el mago de Oz?",
+    "opciones": [
+      { "respuesta": "La ciudad Esmeralda", "correcta": true },
+      { "respuesta": "La ciudad Diamante", "correcta": false },
+      { "respuesta": "La ciudad Dorada", "correcta": false },
+      { "respuesta": "La ciudad Arcoíris", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿En qué año se emitió el último episodio de la serie 'The Office'?",
+    "opciones": [
+      { "respuesta": "2013", "correcta": true },
+      { "respuesta": "2014", "correcta": false },
+      { "respuesta": "2010", "correcta": false },
+      { "respuesta": "2015", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿En qué calle ficticia vivía Sherlock Holmes?",
+    "opciones": [
+      { "respuesta": "Baker Street", "correcta": true },
+      { "respuesta": "Smith Street", "correcta": false },
+      { "respuesta": "Anton Street", "correcta": false },
+      { "respuesta": "Pure Street", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Cómo se llama el protagonista de la saga de videojuegos 'La Leyenda de Zelda'?",
+    "opciones": [
+      { "respuesta": "Link", "correcta": true },
+      { "respuesta": "Zelda", "correcta": false },
+      { "respuesta": "Mario", "correcta": false },
+      { "respuesta": "Pit", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Quién escribió la novela gráfica 'Watchmen'?",
+    "opciones": [
+      { "respuesta": "Alan Moore", "correcta": true },
+      { "respuesta": "Akira Toriyama", "correcta": false },
+      { "respuesta": "Satoru Noda", "correcta": false },
+      { "respuesta": "Dayo Script", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Qué actor interpreta a Leonard Hofstadter en la popular serie 'The Big Bang Theory'?",
+    "opciones": [
+      { "respuesta": "Johnny Galecki", "correcta": true },
+      { "respuesta": "Jim Parsons", "correcta": false },
+      { "respuesta": "Kunal Nayyar", "correcta": false },
+      { "respuesta": "Kevin Sussmar", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Cuál de los actores que ha interpretado a James Bond luchó contra el Dr. No?",
+    "opciones": [
+      { "respuesta": "Sean Connery", "correcta": true },
+      { "respuesta": "Barry Nelson", "correcta": false },
+      { "respuesta": "Roger Moore", "correcta": false },
+      { "respuesta": "Daniel Craig", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Cuál fue la primera película en ganar el Óscar a 'Mejor película'?",
+    "opciones": [
+      { "respuesta": "Wings", "correcta": true },
+      { "respuesta": "The Broadway Melody", "correcta": false },
+      { "respuesta": "All Quiet on the Western Front", "correcta": false },
+      { "respuesta": "Cimarron", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Qué dúo musical participó en la banda sonora de la película 'Tron: Legacy'?",
+    "opciones": [
+      { "respuesta": "Daft Punk", "correcta": true },
+      { "respuesta": "Eminem y Elton John", "correcta": false },
+      { "respuesta": "Roberta Flack y Donny Hathaway", "correcta": false },
+      { "respuesta": "Santana y Rob Thomas", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Quién fue la primera mujer en ganar una medalla olímpica en el año 1900?",
+    "opciones": [
+      { "respuesta": "Charlotte Cooper", "correcta": true },
+      { "respuesta": "Ariarne Titmus", "correcta": false },
+      { "respuesta": "Elaine Thompson-Herah", "correcta": false },
+      { "respuesta": "Simone Biles", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Cómo se llaman los deportistas que practican Judo?",
+    "opciones": [
+      { "respuesta": "Judokas", "correcta": true },
+      { "respuesta": "Juderos", "correcta": false },
+      { "respuesta": "Judistas", "correcta": false },
+      { "respuesta": "Judios", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Cuáles son los colores de los cinco anillos olímpicos?",
+    "opciones": [
+      { "respuesta": "Amarillo, azul, negro, rojo y verde", "correcta": true },
+      {
+        "respuesta": "Amarillo, naranja, negro, rojo y verde",
+        "correcta": false
+      },
+      { "respuesta": "Naranja, azul, negro, rojo y verde", "correcta": false },
+      {
+        "respuesta": "Amarillo, azul, negro, rojo y naranja",
+        "correcta": false
+      }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿En qué deporte destacó Carl Lewis?",
+    "opciones": [
+      { "respuesta": "Atletismo", "correcta": true },
+      { "respuesta": "Ciclismo", "correcta": false },
+      { "respuesta": "Baloncesto", "correcta": false },
+      { "respuesta": "Fútbol", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Dónde se inventó el Ping-Pong?",
+    "opciones": [
+      { "respuesta": "Inglaterra", "correcta": true },
+      { "respuesta": "China", "correcta": false },
+      { "respuesta": "España", "correcta": false },
+      { "respuesta": "Dinamarka", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Qué atleta ostenta el récord de los 100 metros lisos?",
+    "opciones": [
+      { "respuesta": "Usain Bolt", "correcta": true },
+      { "respuesta": "Hicham El Guerrouj", "correcta": false },
+      { "respuesta": "Kenenisa Bekele", "correcta": false },
+      { "respuesta": "Jacob Kiplimo", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Qué jugador de fútbol inventó un movimiento conocido como la 'Gravesinha'?",
+    "opciones": [
+      { "respuesta": "Thomas Gravessen", "correcta": true },
+      { "respuesta": "Peter Graveson", "correcta": false },
+      { "respuesta": "Graves Tombston", "correcta": false },
+      { "respuesta": "Gerardo Pérez", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Cómo se llamaba Muhammad Ali antes de adoptar este nombre?",
+    "opciones": [
+      { "respuesta": "Cassius Clay", "correcta": true },
+      { "respuesta": "Casio Clay", "correcta": false },
+      { "respuesta": "Muhammad Al Isma", "correcta": false },
+      { "respuesta": "Muhammad Clay", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Quién fue el campeón del mundo de Moto GP en 2017?",
+    "opciones": [
+      { "respuesta": "Marc Márquez", "correcta": true },
+      { "respuesta": "Francesco Bagnaia", "correcta": false },
+      { "respuesta": "Johann Zarco", "correcta": false },
+      { "respuesta": "Miguel Oliveira", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿En qué equipo de béisbol jugó el famoso Derek Jeter?",
+    "opciones": [
+      { "respuesta": "Yankees", "correcta": true },
+      { "respuesta": "Nuggets", "correcta": false },
+      { "respuesta": "Lakers", "correcta": false },
+      { "respuesta": "Heat", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Quién es el máximo goleador histórico de los mundiales de fútbol?",
+    "opciones": [
+      { "respuesta": "Miroslav Klose", "correcta": true },
+      { "respuesta": "Lionel Messi", "correcta": false },
+      { "respuesta": "Cristiano ronaldo", "correcta": false },
+      { "respuesta": "Pelé", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Cuál es el equipo de la NBA con más títulos?",
+    "opciones": [
+      { "respuesta": "Celtics", "correcta": true },
+      { "respuesta": "Lakers", "correcta": false },
+      { "respuesta": "Raptors", "correcta": false },
+      { "respuesta": "Bulls", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Quién fue la primera alpinista en llegar a la cima del Everest?",
+    "opciones": [
+      { "respuesta": "Junko Tabei", "correcta": true },
+      { "respuesta": "Yue Yu Fei", "correcta": false },
+      { "respuesta": "André Livital", "correcta": false },
+      { "respuesta": "Iker Arrien", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿En qué equipo jugaba David Beckham en el año 2007?",
+    "opciones": [
+      { "respuesta": "En Los Angeles Galaxy", "correcta": true },
+      { "respuesta": "Manchester City", "correcta": false },
+      { "respuesta": "Manchester United", "correcta": false },
+      { "respuesta": "Chelsea", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Deporte",
+    "pregunta": "¿Cuántos jugadores hay en un equipo de voleibol?",
+    "opciones": [
+      { "respuesta": "6", "correcta": true },
+      { "respuesta": "8", "correcta": false },
+      { "respuesta": "5", "correcta": false },
+      { "respuesta": "7", "correcta": false }
+    ]
+  }
 ]

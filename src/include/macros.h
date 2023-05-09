@@ -15,6 +15,7 @@
 #include "macros/max.h"
 #include "macros/min.h"
 #include "macros/mkstemp.h"
+#include "macros/null.h"
 #include "macros/restrict.h"
 #include "macros/setdims.h"
 #include "macros/stringify.h"

@@ -128,13 +128,7 @@ int get_next_free_port (int start, int end) {
         return -1;
     }
 
-    struct
-#ifdef _WIN32
-        sockaddr_in
-#else
-        sockaddr_in
-#endif
-            addr;
+    struct sockaddr_in addr;
     memset (&addr, 0, sizeof (addr));
     addr.sin_family = AF_INET;
 #ifdef _WIN32
@@ -183,11 +177,22 @@ int get_next_free_port (int start, int end) {
             if (!connect (sock, (struct sockaddr *) &addr, sizeof (addr))) {
 #ifdef _WIN32
                 ret = p;
-                closesocket
-#else
-            close
 #endif
-                    (sock);
+
+                if (
+#ifdef _WIN32
+                    closesocket
+#else
+                close
+#endif
+                    (sock) ==
+#ifdef _WIN32
+                    SOCKET_ERROR
+#else
+                -1
+#endif
+                )
+                    warning ("could not close the socket");
 
 #ifndef _WIN32
                 return p;

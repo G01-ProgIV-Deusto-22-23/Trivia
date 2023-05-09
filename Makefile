@@ -10,33 +10,53 @@ RESDIR        := resources
 
 ifeq ($(OS), Windows_NT)
 	GCC_LINUX   := desdewindowsnopuedes
+	GXX_LINUX   := desdewindowsnopuedes
+
 	GCC_WINDOWS := gcc
+	GXX_WINDOWS := g++
 else
 	GCC_LINUX   := $(shell which gcc)
+	GXX_LINUX   := $(shell which g++)
+
 	GCC_WINDOWS := $(shell which x86_64-w64-mingw32-gcc)
+	GXX_WINDOWS := $(shell which x86_64-w64-mingw32-g++)
 endif
 
 STDC               := gnu11
+STDCXX             := gnu++11
 OPTIMIZATION_LEVEL := 3
 RUNTIME_DIAGS      := true
 
 CFLAGS := \
-	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing -fmax-errors=1 \
+	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing --fast-math -fmax-errors=1 \
 	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h
+
+CXXFLAGS := \
+	-std=$(STDCXX) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing --fast-math -fmax-errors=1 \
+	-fpermissive -D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -static-libstdc++ \
+	-include $(SRCINCLUDE)/trivia.h -include $(SRCINCLUDE)/macros/null.h
+
 ifeq ($(RUNTIME_DIAGS), false)
 	CFLAGS += -DDISABLE_RUNTIME_DIAGS
+	CXXFLAGS += --DISABLE_RUNTIME_DIAGS
 endif
 
 DFLAGS := \
 	-ggdb3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
 	-Wshadow=local -Wstrict-prototypes -Wwrite-strings -Wconversion \
+	-Wcast-align -Wnull-dereference -Wformat=2 -Wno-format-y2k -Wnonnull
+
+DXXFLAGS := \
+	-ggdb3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
+	-Wshadow=local -Wwrite-strings -Wconversion -Wnonnull \
 	-Wcast-align -Wnull-dereference -Wformat=2 -Wno-format-y2k
 
 UILIBS     := -lformw -lmenuw -lpanelw -lncursesw -lm
 OSLIBS     := -lbacktrace
 BDLIBS     := -lsqlite3
+JSONLIBS   := -lcjson -lcjson_utils
 TRIVIALIBS := -lui -los -lserver -lbd -ladt
-LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(BDLIBS)
+LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(BDLIBS) $(JSONLIBS)
 
 ifeq ($(OS), Windows_NT)
 all: windows
@@ -44,17 +64,21 @@ else
 all: linux windows
 endif
 
-linux: CC     := $(GCC_LINUX)
-linux: LIBDIR := $(LIBDIR)/linux
-linux: CFLAGS += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
-linux: OBJDIR := $(OBJDIR)/linux
-linux: BINDIR := $(BINDIR)/linux
+linux: CC       := $(GCC_LINUX)
+linux: CXX      := $(GXX_LINUX)
+linux: LIBDIR   := $(LIBDIR)/linux
+linux: CFLAGS   += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
+linux: CXXFLAGS += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
+linux: OBJDIR   := $(OBJDIR)/linux
+linux: BINDIR   := $(BINDIR)/linux
 
-windows: CC     := $(GCC_WINDOWS)
-windows: LIBDIR := $(LIBDIR)/windows
-windows: CFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
-windows: OBJDIR := $(OBJDIR)/windows
-windows: BINDIR := $(BINDIR)/windows
+windows: CC       := $(GCC_WINDOWS)
+windows: CXX      := $(GXX_WINDOWS)
+windows: LIBDIR   := $(LIBDIR)/windows
+windows: CFLAGS   += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: CXXFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: OBJDIR   := $(OBJDIR)/windows
+windows: BINDIR   := $(BINDIR)/windows
 
 init: init_bin init_lib init_obj
 
@@ -111,8 +135,13 @@ LOCALW     := $(BINDIR)/windows/local.exe
 LOCALOBJSL := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/linux/local_ui_%.o, $(wildcard $(SRCDIR)/local/ui/*.c))
 LOCALOBJSW := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/windows/local_ui_%.o, $(wildcard $(SRCDIR)/local/ui/*.c))
 
-linux:   init $(LOCALL)
-windows: init $(LOCALW)
+REMOTEL     := $(BINDIR)/linux/remote
+REMOTEW     := $(BINDIR)/windows/remote.exe
+REMOTEOBJSL := $(patsubst $(SRCDIR)/remote/ui/%.c, $(OBJDIR)/linux/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.c))
+REMOTEOBJSW := $(patsubst $(SRCDIR)/remote/ui/%.c, $(OBJDIR)/windows/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.c))
+
+linux:   init $(LOCALL) $(REMOTEL)
+windows: init $(LOCALW) $(REMOTEW)
 
 $(ADTL): $(ADTOBJSL)
 	ar rcs $@ $^
@@ -191,6 +220,18 @@ $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 
 $(OBJDIR)/windows/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
+
+$(REMOTEL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(REMOTEOBJSL)
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSL) $(LIBS)
+
+$(REMOTEW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(REMOTEOBJSW)
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/remote/main.c $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
+
+$(OBJDIR)/linux/remote_ui_%.o: $(SRCDIR)/remote/ui/%.c
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
+
+$(OBJDIR)/windows/remote_ui_%.o: $(SRCDIR)/remote/ui/%.c
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
 
 clean:
 	@echo $(shell rm -rf $(BINDIR) $(LIBDIR) $(OBJDIR))

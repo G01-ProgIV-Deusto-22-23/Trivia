@@ -1,7 +1,14 @@
+
+
 #ifndef TRIVIA_H
 #define TRIVIA_H
 
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-fpermissive"
+#pragma GCC diagnostic warning "-Wpragmas"
+
 #ifdef __cplusplus
+    #include <cstddef>
     #include <cstdio>
     #include <type_traits>
     #include <cstdlib>
@@ -17,6 +24,10 @@
     #include <ctime>
     #include <atomic>
     #include <climits>
+    #include <memory>
+    #include <vector>
+    #include <algorithm>
+    #include <iostream>
 #else
     #include <stdio.h>
     #include <stdlib.h>
@@ -47,6 +58,8 @@
 #include <sqlite3.h>
 #include <sqlite3rc.h>
 
+#include <cJSON_Utils.h>
+
 #include "types.h"
 #include "macros.h"
 #include "adt.h"
@@ -58,30 +71,12 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 
-static const int
-#if defined(__cpp_attributes) || __STDC_VERSION__ >= 201710L
-    [[unused]]
-#else
-    __attribute__ ((unused))
-#endif
-    argc;
+static const int __attribute__ ((unused)) argc = 0;
 
-static const char
-#if defined(__cpp_attributes) || __STDC_VERSION__ >= 201710L
-    [[unused]]
-#else
-    __attribute__ ((unused))
-#endif
-    * argv [1];
+static const char __attribute__ ((unused)) * argv [1];
 
 #ifdef _WIN32
-static LPWSTR
-    #if defined(__cpp_attributes) || __STDC_VERSION__ >= 201710L
-    [[unused]]
-    #else
-    __attribute__ ((unused))
-    #endif
-    pCmdLine;
+static LPWSTR __attribute__ ((unused)) pCmdLine;
 #endif
 
 #pragma GCC diagnostic pop

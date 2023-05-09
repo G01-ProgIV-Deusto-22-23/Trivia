@@ -155,9 +155,9 @@ void stop_form_gc (void) {
              ;) {
         if (
 #ifdef _WIN32
-            WaitForSingleObject (*(FREE_FORM_SEMS + i), 0L) == WAIT_FAILED
+            WaitForSingleObject (*(FREE_FORM_SEMS + i), INFINITE) == WAIT_FAILED
 #else
-            sem_wait (FREE_FORM_SEMS + i) == WAIT_FAILED
+            sem_wait (FREE_FORM_SEMS + i) == -1
 #endif
         )
             warning ("could not wait for a semaphore.");
@@ -214,7 +214,7 @@ size_t
 
     if (
 #ifdef _WIN32
-        WaitForSingleObject (*(FREE_FORM_SEMS + form), 0L) == WAIT_FAILED
+        WaitForSingleObject (*(FREE_FORM_SEMS + form), INFINITE) == WAIT_FAILED
 #else
         sem_wait (FREE_FORM_SEMS + form) == -1
 #endif

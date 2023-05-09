@@ -2,16 +2,6 @@
 #define TRIVIA_MACROS_SETDIMS_H
 
 #ifdef __cplusplus
-
-template <setdimsfunc_t *F, uint64_t D> static constexpr uint64_t SETDIMS_FUNC (setdimsfunc_t *F, uint64_t D) {
-    return f (u64decomp (D));
-}
-
-template <setdimsfunc_t *F, uint32_t W, uint32_t H>
-static constexpr uint64_t SETDIMS_FUNC (setdimsfunc_t *F, uint32_t W, uint32_t H) {
-    return F (W, H);
-}
-
     #define setdims(f, dw, dh, ...)                                                                                    \
         (ct_error (NARGS (__VA_ARGS__) > 2, "the setdims() macro must be passed between 3 and 5 arguments."),          \
          ct_error (                                                                                                    \
@@ -24,9 +14,10 @@ static constexpr uint64_t SETDIMS_FUNC (setdimsfunc_t *F, uint32_t W, uint32_t H
                isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0))),                                                       \
              "the second, third, fourth and fifth arguments passed to the setdims() macro must be of integral type."   \
          ),                                                                                                            \
-         !NARGS (__VA_ARGS__)       ? SETDIMS_FUNC (f, dw, dh)                                                         \
-         : NARGS (__VA_ARGS__) == 1 ? SETDIMS_FUNC (f, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0))                           \
-                                    : SETDIMS_FUNC (f __VA_OPT__ (, ) __VA_ARGS__));
+         !NARGS (__VA_ARGS__) ? f (dw, dh)                                                                             \
+         : NARGS (__VA_ARGS__) == 1                                                                                    \
+             ? f (u64decomp (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) u64comp (dw, dh))))                                     \
+             : f (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) dw), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) dh)))
 
     #define setwidth(f, dw, dh, ...)                                                                                   \
         (ct_error (NARGS (__VA_ARGS__) > 1, "the setwidth() macro accepts either three or four arguments."),           \
@@ -53,9 +44,7 @@ static constexpr uint64_t SETDIMS_FUNC (setdimsfunc_t *F, uint32_t W, uint32_t H
              "the second, third and fourth arguments passed to the setheight() macro must be of integral type."        \
          ),                                                                                                            \
          setdims (f, dw, dh, dw, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) dh)))
-
 #else
-
     #define setdims(f, dw, dh, ...)                                                                                    \
         (ct_error (NARGS (__VA_ARGS__) > 2, "the setdims() macro must be passed between 3 and 5 arguments."),          \
          ct_error (                                                                                                    \

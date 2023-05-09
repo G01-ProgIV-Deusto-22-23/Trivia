@@ -3,15 +3,12 @@
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <byteswap.h>
 
-#ifdef __cplusplus
-    #include <cunistd>
-#else
-    #include <unistd.h>
-#endif
-
+#include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
 

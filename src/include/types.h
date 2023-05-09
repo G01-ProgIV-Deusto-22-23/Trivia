@@ -82,6 +82,34 @@ typedef void freefunc_t (void *);
 
 typedef enum { u32_key, u64_key, str_key } key_type_t;
 
+#include "ui.h"
+#define MAX_PACKET_SZ (MAX_FORM_FIELD_LEN + 1)
+
+typedef struct __attribute__ ((packed)) {
+        uint16_t len;
+        char     text [MAX_PACKET_SZ];
+} packet_t;
+
+typedef enum __attribute__ ((packed)) { cmd_kill = 1, cmd_packet, cmd_success = 0, cmd_error = -1 } cmdname_t;
+
+#define MAX_CMD_ARG 4
+
+#define CMD_ERROR_SEND    0
+#define CMD_ERROR_RECV    1
+#define CMD_ERROR_INVALID 2
+
+typedef struct __attribute__ ((packed)) {
+        cmdname_t cmd;
+
+        union {
+                struct {
+                        uint32_t arg [MAX_CMD_ARG];
+                };
+
+                packet_t pack;
+        } info;
+} cmd_t;
+
 typedef struct {
         int  ID_Usuario;
         char nombreVisible [21];
