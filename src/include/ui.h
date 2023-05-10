@@ -139,105 +139,99 @@ __attribute__ ((warn_unused_result))
         );
 
 #ifdef __cplusplus
-#define create_form(w, h, x, y, attrs, ...)                                                                            \
-    (ct_error (NARGS (__VA_ARGS__) > 1, "the create_form() macro admits either 5 or 6 arguments."),                    \
-     ct_error (                                                                                                        \
-         !(isint (w) && isint (h) && isint (x) && isint (y)),                                                          \
-         "the first four arguments passed to the create_form() macro must be of integer type."                         \
-     ),                                                                                                                \
-     ct_error (                                                                                                        \
-         !(std::is_array <decltype (attrs)>::value && std::is_same<std::remove_cv<std::remove_extent <decltype (attr)>::type>::type, field_attr_t>::value),                                      \
-         "the fifth argument passed to the create_form() macro must be a (const) field_attr_t []."                     \
-     ),                                                                                                                \
-     ({                                                                                                                \
-         _Pragma ("GCC diagnostic push");                                                                              \
-         _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                \
+    #define create_form(w, h, x, y, attrs, ...)                                                                        \
+        (ct_error (NARGS (__VA_ARGS__) > 1, "the create_form() macro admits either 5 or 6 arguments."),                \
          ct_error (                                                                                                    \
-             std::is_pointer <std::decay <decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL))>::type>::value,                  \
-             "the sixth argument passed to the create_form() macro must be of pointer type."                           \
-         );                                                                                                            \
-         _Pragma ("GCC diagnostic pop");                                                                               \
-     }),                                                                                                               \
-     impl_create_form (                                                                                                \
-         w, h,                             \
-         x, y,                             \
-         arrsize (attrs),                                                                                                           \
-         (const field_attr_t *) attrs,                                                                                                            \
-         (const char *const *) ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)                                                                                                             \
-     ))
-#else
-#define create_form(w, h, x, y, attrs, ...)                                                                            \
-    (ct_error (NARGS (__VA_ARGS__) > 1, "the create_form() macro admits either 5 or 6 arguments."),                    \
-     ct_error (                                                                                                        \
-         !(isint (w) && isint (h) && isint (x) && isint (y)),                                                          \
-         "the first four arguments passed to the create_form() macro must be of integer type."                         \
-     ),                                                                                                                \
-     ct_error (                                                                                                        \
-         !(__builtin_types_compatible_p (typeof (attrs), field_attr_t []) ||                                           \
-           __builtin_types_compatible_p (typeof (attrs), const field_attr_t [])),                                      \
-         "the fifth argument passed to the create_form() macro must be a (const) field_attr_t []."                     \
-     ),                                                                                                                \
-     ({                                                                                                                \
-         _Pragma ("GCC diagnostic push");                                                                              \
-         _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                \
-         ct_error (                                                                                                    \
-             __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) != pointer_type_class,                  \
-             "the sixth argument passed to the create_form() macro must be of pointer type."                           \
-         );                                                                                                            \
-         _Pragma ("GCC diagnostic pop");                                                                               \
-     }),                                                                                                               \
-     impl_create_form (                                                                                                \
-         __builtin_choose_expr (isint (w), w, 0), __builtin_choose_expr (isint (h), h, 0),                             \
-         __builtin_choose_expr (isint (x), x, 0), __builtin_choose_expr (isint (y), y, 0),                             \
-         arrsize (__builtin_choose_expr (                                                                              \
-             __builtin_types_compatible_p (typeof (attrs), field_attr_t []) ||                                         \
-                 __builtin_types_compatible_p (typeof (attrs), const field_attr_t []),                                 \
-             attrs, ((char []) {})                                                                                     \
-         )),                                                                                                           \
-         (const field_attr_t *) __builtin_choose_expr (                                                                \
-             __builtin_classify_type (attrs) == pointer_type_class, attrs, NULL                                        \
+             !(isint (w) && isint (h) && isint (x) && isint (y)),                                                      \
+             "the first four arguments passed to the create_form() macro must be of integer type."                     \
          ),                                                                                                            \
-         (const char *const *) __builtin_choose_expr (                                                                 \
-             __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) == pointer_type_class,                  \
-             ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL), NULL                                                             \
-         )                                                                                                             \
-     ))
-     #endif
+         ct_error (                                                                                                    \
+             !(std::is_array<decltype (attrs)>::value &&                                                               \
+               std::is_same<std::remove_cv<std::remove_extent<decltype (attr)>::type>::type, field_attr_t>::value),    \
+             "the fifth argument passed to the create_form() macro must be a (const) field_attr_t []."                 \
+         ),                                                                                                            \
+         ({                                                                                                            \
+             _Pragma ("GCC diagnostic push");                                                                          \
+             _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                            \
+             ct_error (                                                                                                \
+                 std::is_pointer<std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL))>::type>::value,         \
+                 "the sixth argument passed to the create_form() macro must be of pointer type."                       \
+             );                                                                                                        \
+             _Pragma ("GCC diagnostic pop");                                                                           \
+         }),                                                                                                           \
+         impl_create_form (                                                                                            \
+             w, h, x, y, arrsize (attrs), (const field_attr_t *) attrs,                                                \
+             (const char *const *) ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)                                             \
+         ))
+#else
+    #define create_form(w, h, x, y, attrs, ...)                                                                        \
+        (ct_error (NARGS (__VA_ARGS__) > 1, "the create_form() macro admits either 5 or 6 arguments."),                \
+         ct_error (                                                                                                    \
+             !(isint (w) && isint (h) && isint (x) && isint (y)),                                                      \
+             "the first four arguments passed to the create_form() macro must be of integer type."                     \
+         ),                                                                                                            \
+         ct_error (                                                                                                    \
+             !(__builtin_types_compatible_p (typeof (attrs), field_attr_t []) ||                                       \
+               __builtin_types_compatible_p (typeof (attrs), const field_attr_t [])),                                  \
+             "the fifth argument passed to the create_form() macro must be a (const) field_attr_t []."                 \
+         ),                                                                                                            \
+         ({                                                                                                            \
+             _Pragma ("GCC diagnostic push");                                                                          \
+             _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                            \
+             ct_error (                                                                                                \
+                 __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) != pointer_type_class,              \
+                 "the sixth argument passed to the create_form() macro must be of pointer type."                       \
+             );                                                                                                        \
+             _Pragma ("GCC diagnostic pop");                                                                           \
+         }),                                                                                                           \
+         impl_create_form (                                                                                            \
+             __builtin_choose_expr (isint (w), w, 0), __builtin_choose_expr (isint (h), h, 0),                         \
+             __builtin_choose_expr (isint (x), x, 0), __builtin_choose_expr (isint (y), y, 0),                         \
+             arrsize (__builtin_choose_expr (                                                                          \
+                 __builtin_types_compatible_p (typeof (attrs), field_attr_t []) ||                                     \
+                     __builtin_types_compatible_p (typeof (attrs), const field_attr_t []),                             \
+                 attrs, ((char []) {})                                                                                 \
+             )),                                                                                                       \
+             (const field_attr_t *) __builtin_choose_expr (                                                            \
+                 __builtin_classify_type (attrs) == pointer_type_class, attrs, NULL                                    \
+             ),                                                                                                        \
+             (const char *const *) __builtin_choose_expr (                                                             \
+                 __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)) == pointer_type_class,              \
+                 ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL), NULL                                                         \
+             )                                                                                                         \
+         ))
+#endif
 
     size_t impl_display_form (const size_t, const char *const restrict) __attribute__ ((nonnull (2)));
 
 #ifdef __cplusplus
-#define display_form(form, ...)                                                                                        \
-    (ct_error (NARGS (__VA_ARGS__) > 1, "the display_form() macro admits either one or two arguments."),               \
-     ct_error (!isint (form), "the first argument passed to the display_form() macro must be of integer type."),       \
-     ct_error (                                                                                                        \
-         !std::is_pointer <std::decay <decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))>::type>::value,                        \
-         "the second argument passed to the display_form() macro must be of pointer or array type."                    \
-     ),                                                                                                                \
-     impl_display_form (                                                                                               \
-         form, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                                       \
-                   ? ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")                                                                                                 \
-                   : ""                                                                                                \
-     ))
+    #define display_form(form, ...)                                                                                    \
+        (ct_error (NARGS (__VA_ARGS__) > 1, "the display_form() macro admits either one or two arguments."),           \
+         ct_error (!isint (form), "the first argument passed to the display_form() macro must be of integer type."),   \
+         ct_error (                                                                                                    \
+             !std::is_pointer<std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))>::type>::value,              \
+             "the second argument passed to the display_form() macro must be of pointer or array type."                \
+         ),                                                                                                            \
+         impl_display_form (form, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "") ? ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "") : ""))
 #else
-#define display_form(form, ...)                                                                                        \
-    (ct_error (NARGS (__VA_ARGS__) > 1, "the display_form() macro admits either one or two arguments."),               \
-     ct_error (!isint (form), "the first argument passed to the display_form() macro must be of integer type."),       \
-     ct_error (                                                                                                        \
-         __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                        \
-         "the second argument passed to the display_form() macro must be of pointer or array type."                    \
-     ),                                                                                                                \
-     impl_display_form (                                                                                               \
-         form, __builtin_choose_expr (                                                                                 \
-                   __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == pointer_type_class,              \
-                   ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""), ""                                                           \
-               )                                                                                                       \
-                   ? __builtin_choose_expr (                                                                           \
-                         __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == pointer_type_class,        \
-                         ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""), ""                                                     \
-                     )                                                                                                 \
-                   : ""                                                                                                \
-     ))
+    #define display_form(form, ...)                                                                                    \
+        (ct_error (NARGS (__VA_ARGS__) > 1, "the display_form() macro admits either one or two arguments."),           \
+         ct_error (!isint (form), "the first argument passed to the display_form() macro must be of integer type."),   \
+         ct_error (                                                                                                    \
+             __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                    \
+             "the second argument passed to the display_form() macro must be of pointer or array type."                \
+         ),                                                                                                            \
+         impl_display_form (                                                                                           \
+             form, __builtin_choose_expr (                                                                             \
+                       __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == pointer_type_class,          \
+                       ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""), ""                                                       \
+                   )                                                                                                   \
+                       ? __builtin_choose_expr (                                                                       \
+                             __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == pointer_type_class,    \
+                             ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""), ""                                                 \
+                         )                                                                                             \
+                       : ""                                                                                            \
+         ))
 #endif
 
 #define form(w, h, x, y, attrs, ...)                                                                                   \
@@ -617,56 +611,51 @@ __attribute__ ((nonnull (8), warn_unused_result))
              const size_t __create_menu_arrsz__ = std::extent<decltype (c)>::value;                                                                     \
              if (!__create_menu_arrsz__)                                                                                                                \
                  error ("menus must have at least one item.");                                                                                          \
-             size_t *const restrict __create_menu_lens__ = alloca (__create_menu_arrsz__ * 2 * sizeof (size_t));                                        \
-             const char *const *const restrict __create_menu_choices__ =                                                                                \
-                 static_cast<const char *const *> (([c, __create_menu_lens__] () {                                                                      \
-                     if (std::rank<decltype (c)>::value == 2)                                                                                           \
-                         return (char **) ({                                                                                                            \
-                             for (size_t __create_menu_iter__ = 0; __create_menu_iter__ < __create_menu_arrsz__;                                        \
-                                  __create_menu_iter__++) {                                                                                             \
-                                 *(__create_menu_lens__ + __create_menu_iter__ * 2) =                                                                   \
-                                     strlen (*((char **) c + __create_menu_iter__ * 2));                                                                \
-                                 *(__create_menu_lens__ + __create_menu_iter__ * 2 + 1) =                                                               \
-                                     strlen (*((char **) c + __create_menu_iter__ * 2 + 1));                                                            \
-                             }                                                                                                                          \
-                             memcpy (                                                                                                                   \
-                                 alloca (__create_menu_arrsz__ * 2 * sizeof (const char *)), c,                                                         \
-                                 __create_menu_arrsz__ * 2 * sizeof (const char *)                                                                      \
-                             );                                                                                                                         \
-                             c;                                                                                                                         \
-                         });                                                                                                                            \
-                     return ({                                                                                                                          \
-                         char **__create_menu_choices__ = alloca (__create_menu_arrsz__ * 2 * sizeof (const char *));                                   \
-                         for (size_t __create_menu_iter__ = 0; __create_menu_iter__ < __create_menu_arrsz__;                                            \
-                              __create_menu_iter__++) {                                                                                                 \
-                             sprintf (                                                                                                                  \
-                                 *(__create_menu_choices__ + __create_menu_iter__ * 2) = alloca (                                                       \
-                                     *(__create_menu_lens__ + __create_menu_iter__ * 2) =                                                               \
-                                         (decplaces (__create_menu_iter__ + 1)) + 1                                                                     \
-                                 ),                                                                                                                     \
-                                 "%" PRISZ, __create_menu_iter__ + 1                                                                                    \
-                             );                                                                                                                         \
-                             *(__create_menu_lens__ + __create_menu_iter__ * 2 + 1) = strlen (                                                          \
-                                 *((char **) __create_menu_choices__ + __create_menu_iter__ * 2 + 1) =                                                  \
-                                     (char *) *((char **) c + __create_menu_iter__)                                                                     \
-                             );                                                                                                                         \
-                         }                                                                                                                              \
-                         __create_menu_choices__;                                                                                                       \
-                     });                                                                                                                                \
-                 }) ());                                                                                                                                \
+             std::vector<size_t> __create_menu_lens__ (__create_menu_arrsz__ * 2);                                                                      \
+             std::vector<char *> __create_menu_choices__ (__create_menu_arrsz__ * 2);                                                                   \
+             if (std::rank<decltype (c)>::value == 2) {                                                                                                 \
+                 for (size_t __create_menu_iter__ = 0; __create_menu_iter__ < __create_menu_arrsz__;                                                    \
+                      __create_menu_iter__++) {                                                                                                         \
+                     __create_menu_lens__ [__create_menu_iter__ * 2] =                                                                                  \
+                         strlen (*((char **) c + __create_menu_iter__ * 2));                                                                            \
+                     __create_menu_lens__ [__create_menu_iter__ * 2 + 1] =                                                                              \
+                         strlen (*((char **) c + __create_menu_iter__ * 2 + 1));                                                                        \
+                 }                                                                                                                                      \
+                 memcpy (__create_menu_choices__.data (), c, __create_menu_arrsz__ * 2 * sizeof (char *));                                              \
+             } else {                                                                                                                                   \
+                 for (size_t __create_menu_iter__ = 0; __create_menu_iter__ < __create_menu_arrsz__;                                                    \
+                      __create_menu_iter__++) {                                                                                                         \
+                     sprintf (                                                                                                                          \
+                         (__create_menu_choices__ [__create_menu_iter__ * 2] = (char *) malloc (                                                        \
+                              (__create_menu_lens__ [__create_menu_iter__ * 2] =                                                                        \
+                                   (decplaces (__create_menu_iter__ + 1))) +                                                                            \
+                              1                                                                                                                         \
+                          ),                                                                                                                            \
+                          __create_menu_choices__ [__create_menu_iter__ * 2]                                                                            \
+                              ? (void) 0                                                                                                                \
+                              : error ("failed to allocate memory for the menu choice index."),                                                         \
+                          __create_menu_choices__ [__create_menu_iter__ * 2]),                                                                          \
+                         "%" PRISZ, __create_menu_iter__ + 1                                                                                            \
+                     );                                                                                                                                 \
+                     __create_menu_lens__ [__create_menu_iter__ * 2 + 1] = strlen (                                                                     \
+                         __create_menu_choices__ [__create_menu_iter__ * 2 + 1] =                                                                       \
+                             (char *) *((char **) c + __create_menu_iter__)                                                                             \
+                     );                                                                                                                                 \
+                 }                                                                                                                                      \
+             }                                                                                                                                          \
              size_t __create_menu_ret__ = impl_create_menu (                                                                                            \
-                 t, w, h, x, y, __create_menu_arrsz__, (char *(*) [2]) __create_menu_choices__,                                                         \
-                 (size_t (*) [2]) __create_menu_lens__,                                                                                                 \
+                 t, w, h, x, y, __create_menu_arrsz__, (char *(*) [2]) __create_menu_choices__.data (),                                                 \
+                 (size_t (*) [2]) __create_menu_lens__.data (),                                                                                         \
                  NARGS (__VA_ARGS__) ? (choicefunc_t **) ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((choicefunc_t **) NULL))                                    \
                                      : (choicefunc_t **) memset (                                                                                       \
-                                           std::shared_ptr<std::vector<choicefunc_t *>> (                                                               \
-                                               new std::vector<choicefunc_t *> (__create_menu_arrsz__)                                                  \
-                                           )                                                                                                            \
-                                               .get ()                                                                                                  \
-                                               ->data (),                                                                                               \
-                                           0, __create_menu_arrsz__ * sizeof (choicefunc_t *)                                                           \
+                                           (std::vector<choicefunc_t *> (__create_menu_arrsz__)).data (), 0,                                            \
+                                           __create_menu_arrsz__ * sizeof (choicefunc_t *)                                                              \
                                        )                                                                                                                \
              );                                                                                                                                         \
+             if (std::rank<decltype (c)>::value == 1)                                                                                                   \
+                 for (size_t __create_menu_iter__ = 0; __create_menu_iter__ < __create_menu_arrsz__;                                                    \
+                      free (__create_menu_choices__ [__create_menu_iter__++ * 2]))                                                                      \
+                     ;                                                                                                                                  \
              _Pragma ("GCC diagnostic pop");                                                                                                            \
              __create_menu_ret__;                                                                                                                       \
          }))
