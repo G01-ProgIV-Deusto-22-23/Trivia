@@ -42,7 +42,9 @@ extern "C" {
     extern bool   end_games (void);
     extern void   game_server (const int, const size_t);
 
+    extern const char     *get_start_server_command (void);
     extern server_status_t get_server_status (void);
+    extern void            impl_start_server (void);
     extern void            start_server (void);
     extern void            stop_server (int);
     extern void            restart_server (int);
