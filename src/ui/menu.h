@@ -1,9 +1,9 @@
 #ifndef TRIVIA_UI_MENU_H
 #define TRIVIA_UI_MENU_H
 
-extern MENU                  *MENUS [__WORDSIZE];
-extern volatile atomic_size_t MENU_CONTROL;
-extern volatile atomic_int    FREE_MENU_ERR;
+extern MENU         *MENUS [__WORDSIZE];
+extern atomic_size_t MENU_CONTROL;
+extern atomic_int    FREE_MENU_ERR [sizeof (MENUS) / sizeof (*MENUS)];
 #ifdef _WIN32
 extern HANDLE FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #else

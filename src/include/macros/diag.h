@@ -1,9 +1,6 @@
 #ifndef TRIVIA_MACROS_DIAG_H
 #define TRIVIA_MACROS_DIAG_H
 
-#undef NULL
-#define NULL static_cast<void *> (nullptr)
-
 #ifdef __cplusplus
 
 static constexpr int EVAL_CT_ERROR_HELPER_FUNC (int x) noexcept {
@@ -1147,19 +1144,18 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                          refresh_log_window ();                                                                                 \
                          def_prog_mode ();                                                                                      \
                          end_ui ();                                                                                             \
-                         reset_prog_mode (); int __error_ignore__;                                                                                    \
-                         for (int __error_iter__ =                                                                              \
-                                  ({                                                                                            \
-                                      int __error_h__;                                                                          \
-                                      getmaxyx (get_log_window (), __error_h__, __error_ignore__);                         \
-                                      __error_h__;                                                                              \
-                                  }) *                                                                                          \
-                                  2;                                                                                            \
+                         reset_prog_mode ();                                                                                    \
+                         int __error_ignore__;                                                                                  \
+                         for (int __error_iter__ = ({                                                                           \
+                                                       int __error_h__;                                                         \
+                                                       getmaxyx (get_log_window (), __error_h__, __error_ignore__);             \
+                                                       __error_h__;                                                             \
+                                                   }) *                                                                         \
+                                                   2;                                                                           \
                               __error_iter__-- > 0; write (STDOUT_FILENO, "\n", sizeof ("\n") - 1))                             \
                              ;                                                                                                  \
                      }                                                                                                          \
-                     trap ();                                                                                                   \
-                     unreachable ();                                                                                            \
+                     return trap (), unreachable ();                                                                            \
                  }) ())
         #else
             #define error(...)                                                                                                                                             \

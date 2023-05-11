@@ -139,7 +139,7 @@ void start_form_gc (void) {
               (*(FREE_FORM_SEMS + i) =
                    OpenSemaphoreA (SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, TRUE, *(FREE_FORM_SEM_NAMES + i))))
 #else
-            sem_init (FREE_FORM_SEMS + i, 0, 1)
+            sem_init (FREE_FORM_SEMS + i, true, 1)
 #endif
         )
             error ("could not start the form garbage collector.");

@@ -243,6 +243,9 @@ __attribute__ ((warn_unused_result))
          display_form (__form_form__, ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", ""));                                      \
      }))
 
+    extern title_color_t get_form_title_color (const size_t);
+    extern title_color_t set_form_title_color (const size_t, const title_color_t);
+
     // extern const char *const *get_form_data (const size_t);
     extern const char (*get_form_data (const size_t)) [MAX_FORM_FIELD_LEN + 1];
     extern void set_form_data (const size_t, const char *const *const restrict);
@@ -574,7 +577,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
 #ifdef __cplusplus
     #define create_menu(t, w, h, x, y, c, ...)                                                                                                          \
         /* NOLINT */                                                                                                                                    \
-        (ct_error (NARGS (__VA_ARGS__) > 1, "the create_menu() macro accepts between 5 and 6 arguments."),                                              \
+        (ct_error (NARGS (__VA_ARGS__) > 1, "the create_menu() macro accepts between 6 and 7 arguments."),                                              \
          ct_error (                                                                                                                                     \
              !(isint (t) && isint (w) && isint (h) && isint (x) && isint (y)),                                                                          \
              "the first four arguments passed to the create_menu() macro must be of integral type."                                                     \
@@ -662,7 +665,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
 #else
     #define create_menu(t, w, h, x, y, c, ...)                                                                                                          \
         /* NOLINT */                                                                                                                                    \
-        (ct_error (NARGS (__VA_ARGS__) > 1, "the create_menu() macro accepts between 5 and 6 arguments."),                                              \
+        (ct_error (NARGS (__VA_ARGS__) > 1, "the create_menu() macro accepts between 6 and 7 arguments."),                                              \
          ct_error (                                                                                                                                     \
              !(isint (t) && isint (w) && isint (h) && isint (x) && isint (y)),                                                                          \
              "the first four arguments passed to the create_menu() macro must be of integral type."                                                     \
@@ -943,6 +946,11 @@ __attribute__ ((nonnull (8), warn_unused_result))
     impl_create_display_menu ("choicemenu", choicemenu, w, h, x, y, c __VA_OPT__ (, ) __VA_ARGS__)
 #define multimenu(w, h, x, y, c, ...)                                                                                  \
     impl_create_display_menu ("multimenu", multimenu, w, h, x, y, c __VA_OPT__ (, ) __VA_ARGS__)
+
+    extern bool loop_menu (const size_t, const bool);
+
+    extern title_color_t get_menu_title_color (const size_t);
+    extern title_color_t set_menu_title_color (const size_t, const title_color_t);
 
     extern size_t *get_menu_ret (const size_t);
     extern size_t *set_menu_ret (const size_t, size_t *const restrict);
@@ -1372,43 +1380,69 @@ __attribute__ ((nonnull (8), warn_unused_result))
                  ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)                                                      \
              ))
     #else
-        #define setup_ui(...)                                                                                                 \
-            (ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments."),            \
-             ct_error (                                                                                                       \
-                 !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                                     \
-                 "the argc and argv variables must be of integral and pointer/array type, respectively."                      \
-             ),                                                                                                               \
-             ct_error (                                                                                                       \
-                 !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) && isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&         \
-                   isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                                      \
-                   isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                                   \
-                   isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                                 \
-                 "all the arguments passed to the set_ui_settings () must be of integral type."                               \
-             ),                                                                                                               \
-             impl_setup_ui (                                                                                                  \
-                 !strcmp (__func__, "main") ? __builtin_choose_expr (isint (argc), argc, 1) - 1 : 0,                          \
-                 !strcmp (__func__, "main")                                                                                   \
-                     ? (void                                                                                                  \
-                            *) (__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) + 1) \
-                     : NULL,                                                                                                  \
-                 __builtin_choose_expr (                                                                                      \
-                     isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                    \
-                 ),                                                                                                           \
-                 __builtin_choose_expr (                                                                                      \
-                     isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0), 0              \
-                 ),                                                                                                           \
-                 __builtin_choose_expr (                                                                                      \
-                     isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)), ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0        \
-                 ),                                                                                                           \
-                 __builtin_choose_expr (                                                                                      \
-                     isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                                   \
-                     ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                                         \
-                 ),                                                                                                           \
-                 __builtin_choose_expr (                                                                                      \
-                     isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                                \
-                     ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                      \
-                 )                                                                                                            \
-             ))
+        #define setup_ui(...)                                                                                                        \
+            ({                                                                                                                       \
+                ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments.");                \
+                ct_error (                                                                                                           \
+                    !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                                         \
+                    "the argc and argv variables must be of integral and pointer/array type, respectively."                          \
+                );                                                                                                                   \
+                ct_error (                                                                                                           \
+                    !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                                                \
+                      isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&                                                             \
+                      isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                                          \
+                      isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                                       \
+                      isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                                     \
+                    "all the arguments passed to the set_ui_settings () must be of integral type."                                   \
+                );                                                                                                                   \
+                _Pragma ("GCC diagnostic push");                                                                                     \
+                _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                               \
+                _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                    \
+                int    __setup_ui_ret__     = 0;                                                                                     \
+                size_t __setup_ui_cmd_len__ = 0;                                                                                     \
+                _Pragma ("GCC diagnostic pop");                                                                                      \
+                if (__builtin_choose_expr (isint (argc), argc, 1) - 1 == 1 &&                                                        \
+                    !strncmp (                                                                                                       \
+                        (*(__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) +                \
+                           1)),                                                                                                      \
+                        get_start_server_command (), __setup_ui_cmd_len__ = strlen (get_start_server_command ())                     \
+                    )) {                                                                                                             \
+                    set_server_port ((int) strtol (                                                                                  \
+                        (*(__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) +                \
+                           1)) +                                                                                                     \
+                            __setup_ui_cmd_len__,                                                                                    \
+                        NULL, 10                                                                                                     \
+                    ));                                                                                                              \
+                    impl_start_server ();                                                                                            \
+                } else                                                                                                               \
+                    __setup_ui_ret__ = impl_setup_ui (                                                                               \
+                        !strcmp (__func__, "main") ? __builtin_choose_expr (isint (argc), argc, 1) - 1 : 0,                          \
+                        !strcmp (__func__, "main")                                                                                   \
+                            ? (void                                                                                                  \
+                                   *) (__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) + 1) \
+                            : NULL,                                                                                                  \
+                        __builtin_choose_expr (                                                                                      \
+                            isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                    \
+                        ),                                                                                                           \
+                        __builtin_choose_expr (                                                                                      \
+                            isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),                \
+                            0                                                                                                        \
+                        ),                                                                                                           \
+                        __builtin_choose_expr (                                                                                      \
+                            isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)),                                                      \
+                            ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                                                            \
+                        ),                                                                                                           \
+                        __builtin_choose_expr (                                                                                      \
+                            isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                                   \
+                            ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                                         \
+                        ),                                                                                                           \
+                        __builtin_choose_expr (                                                                                      \
+                            isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                                \
+                            ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                      \
+                        )                                                                                                            \
+                    );                                                                                                               \
+                __setup_ui_ret__;                                                                                                    \
+            })
     #endif
 #endif
 

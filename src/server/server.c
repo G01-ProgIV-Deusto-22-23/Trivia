@@ -1,5 +1,9 @@
 #include "port.h"
 
+#define _SHARED_MEMORY_NAME "/TRIVIA_SHRMEM"
+static char SHARED_MEMORY_NAME [sizeof (_SHARED_MEMORY_NAME) + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END)) - 1];
+static char START_SERVER_COMMAND [] = "$TRIVIA_INIT_SERVER";
+
 static _Atomic server_status_t *SERVER_STATUS = NULL;
 
 #ifdef _WIN32
@@ -22,6 +26,10 @@ static
 #endif
         SERVER_PROC = 0;
 
+const char *get_start_server_command (void) {
+    return START_SERVER_COMMAND;
+}
+
 static void *unmap_status (
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
     void [[unused]] * unused
@@ -37,6 +45,8 @@ static void *unmap_status (
 #else
     waitpid (SERVER_PROC, NULL, WNOHANG);
 
+    atomic_store (SERVER_STATUS, server_off);
+
     if (munmap (SERVER_STATUS, sizeof (size_t)) == -1)
         warning ("could not unmap the shared memory segment.");
 #endif
@@ -45,7 +55,24 @@ static void *unmap_status (
 }
 
 server_status_t get_server_status (void) {
-    return SERVER_STATUS ? atomic_load (SERVER_STATUS) : server_off;
+    return SERVER_STATUS ? atomic_load (SERVER_STATUS) == server_on ? ({
+#ifdef _WIN32
+        SOCKET
+#else
+        int
+#endif
+        sock = connect_server (NULL, SERVER_PORT);
+        sock ==
+#ifdef _WIN32
+                INVALID_SOCKET
+#else
+                -1
+#endif
+            ? atomic_fetch_add (SERVER_STATUS, server_error - server_on)
+            : (server_status_t) (disconnect_server (sock), server_on);
+    })
+                                                                    : atomic_load (SERVER_STATUS)
+                         : server_off;
 }
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
@@ -97,33 +124,43 @@ static void term_handler (const int __attribute__ ((unused)) signum) {
 }
 #endif
 
-void start_server (void) {
-    if (atomic_load (SERVER_STATUS) == server_on)
-        return;
-
-    if (!SERVER_STATUS) {
+void impl_start_server (void) {
+    static char LOG_FILE
+        [sizeof ("server_port_pid.log") + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
+         sizeof (STRINGIFY (
 #ifdef _WIN32
-    }
+             DWORD_MAX
 #else
-        if ((SERVER_STATUS = mmap (
-                 NULL, sizeof (_Atomic server_status_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0
-             )) == MAP_FAILED)
-            error ("could not map the shared memory segment.");
-    }
-
-    if ((SERVER_PROC = vfork ()) == -1)
-        error ("could not start the server.");
-
-    if (SERVER_PROC) {
-        if (pthread_create (&UNMAP_THREAD, NULL, unmap_status, NULL))
-            warning ("could not create the status unmap thread.");
-
-        for (server_status_t s; (s = atomic_load (SERVER_STATUS)) == server_starting || s == server_restarting;)
-            ;
-
-        return;
-    }
+             INT_MAX
 #endif
+         )) -
+         3] = { 0 };
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+
+    set_log_file (
+        (char *) (sprintf (
+            LOG_FILE,
+            "server_port%d_pid%"
+#ifdef _WIN32
+            PRIu32
+#else
+            "d"
+#endif
+            ".log",
+            SERVER_PORT,
+#ifdef _WIN32
+            GetProcessId (GetCurrentProcess ())
+#else
+            getpid ()
+#endif
+        ) == -1
+            ? (warning ("could not generate a valid log file name."), NULL)
+            : LOG_FILE)
+    );
+
+#pragma GCC diagnostic pop
 
 #ifdef _WIN32
     if (!TERM_THREAD &&
@@ -147,6 +184,54 @@ void start_server (void) {
     return atomic_store (SERVER_STATUS, server_error);
 
     atomic_store (SERVER_STATUS, server_on);
+}
+
+void start_server (void) {
+    static char COMMAND [sizeof (START_SERVER_COMMAND) + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END))];
+
+    int fd;
+
+    if (SERVER_STATUS &&
+        (atomic_load (SERVER_STATUS) == server_starting || atomic_load (SERVER_STATUS) == server_restarting))
+        return;
+
+    if (!SERVER_STATUS) {
+#ifdef _WIN32
+    }
+#else
+        if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1 ||
+            (fd = shm_open (SHARED_MEMORY_NAME, O_RDWR | O_CREAT | O_EXCL, S_IRWXO)) == -1)
+            error ("could not create the shared memory resource.");
+
+        if ((SERVER_STATUS = mmap (
+                 NULL, sizeof (_Atomic server_status_t), PROT_READ | PROT_WRITE | PROT_EXEC,
+                 MAP_SHARED_VALIDATE | MAP_SYNC, fd, sysconf (_SC_PAGE_SIZE)
+             )) == MAP_FAILED)
+            return warning ("could not map the shared memory segment.");
+    }
+
+    if ((SERVER_PROC = vfork ()) == -1) {
+        unmap_status (NULL);
+        atomic_store (SERVER_STATUS, server_error);
+
+        return warning ("could not start the server.");
+    }
+
+    if (SERVER_PROC) {
+        if (pthread_create (&UNMAP_THREAD, NULL, unmap_status, NULL))
+            warning ("could not create the status unmap thread.");
+
+        for (server_status_t s;
+             !SERVER_STATUS || (s = atomic_load (SERVER_STATUS)) == server_starting || s == server_restarting;)
+            ;
+
+        return;
+    }
+
+    if (sprintf (COMMAND, "%s%d", START_SERVER_COMMAND, SERVER_PORT) == -1 ||
+        execvp ("local", (char *const []) { (char *) "local", COMMAND, NULL }) == -1)
+        error ("could not start the server");
+#endif
 }
 
 void stop_server (int port) {
@@ -247,6 +332,8 @@ connect_server (const char *ip, int port) {
 
         memset (&addr, 0, sizeof (addr));
         addr.sin_family = AF_INET;
+        addr.sin_port   = htons ((uint16_t) port);
+
 #ifdef _WIN32
         memcpy (serv->h_addr, &addr.sin_addr.s_addr, (size_t) serv->h_length);
 #else

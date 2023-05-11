@@ -5,9 +5,10 @@
 extern "C" {
 #endif
 
-    MENU                  *MENUS [__WORDSIZE] = { 0 };
-    volatile atomic_size_t MENU_CONTROL       = 0;
-    volatile atomic_int    FREE_MENU_ERR      = OK;
+    MENU         *MENUS [__WORDSIZE]                               = { 0 };
+    atomic_size_t MENU_CONTROL                                     = 0;
+    atomic_int    FREE_MENU_ERR [sizeof (MENUS) / sizeof (*MENUS)] = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
+                                                                           OK };
 
 #ifdef _WIN32
     HANDLE FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
@@ -18,6 +19,7 @@ sem_t            FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
     static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
     static menutype_t MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)] = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
                                                                             actionmenu };
+    static bool       MENU_LOOP [sizeof (MENUS) / sizeof (*MENUS)]  = { false };
     static size_t    *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]  = { 0 };
     static title_color_t MENU_TITLE_COLORS [sizeof (MENUS) / sizeof (*MENUS)] = { title_no_color };
 
@@ -36,8 +38,8 @@ static pthread_t FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 #else
 static void     *impl_trivia_free_menu (void *__menu__) {
 #endif
-        size_t menu = (size_t) (uintptr_t) __menu__;
-        atomic_store (&FREE_MENU_ERR, OK);
+        const size_t menu = (size_t) (uintptr_t) __menu__;
+        atomic_store (FREE_MENU_ERR + menu, OK);
 
         if (!*(MENUS + menu))
             return
@@ -61,7 +63,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
             free (*(*(*(MENU_CHOICE_DATA + menu) + 1) + i));
 
             if (free_item (*(items + i++)) != E_OK) {
-                atomic_store (&FREE_MENU_ERR, ERR);
+                atomic_store (FREE_MENU_ERR + menu, ERR);
 
                 warning ("could not free menu item.");
             }
@@ -76,7 +78,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
         }
 
         if (free_menu (*(MENUS + menu)) != E_OK) {
-            atomic_store (&FREE_MENU_ERR, ERR);
+            atomic_store (FREE_MENU_ERR + menu, ERR);
 
             warning ("could not free the menu.");
 
@@ -89,7 +91,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 
         refresh ();
 
-        atomic_fetch_xor (&MENU_CONTROL, ((size_t) 1) << menu);
+        atomic_fetch_and (&MENU_CONTROL, ~(((size_t) 1) << menu));
         *(MENUS + menu) =
             (void
                  *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = (*(MENU_TITLE_COLORS + menu) = 0)));
@@ -121,9 +123,13 @@ static void     *impl_trivia_free_menu (void *__menu__) {
                   0, impl_trivia_free_menu, (void *) (uintptr_t) menu, 0, NULL
               )))
 #else
-    if (pthread_create (FREE_MENU_THREADS + menu, NULL, impl_trivia_free_menu, (void *) (uintptr_t) menu))
+    if (pthread_create (FREE_MENU_THREADS + menu, NULL, impl_trivia_free_menu, (void *) (uintptr_t) menu) == -1)
 #endif
+        {
+            warning ("could not start the menu freeing thread, falling back to manual freeing.");
+
             impl_trivia_free_menu ((void *) (uintptr_t) menu);
+        }
     }
 
     void start_menu_gc (void) {
@@ -149,7 +155,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
                   (*(FREE_MENU_SEMS + i) =
                        OpenSemaphoreA (SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, *(FREE_MENU_SEM_NAMES + i))))
 #else
-            sem_init (FREE_MENU_SEMS + i, 0, 1)
+            sem_init (FREE_MENU_SEMS + i, true, 1)
 #endif
             )
                 error ("could not start the menu garbage collector.");
@@ -195,6 +201,9 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 #endif
         )
             error ("could not wait for the menu to be freed.");
+
+        if (*(MENUS + menu) && !delete_menu (menu))
+            error ("the menu index was already in use and could not be properly freed.");
 
         atomic_fetch_or (&MENU_CONTROL, 1 << menu);
 
@@ -247,7 +256,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
         add_window ((void *) (uintptr_t) menu, 2);
 
         keypad (menu_win (*(MENUS + menu)), true);
-        *(MENU_TYPES + menu) = t;
+        *(MENU_LOOP + menu) = ((*(MENU_TYPES + menu) = t) == actionmenu);
         set_menu_ret (menu, NULL);
 
         if (
@@ -328,6 +337,13 @@ __attribute__ ((nonnull (8), warn_unused_result))
         return *(MENU_TITLE_COLORS + menu) = color;
     }
 
+    bool loop_menu (const size_t menu, const bool loop) {
+        if (menu >= sizeof (MENUS) / sizeof (*MENUS))
+            error ("not a valid menu index.");
+
+        return *(MENU_LOOP + menu) = loop;
+    }
+
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
     [[nonnull (2)]]
 #else
@@ -398,13 +414,7 @@ __attribute__ ((nonnull (2)))
     static size_t impl_display_menu2 (
         const size_t menu, size_t current, const char *const restrict title, const char *const restrict mark
     ) {
-        if (menu >=
-#ifdef _WIN32
-            sizeof (MENUS) / sizeof (*MENUS)
-#else
-        arrsize (MENUS)
-#endif
-        )
+        if (menu >= sizeof (MENUS) / sizeof (*MENUS))
             error ("not a valid menu index.");
 
         if (!*(MENUS + menu))
@@ -551,7 +561,8 @@ __attribute__ ((nonnull (2)))
         *dims       = *dims - (*(dims + 2) -= (int) get_hor_padding ()) + (int) get_hor_padding () * 2;
         *(dims + 1) = *(dims + 1) - (*(dims + 3) -= (int) get_ver_padding ()) + (int) get_ver_padding () * 2;
 
-        current = (size_t) item_index (current_item (*(MENUS + menu)));
+        current             = (size_t) item_index (current_item (*(MENUS + menu)));
+        title_color_t color = get_menu_title_color (menu);
 
         if (!delete_menu (menu)) {
             warning ("could not delete menu, choice function not called.");
@@ -562,20 +573,20 @@ __attribute__ ((nonnull (2)))
 
         exec ();
 
+        if (*(MENUS + menu) && !delete_menu (menu))
+            warning ("could not delete menu, will probably crash while creating the replacement menu.");
+
         // There's risk of overflowing the stack, but I don't think anybody will dare to make nearly-infinite
         // invocations of menus.
-        return impl_display_menu2 (
-            ({
-                impl_create_menu2 (
-                    menu, actionmenu, (uint32_t) *dims, (uint32_t) * (dims + 1), (uint32_t) * (dims + 2),
-                    (uint32_t) * (dims + 3), n, (const char *const (*const restrict) [2]) c,
-                    (const size_t (*const restrict) [2]) l, f
-                );
-                free (p);
-                menu;
-            }),
-            current, title, mark
+        impl_create_menu2 (
+            menu, actionmenu, (uint32_t) *dims, (uint32_t) * (dims + 1), (uint32_t) * (dims + 2),
+            (uint32_t) * (dims + 3), n, (const char *const (*const restrict) [2]) c,
+            (const size_t (*const restrict) [2]) l, f
         );
+        free (p);
+        set_menu_title_color (menu, color);
+
+        return *(MENU_LOOP + menu) ? impl_display_menu2 (menu, current, title, mark) : menu;
     }
 
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
