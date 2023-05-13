@@ -948,6 +948,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
     impl_create_display_menu ("multimenu", multimenu, w, h, x, y, c __VA_OPT__ (, ) __VA_ARGS__)
 
     extern bool loop_menu (const size_t, const bool);
+    extern int  timeout_menu (const size_t, const int);
 
     extern title_color_t get_menu_title_color (const size_t);
     extern title_color_t set_menu_title_color (const size_t, const title_color_t);
@@ -961,6 +962,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
 
 #define DEFAULT_MENU_EXIT_KEY     KEY_F (1)
 #define DEFAULT_MENU_EXIT_MESSAGE "Pulsa F1 para salir."
+#define DEFAULT_MENU_TIMEOUT_MESSAGE "Segundos restantes: "
 
     // padding.c
 

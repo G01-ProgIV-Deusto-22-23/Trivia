@@ -156,7 +156,7 @@ extern "C" {
              dup2 (STDERR_SAVE, STDERR_FILENO)
 #endif
             ) == -1)
-            error ("could not restore stderr.");
+            warning ("could not restore stderr.");
 
         return ret;
     }

@@ -12,14 +12,16 @@ extern "C" {
 #define IANA_DYNAMIC_PORT_START ((1 << 16) - (1 << 14))
 #define IANA_DYNAMIC_PORT_END   (1 << 16)
 
-#define DEFAULT_SERVER_PORT     21023
-#define DEFAULT_GAME_PORT_START IANA_DYNAMIC_PORT_START
+#define DEFAULT_SERVER_PORT IANA_DYNAMIC_PORT_START
+
+#define DEFAULT_GAME_PORT_START DEFAULT_SERVER_PORT + 1
 #define DEFAULT_GAME_PORT_END   IANA_DYNAMIC_PORT_END
 
 #define MAX_PLAYERS 20
 
     cmd_t error_command (const uint32_t);
     cmd_t kill_command (void);
+    cmd_t game_command (const game_attr_t);
     void  packet (
          cmd_t *const restrict,
          const char [
@@ -27,7 +29,7 @@ extern "C" {
             static
 #endif
             1],
-        size_t
+        size_t, const bool
     );
 
 #ifdef _WIN32
@@ -54,7 +56,7 @@ extern "C" {
 #else
     int
 #endif
-                connect_server (const char *, int);
+                impl_connect_server (const char *, int, const char *);
     extern void disconnect_server (const
 #ifdef _WIN32
                                    SOCKET
@@ -63,6 +65,8 @@ extern "C" {
 #endif
     );
     extern cmd_t send_server (const char *, int, const cmd_t);
+
+#define connect_server(a, p) impl_connect_server (a, p, __func__)
 
     extern int get_server_port (void);
     extern int set_server_port (int);

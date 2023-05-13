@@ -10,7 +10,11 @@ cmd_t kill_command (void) {
     return (cmd_t) { .cmd = cmd_kill };
 }
 
-void packet (cmd_t *const restrict dest, const char src [static 1], size_t sz) {
+cmd_t game_command (const game_attr_t game) {
+    return (cmd_t) { .cmd = cmd_game, .info.game = game };
+}
+
+void packet (cmd_t *const restrict dest, const char src [static 1], size_t sz, const bool cont) {
     if (!dest)
         return;
 
@@ -25,7 +29,7 @@ void packet (cmd_t *const restrict dest, const char src [static 1], size_t sz) {
         sz = MAX_PACKET_SZ;
     }
 
-    dest->cmd           = cmd_packet;
+    dest->cmd           = cmd_packet + cont;
     dest->info.pack.len = (uint16_t) sz;
     memcpy (dest->info.pack.text, src, sz);
 }

@@ -1,5 +1,7 @@
 #include "menu.h"
+#include "linux/ncursesw/curses.h"
 #include "window.h"
+#include <signal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,35 +18,42 @@ extern "C" {
 sem_t            FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #endif
 
-    static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
-    static menutype_t MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)] = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
-                                                                            actionmenu };
-    static bool       MENU_LOOP [sizeof (MENUS) / sizeof (*MENUS)]  = { false };
-    static size_t    *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]  = { 0 };
-    static title_color_t MENU_TITLE_COLORS [sizeof (MENUS) / sizeof (*MENUS)] = { title_no_color };
+    static char      **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
+    static menutype_t  MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)] = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
+                                                                             actionmenu };
+    static bool        MENU_LOOP [sizeof (MENUS) / sizeof (*MENUS)]  = { false };
+    static int         MENU_TIMEOUT [sizeof (MENUS) / sizeof (*MENUS)]         = { 0 };
+    static atomic_bool MENU_TIMEOUT_RUNNING [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
+    static size_t     *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]            = { 0 };
+    static title_color_t MENU_TITLE_COLORS [sizeof (MENUS) / sizeof (*MENUS)]  = { title_no_color };
 
     static bool FREE_MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
 #ifdef _WIN32
+    static HANDLE MENU_TIMEOUT_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
     static HANDLE FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 #else
+static pthread_t MENU_TIMEOUT_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 static pthread_t FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 #endif
 
-    static int  MENU_EXIT_KEY              = DEFAULT_MENU_EXIT_KEY;
-    static char MENU_EXIT_MESSAGE [BUFSIZ] = DEFAULT_MENU_EXIT_MESSAGE;
+    static int  MENU_EXIT_KEY                 = DEFAULT_MENU_EXIT_KEY;
+    static char MENU_EXIT_MESSAGE [BUFSIZ]    = DEFAULT_MENU_EXIT_MESSAGE;
+    static char MENU_TIMEOUT_MESSAGE [BUFSIZ] = DEFAULT_MENU_TIMEOUT_MESSAGE;
 
+    static
 #ifdef _WIN32
-    static unsigned long impl_trivia_free_menu (void *__menu__) {
+        DWORD
 #else
-static void     *impl_trivia_free_menu (void *__menu__) {
+    void *
 #endif
+        impl_trivia_free_menu (void *__menu__) {
         const size_t menu = (size_t) (uintptr_t) __menu__;
         atomic_store (FREE_MENU_ERR + menu, OK);
 
         if (!*(MENUS + menu))
             return
 #ifdef _WIN32
-                (unsigned long) (uintptr_t)
+                (DWORD) (uintptr_t)
 #endif
                 * (MENUS + menu);
 
@@ -84,7 +93,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 
             return
 #ifdef _WIN32
-                (unsigned long) (uintptr_t)
+                (DWORD) (uintptr_t)
 #endif
                 * (MENUS + menu);
         }
@@ -94,7 +103,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
         atomic_fetch_and (&MENU_CONTROL, ~(((size_t) 1) << menu));
         *(MENUS + menu) =
             (void
-                 *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = (*(MENU_TITLE_COLORS + menu) = 0)));
+                 *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = (*(MENU_TIMEOUT_RUNNING + menu) = (*(MENU_TITLE_COLORS + menu) = 0))));
 
         if (
 #ifdef _WIN32
@@ -107,7 +116,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
 
         return
 #ifdef _WIN32
-            (unsigned long) (uintptr_t)
+            (DWORD) (uintptr_t)
 #endif
             * (MENUS + menu);
     }
@@ -155,7 +164,7 @@ static void     *impl_trivia_free_menu (void *__menu__) {
                   (*(FREE_MENU_SEMS + i) =
                        OpenSemaphoreA (SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, *(FREE_MENU_SEM_NAMES + i))))
 #else
-            sem_init (FREE_MENU_SEMS + i, true, 1)
+            sem_init (FREE_MENU_SEMS + i, false, 1)
 #endif
             )
                 error ("could not start the menu garbage collector.");
@@ -344,6 +353,26 @@ __attribute__ ((nonnull (8), warn_unused_result))
         return *(MENU_LOOP + menu) = loop;
     }
 
+    int timeout_menu (const size_t menu, const int time) {
+        if (menu >= sizeof (MENUS) / sizeof (*MENUS))
+            error ("not a valid menu index.");
+
+        return *(MENU_TIMEOUT + menu) = max (0, time);
+    }
+
+    __attribute__ ((nonnull (1))) static
+#ifdef _WIN32
+        DWORD
+#else
+    void *
+#endif
+        countdown_menu (void *const restrict args) {
+        for (; atomic_load ((atomic_int *) args) > 0; atomic_fetch_sub ((atomic_int *) args, 1))
+            sleep (1);
+
+        return 0;
+    }
+
 #if defined(__cpp_attributes) || __STDC_VERSION__ > 201710L
     [[nonnull (2)]]
 #else
@@ -465,8 +494,47 @@ __attribute__ ((nonnull (2)))
             return menu;
         }
 
-        for (int c = 0; (c = tolower (wgetch (menu_win (*(MENUS + menu))))) != get_menu_exit_key ();
-             wrefresh (menu_sub (*(MENUS + menu))), wrefresh (menu_win (*(MENUS + menu))), refresh ())
+        atomic_store (MENU_TIMEOUT_RUNNING + menu, 1);
+        atomic_int t = -1;
+        if (*(MENU_TIMEOUT + menu)) {
+            t = *(MENU_TIMEOUT + menu);
+
+#ifdef _WIN32
+            if (!(*(FREE_MENU_THREADS + menu) = CreateThread (
+                      &(SECURITY_ATTRIBUTES) { .nLength              = sizeof (SECURITY_ATTRIBUTES),
+                                               .lpSecurityDescriptor = NULL,
+                                               .bInheritHandle       = TRUE },
+                      0, countdown_menu, &t, 0, NULL
+                  )))
+#else
+        if (pthread_create (MENU_TIMEOUT_THREADS + menu, NULL, countdown_menu, &t) == -1)
+#endif
+            {
+                warning ("could not start the menu timeout thread.");
+                t = -1;
+            }
+        }
+
+        nodelay (menu_win (*(MENUS + menu)), true);
+        fprintf (stderr, "timeout: %d\n", *(MENU_TIMEOUT + menu));
+        for (int c = 0, l = (int) strlen (MENU_TIMEOUT_MESSAGE),
+                 y = getmaxy (menu_win (*(MENUS + menu))) - getbegy (menu_win (*(MENUS + menu))) - 6,
+                 x = (int) strlen (mark) + 2;
+             (c = tolower (wgetch (menu_win (*(MENUS + menu))))) != get_menu_exit_key ();
+             wrefresh (menu_sub (*(MENUS + menu))), wrefresh (menu_win (*(MENUS + menu))), refresh ()) {
+            if (atomic_load (&t) != -1) {
+                for (int i = 0, n = l + (int) decplaces (atomic_load (&t)); i < n;
+                     mvwdelch (menu_win (*(MENUS + menu)), y, x + i++))
+                    ;
+                mvwprintw (menu_win (*(MENUS + menu)), y, x, "%s%d", MENU_TIMEOUT_MESSAGE, atomic_load (&t));
+                wrefresh (menu_sub (*(MENUS + menu)));
+                wrefresh (menu_win (*(MENUS + menu)));
+                refresh ();
+
+                if (!atomic_load (&t))
+                    break;
+            }
+
             if (c == KEY_DOWN) {
                 if (item_index (current_item (*(MENUS + menu))) == item_count (*(MENUS + menu)) - 1)
                     menu_driver (*(MENUS + menu), REQ_FIRST_ITEM);
@@ -513,6 +581,7 @@ __attribute__ ((nonnull (2)))
             cont:
                 continue;
             }
+        }
 
         if (prevcurs && prevcurs != ERR)
             if (curs_set (prevcurs) == ERR)
@@ -665,6 +734,26 @@ __attribute__ ((nonnull (2, 3)))
         }
 
         return MENU_EXIT_KEY = key ? key : DEFAULT_MENU_EXIT_KEY;
+    }
+
+    const char *get_menu_timeout_message (void) {
+        return MENU_TIMEOUT_MESSAGE;
+    }
+
+    const char *set_menu_timeout_key (const char *const restrict message) {
+        if (!message)
+            memcpy (MENU_TIMEOUT_MESSAGE, DEFAULT_MENU_TIMEOUT_MESSAGE, sizeof (DEFAULT_MENU_TIMEOUT_MESSAGE));
+
+        else if (message != MENU_TIMEOUT_MESSAGE) {
+            size_t l;
+            if ((l = strlen (message)) < sizeof (MENU_TIMEOUT_MESSAGE))
+                memcpy (MENU_TIMEOUT_MESSAGE, message, l + 1);
+
+            else
+                warning ("the menu timeout message is too big so the previous one will be used.");
+        }
+
+        return MENU_TIMEOUT_MESSAGE;
     }
 
 #ifdef __cplusplus

@@ -28,11 +28,11 @@ OPTIMIZATION_LEVEL := 3
 RUNTIME_DIAGS      := true
 
 CFLAGS := \
-	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing --fast-math -fmax-errors=1 \
+	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing -ffast-math -fmax-errors=1 \
 	-D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -include $(SRCINCLUDE)/trivia.h
 
 CXXFLAGS := \
-	-std=$(STDCXX) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing --fast-math -fmax-errors=1 \
+	-std=$(STDCXX) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing -ffast-math -fmax-errors=1 \
 	-fpermissive -D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -static-libstdc++ \
 	-include $(SRCINCLUDE)/trivia.h -include $(SRCINCLUDE)/macros/null.h
 
@@ -225,7 +225,7 @@ $(REMOTEL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(REMOTEOBJSL)
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSL) $(LIBS)
 
 $(REMOTEW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(REMOTEOBJSW)
-	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/remote/main.c $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
 
 $(OBJDIR)/linux/remote_ui_%.o: $(SRCDIR)/remote/ui/%.c
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@

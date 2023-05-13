@@ -165,6 +165,9 @@ int get_next_free_port (int start, int end) {
                 return -1;
             }
 
+            if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &(int) { 1 }, sizeof (int)) == -1)
+                warning ("could make the socket reuse local addresses.");
+
             addr.sin_port = htons (
 #ifdef _WIN32
                 (u_short)
@@ -174,7 +177,7 @@ int get_next_free_port (int start, int end) {
                     p
             );
 
-            if (!connect (sock, (struct sockaddr *) &addr, sizeof (addr))) {
+            if (!bind (sock, (struct sockaddr *) &addr, sizeof (addr))) {
 #ifdef _WIN32
                 ret = p;
 #endif

@@ -123,8 +123,11 @@ bool init_game (const size_t players, const bool pub) {
 #else
              ({
                  p = fork ();
-                 if (!p)
+                 if (!p) {
                      game_server (port, players);
+
+                     exit (0);
+                 }
                  p;
              }) == -1
 #endif
@@ -239,8 +242,11 @@ static bool kill_game (const struct __game_struct g) {
 static bool kill_games (void) {
     static game_t g;
     static size_t n;
-    if (!(g = values_map (GAMES, &n)))
+    if (!(g = values_map (GAMES, &n))) {
+        warning ("could not retrieve the games array from the map.");
+
         return false;
+    }
 
     bool e = false;
     for (size_t i =
@@ -248,7 +254,7 @@ static bool kill_games (void) {
              *
 #endif
              CURGAME = 0;
-         i < n; e    |= kill_game (*(g + i++)))
+         i < n; e    |= kill_game (*(g + i++)) ? (warning ("could not kill game."), true) : false)
         ;
 
     free (g);
@@ -263,8 +269,10 @@ static bool kill_games (void) {
 }
 
 bool end_games (void) {
-    bool e = kill_games ();
-    destroy_map (GAMES);
+    const bool e = kill_games ();
+
+    if (!destroy_map (GAMES))
+        warning ("could not destroy the games map successfully.");
 
     return e;
 }
@@ -314,10 +322,6 @@ void game_server (const int port, const size_t players) {
         warning ("the minimum recommended port for games is the first IANA dynamic port (" STRINGIFY (
             IANA_DYNAMIC_PORT_START
         ) ").");
-
-    printf ("port: %d\n", port);
-    for (size_t i = 0; i < 0; i++)
-        ;
 
     exit (0);
 }

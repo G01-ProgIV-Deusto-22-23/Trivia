@@ -9,7 +9,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
     static struct backtrace_state *BT_STATE               = NULL;
     static bool                    BT_INIT_ALREADY_CALLED = false;
     static int                     BT_FD                  = -1;
@@ -17,6 +16,15 @@ extern "C" {
 
     static char   BT_INIT_TIME [BT_TIME_BUFSZ];
     static size_t BT_INIT_TIME_LEN;
+
+    static
+#ifdef _WIN32
+        DWORD
+#else
+    pid_t
+#endif
+                BT_PID;
+    static char BT_DIGITS [sizeof (STRINGIFY ((typeof (BT_PID)) -1)) - 1];
 
     int get_backtrace_fd (void) {
         return BT_FD;
@@ -69,12 +77,11 @@ static int bt_callback_func (
         );
         write (BT_FD, ", line ", sizeof (", line ") - 1);
 
-        char     digits [10];
         uint32_t line = (uint32_t) lineno;
         uint32_t dp   = (uint32_t) decplaces (line);
         for (uint32_t i = 1; line; line /= 10)
-            *(digits + dp - i++) = (char) (line % 10) + '0';
-        write (BT_FD, digits, dp);
+            *(BT_DIGITS + dp - i++) = (char) (line % 10) + '0';
+        write (BT_FD, BT_DIGITS, dp);
 
         write (BT_FD, ").", sizeof (").") - 1);
 
@@ -121,7 +128,22 @@ static void bt_error_func (void *f, const char __attribute__ ((unused)) * unused
 #endif
                 BT_INIT_TIME_LEN
         );
-        write (BT_FD, ")\n", sizeof (")\n") - 1);
+        write (BT_FD, ")\nProcess ID: ", sizeof (")\nProcess ID: ") - 1);
+
+#ifdef _WIN32
+        if (BT_PID) {
+#endif
+            auto dp = decplaces (BT_PID);
+            for (typeof (BT_PID) i = 1; BT_PID; BT_PID /= 10)
+                *(BT_DIGITS + dp - i++) = (char) (BT_PID % 10) + '0';
+            write (BT_FD, BT_DIGITS, (unsigned) dp);
+#ifdef _WIN32
+        }
+
+        else
+            write (BT_FD, "unknown", sizeof ("unknown") - 1);
+#endif
+        write (BT_FD, "\n", sizeof ("\n") - 1);
 
         backtrace_full (BT_STATE, 1, bt_callback_func, bt_error_func, (void *) ((uintptr_t) NULL + 1));
 
@@ -134,6 +156,13 @@ static void bt_error_func (void *f, const char __attribute__ ((unused)) * unused
 
         BT_INIT_ALREADY_CALLED = true;
 
+        BT_PID =
+#ifdef _WIN32
+            GetProcessId (GetCurrentProcess ());
+#else
+        getpid ();
+#endif
+        ;
         size_t tries = 0;
 
     tempfile:

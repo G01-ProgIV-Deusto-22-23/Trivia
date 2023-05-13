@@ -1,3 +1,6 @@
 trivia_main {
-    error ("Nada por aquí.");
+    setup_ui ();
+
+    const char *const a [] = { "xd" };
+    actionmenu (0, 0, 0, 0, a);
 }

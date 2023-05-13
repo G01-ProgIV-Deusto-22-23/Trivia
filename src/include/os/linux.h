@@ -2,6 +2,7 @@
 #define TRIVIA_OS_LINUX_H
 
 #include <unistd.h>
+#include <signal.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <fcntl.h>
@@ -17,7 +18,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <linux/futex.h>
+#include <linux/limits.h>
 #include <sys/syscall.h>
 
 #include <arpa/inet.h>

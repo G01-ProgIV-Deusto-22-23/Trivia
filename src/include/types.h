@@ -90,7 +90,13 @@ typedef struct __attribute__ ((packed)) {
         char     text [MAX_PACKET_SZ];
 } packet_t;
 
-typedef enum __attribute__ ((packed)) { cmd_kill = 1, cmd_packet, cmd_success = 0, cmd_error = -1 } cmdname_t;
+typedef enum __attribute__ ((packed)
+) { cmd_kill = 1,
+    cmd_game,
+    cmd_packet,
+    cmd_packet_cont,
+    cmd_success = 0,
+    cmd_error   = -1 } cmdname_t;
 
 #define MAX_CMD_ARG 4
 
@@ -99,12 +105,19 @@ typedef enum __attribute__ ((packed)) { cmd_kill = 1, cmd_packet, cmd_success = 
 #define CMD_ERROR_INVALID 2
 
 typedef struct __attribute__ ((packed)) {
+        uint8_t players;
+        uint8_t round_time;
+} game_attr_t;
+
+typedef struct __attribute__ ((packed)) {
         cmdname_t cmd;
 
         union {
                 struct {
                         uint32_t arg [MAX_CMD_ARG];
                 };
+
+                game_attr_t game;
 
                 packet_t pack;
         } info;
