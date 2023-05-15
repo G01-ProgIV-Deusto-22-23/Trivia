@@ -1,13 +1,19 @@
 #include "port.h"
 
-#define _SHARED_MEMORY_NAME "/TRIVIA_SHRMEM"
-static char SHARED_MEMORY_NAME [sizeof (_SHARED_MEMORY_NAME) + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END)) - 1];
+#ifdef _WIN32
+    #define _SHARED_MEMORY_NAME "Global\\TRIVIA_SHRMEM"
+#else
+    #define _SHARED_MEMORY_NAME "/TRIVIA_SHRMEM"
+#endif
+
+static char SHARED_MEMORY_NAME [sizeof (_SHARED_MEMORY_NAME) + sizeof (stringify (IANA_DYNAMIC_PORT_END)) - 1];
 static char START_SERVER_COMMAND [] = "$TRIVIA_INIT_SERVER";
 
 static _Atomic server_status_t *SERVER_STATUS = NULL;
 
 #ifdef _WIN32
 static HANDLE TERM_THREAD = NULL;
+static HANDLE MAP_FILE    = NULL;
 #endif
 
 static
@@ -27,7 +33,11 @@ static void unmap_status (void) {
         return;
 
 #ifdef _WIN32
+    if (!UnmapViewOfFile (SERVER_STATUS))
+        warning ("could not unmap the view on the shared memory file.");
 
+    if (CloseHandle (MAP_FILE))
+        warning ("could not close the shared memory file.");
 #else
     if (munmap (SERVER_STATUS, ({
                     size_t sz = (size_t) sysconf (_SC_PAGESIZE);
@@ -50,6 +60,24 @@ static void unmap_status (void) {
 
 server_status_t get_server_status (void) {
     if (!SERVER_STATUS) {
+#ifdef _WIN32
+        if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
+            error ("could not open the shared memory resource.");
+
+        if (!(MAP_FILE = CreateFileMappingA (
+                  INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof (_Atomic server_status_t), SHARED_MEMORY_NAME
+              )))
+            error ("could not create the shared memory file.");
+
+        if (!(SERVER_STATUS = MapViewOfFile (MAP_FILE, FILE_MAP_ALL_ACCESS, 0, 0, sizeof (_Atomic server_status_t)))) {
+            CloseHandle (MAP_FILE);
+
+            error ("could not map the shared memory segment.");
+        }
+
+        if (atexit (unmap_status))
+            warning ("could make the status segment unmap at program exit.");
+#else
         if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
             error ("could not open the shared memory resource.");
 
@@ -69,7 +97,7 @@ server_status_t get_server_status (void) {
                 error ("could not create the shared memory resource.");
 
             if (ftruncate (fd, (off_t) sz) == -1)
-                error ("could not truncate the shared memory resource to the next multiple of page size of " STRINGIFY (
+                error ("could not truncate the shared memory resource to the next multiple of page size of " stringify (
                     sizeof (_Atomic server_status_t)
                 ) " bytes.");
         }
@@ -82,6 +110,7 @@ server_status_t get_server_status (void) {
 
         if (atexit (unmap_status))
             warning ("could make the status segment unmap at program exit.");
+#endif
     }
 
 #ifdef _WIN32
@@ -91,7 +120,10 @@ server_status_t get_server_status (void) {
 #endif
     sock = connect_server (NULL, SERVER_PORT);
 
+#ifndef _WIN32
     msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
     server_status_t s;
     atomic_store (
         SERVER_STATUS, s =
@@ -108,7 +140,13 @@ server_status_t get_server_status (void) {
                                 : server_on)
     );
 
+#ifdef _WIN32
+    FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
+    FlushFileBuffers (MAP_FILE);
+#else
     msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
     return s;
 }
 
@@ -144,6 +182,19 @@ __attribute__ ((__noreturn__)) static void
     if (!end_games ())
         warning ("could not end all games successfully");
 
+#ifdef _WIN32
+    if (atomic_load (SERVER_STATUS) != server_restarting) {
+        atomic_store (SERVER_STATUS, server_off);
+        FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
+        FlushFileBuffers (MAP_FILE);
+    }
+
+    if (!UnmapViewOfFile (SERVER_STATUS))
+        warning ("could not unmap the view on the shared memory file.");
+
+    if (CloseHandle (MAP_FILE))
+        warning ("could not close the shared memory file.");
+#else
     msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
     if (atomic_load (SERVER_STATUS) != server_restarting) {
         atomic_store (SERVER_STATUS, server_off);
@@ -165,6 +216,7 @@ __attribute__ ((__noreturn__)) static void
     if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1 ||
         shm_unlink (SHARED_MEMORY_NAME) == -1)
         warning ("could not unlink the shared memory resource.");
+#endif
 
     message ("server terminated.");
 
@@ -184,8 +236,8 @@ static void term_handler (const int __attribute__ ((unused)) signum) {
 
 __attribute__ ((noreturn)) void impl_start_server (void) {
     static char LOG_FILE
-        [sizeof ("server_port_pid.log") + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
-         sizeof (STRINGIFY (
+        [sizeof ("server_port_pid.log") + sizeof (stringify (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
+         sizeof (stringify (
 #ifdef _WIN32
              DWORD_MAX
 #else
@@ -202,7 +254,7 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
                                 LOG_FILE,
                                 "server_port%d_pid%"
 #ifdef _WIN32
-                                PRIu32
+                                "lu"
 #else
                                 "d"
 #endif
@@ -231,10 +283,24 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
 
     signal (SIGTERM, term_handler);
     signal (SIGABRT, term_handler);
+
+    if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
+        error ("could not open the shared memory resource.");
+
+    if (!(MAP_FILE = OpenFileMappingA (FILE_MAP_ALL_ACCESS, FALSE, SHARED_MEMORY_NAME)))
+        error ("could not create the shared memory file.");
+
+    if (!(SERVER_STATUS = MapViewOfFile (MAP_FILE, FILE_MAP_ALL_ACCESS, 0, 0, sizeof (_Atomic server_status_t)))) {
+        CloseHandle (MAP_FILE);
+
+        error ("could not map the shared memory segment.");
+    }
+
+    if (atexit (unmap_status))
+        warning ("could make the status segment unmap at program exit.");
 #else
     sigaction (SIGTERM, &(struct sigaction) { .sa_handler = term_handler }, NULL);
     sigaction (SIGABRT, &(struct sigaction) { .sa_handler = term_handler }, NULL);
-#endif
 
     int fd;
     if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
@@ -254,18 +320,52 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
             error ("could not create the shared memory resource.");
 
         if (ftruncate (fd, (off_t) sz) == -1)
-            error ("could not truncate the shared memory resource to the next multiple of page size of " STRINGIFY (
+            error ("could not truncate the shared memory resource to the next multiple of page size of " stringify (
                 sizeof (_Atomic server_status_t)
             ) " bytes.");
     }
 
     if ((SERVER_STATUS = mmap (NULL, sz, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0)) == MAP_FAILED)
         error ("could not map the shared memory segment.");
+#endif
+
+#ifdef _WIN32
+    WSADATA wsa;
+    if (WSAStartup (MAKEWORD (2, 2), &wsa)) {
+        int r = WSAGetLastError ();
+
+        if (r == WSASYSNOTREADY)
+            error ("the underlying network subsystem is not ready for network communication.");
+
+        else if (r == WSAVERNOTSUPPORTED)
+            error (
+                "the version of Windows Sockets support requested is not provided by this particular Windows Sockets implementation."
+            );
+
+        else if (r == WSAEINPROGRESS)
+            error ("a blocking Windows Sockets 1.1 operation is in progress.");
+
+        else if (r == WSAEPROCLIM)
+            error ("a limit on the number of tasks supported by the Windows Sockets implementation has been reached.");
+
+        else if (r == WSAEFAULT)
+            error ("The lpWSAData parameter is not a valid pointer.");
+    }
+#endif
 
     if (get_next_free_port (SERVER_PORT, SERVER_PORT) == -1) {
+#ifndef _WIN32
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
         atomic_store (SERVER_STATUS, server_error);
+
+#ifdef _WIN32
+        FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
+        FlushFileBuffers (MAP_FILE);
+#else
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
 
         error ("the server port is not available.");
     }
@@ -289,32 +389,71 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         -1
 #endif
     ) {
+#ifndef _WIN32
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
         atomic_store (SERVER_STATUS, server_error);
+
+#ifdef _WIN32
+        FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
+        FlushFileBuffers (MAP_FILE);
+#else
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
 
         error ("could not create the server socket.");
     }
 
-    if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &(int) { 1 }, sizeof (int)) == -1)
+    if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, (void *) &(int) { 1 }, sizeof (int)) ==
+#ifdef _WIN32
+        SOCKET_ERROR
+#else
+        -1
+#endif
+    )
         warning ("could make the socket reuse local addresses.");
 
-    if (bind (sock, (struct sockaddr *) &addr, sizeof (addr)) == -1) {
-        shutdown (sock, SHUT_RDWR);
+    if (bind (sock, (struct sockaddr *) &addr, sizeof (addr)) ==
+#ifdef _WIN32
+        SOCKET_ERROR
+#else
+        -1
+#endif
+    ) {
+        disconnect_server (sock);
 
+#ifndef _WIN32
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
         atomic_store (SERVER_STATUS, server_error);
+
+#ifdef _WIN32
+        FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
+        FlushFileBuffers (MAP_FILE);
+#else
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
 
         error ("could not bind.");
     }
 
     if (listen (sock, 1) == -1) {
-        shutdown (sock, SHUT_RDWR);
+        disconnect_server (sock);
 
+#ifndef _WIN32
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
         atomic_store (SERVER_STATUS, server_error);
+
+#ifdef _WIN32
+        FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
+        FlushFileBuffers (MAP_FILE);
+#else
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
 
         error ("could not listen.");
     }
@@ -322,25 +461,56 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
     if (!init_games ())
         warning ("could not start all games.");
 
+#ifndef _WIN32
     msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
     atomic_store (SERVER_STATUS, server_on);
+
+#ifdef _WIN32
+    FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
+    FlushFileBuffers (MAP_FILE);
+#else
     msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
+#endif
+
+    message ("server started.");
 
     for (;;) {
-        static socklen_t sl = sizeof (addr);
-        static int       client_sock;
-        static cmd_t     cmd;
-        static ssize_t   recvlen;
+        static
+#ifdef _WIN32
+            int
+#else
+            socklen_t
+#endif
+                sl = sizeof (addr);
+        static
+#ifdef _WIN32
+            SOCKET
+#else
+            int
+#endif
+                       client_sock;
+        static cmd_t   cmd;
+        static ssize_t recvlen;
 
-        if ((client_sock = accept (sock, &addr, &sl)) == -1)
+        if ((client_sock = accept (sock, (struct sockaddr *) &addr, &sl)) ==
+#ifdef _WIN32
+            INVALID_SOCKET
+#else
+            -1
+#endif
+        )
             continue;
 
-        if ((recvlen = read (client_sock, &cmd, sizeof (cmd_t))) == -1) {
-            disconnect_server (client_sock);
-            shutdown (sock, SHUT_RDWR);
-
-            goto end;
-        }
+        if ((recvlen = recv (client_sock, (void *) &cmd, sizeof (cmd_t), 0)) ==
+#ifdef _WIN32
+            SOCKET_ERROR
+#else
+            -1
+#endif
+        )
+            continue;
 
         if (!recvlen) {
             message ("the client closed the connection");
@@ -348,35 +518,89 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
             continue;
         }
 
-        if (cmd.cmd != cmd_kill)
+        if (!(cmd.cmd == cmd_kill || cmd.cmd == cmd_game)) {
+            warning ("The server only accepts two commands (kill and game), ignoring the received command.");
+
             continue;
+        }
+
+        if (cmd.cmd == cmd_game) {
+            send (
+                client_sock, (packet (&cmd, init_game (cmd.info.game, 0), 0, false), (void *) &cmd), sizeof (cmd_t), 0
+            );
+
+            continue;
+        }
 
     end:
         message ("kill command received.");
+        send (client_sock, (cmd = success_command (), (void *) &cmd), sizeof (cmd_t), 0);
+
         disconnect_server (client_sock);
-        shutdown (sock, SHUT_RDWR);
+        disconnect_server (sock);
 
         raise (SIGTERM);
         exit (0);
     }
 
+    raise (SIGTERM);
     exit (0);
 }
 
 void start_server (void) {
-    static char PROG_PATH [PATH_MAX + 1];
-    static char COMMAND [sizeof (START_SERVER_COMMAND) + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END))];
+#ifdef _WIN32
+    static STARTUPINFOA        SI;
+    static PROCESS_INFORMATION PI;
+    static char                PROG_PATH [MAX_PATH + 1]                                                  = { 0 };
+    static char COMMAND [sizeof (START_SERVER_COMMAND) + sizeof (stringify (IANA_DYNAMIC_PORT_END)) - 1] = { 0 };
 
-    int fd;
+    if (!GetModuleFileNameA (NULL, PROG_PATH, MAX_PATH + 1))
+        error ("could not get the executable filename.");
+
+    GetStartupInfoA (&SI);
 
     if (SERVER_STATUS &&
         (atomic_load (SERVER_STATUS) == server_starting || atomic_load (SERVER_STATUS) == server_restarting))
         return;
 
     if (!SERVER_STATUS) {
-#ifdef _WIN32
+        if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
+            error ("could not open the shared memory resource.");
+
+        if (!(MAP_FILE = CreateFileMappingA (
+                  INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof (_Atomic server_status_t), SHARED_MEMORY_NAME
+              )))
+            error ("could not create the shared memory file.");
+
+        if (!(SERVER_STATUS = MapViewOfFile (MAP_FILE, FILE_MAP_ALL_ACCESS, 0, 0, sizeof (_Atomic server_status_t)))) {
+            CloseHandle (MAP_FILE);
+
+            error ("could not map the shared memory segment.");
+        }
+
+        if (atexit (unmap_status))
+            warning ("could make the status segment unmap at program exit.");
     }
+
+    if (sprintf (COMMAND, "%s%d", START_SERVER_COMMAND, SERVER_PORT) == -1 ||
+        !CreateProcessA (PROG_PATH, COMMAND, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &SI, &PI))
+        error ("could not start the server.");
+
+    SERVER_PROC = PI.hProcess;
+
+    if (!CloseHandle (PI.hThread))
+        warning ("could not close the handle to the new primary thread of the new process.");
 #else
+    static char PROG_PATH [PATH_MAX + 1]                                                                 = { 0 };
+    static char COMMAND [sizeof (START_SERVER_COMMAND) + sizeof (stringify (IANA_DYNAMIC_PORT_END)) - 1] = { 0 };
+
+    if (SERVER_STATUS &&
+        (msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC),
+         atomic_load (SERVER_STATUS) == server_starting || atomic_load (SERVER_STATUS) == server_restarting))
+        return;
+
+    if (!SERVER_STATUS) {
+        int fd;
         if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
             error ("could not open the shared memory resource.");
 
@@ -394,7 +618,7 @@ void start_server (void) {
                 error ("could not create the shared memory resource.");
 
             if (ftruncate (fd, (off_t) sz) == -1)
-                error ("could not truncate the shared memory resource to the next multiple of page size of " STRINGIFY (
+                error ("could not truncate the shared memory resource to the next multiple of page size of " stringify (
                     sizeof (_Atomic server_status_t)
                 ) " bytes.");
         }
@@ -437,6 +661,8 @@ void start_server (void) {
             (char *const []) { PROG_PATH, COMMAND, NULL }
         ) == -1)
         error ("could not start the server");
+
+    exit (0);
 #endif
 }
 
@@ -561,8 +787,29 @@ impl_connect_server (const char *ip, int port, const char *prevf) {
         return sock;
     }
 
-    if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &(int) { 1 }, sizeof (int)) == -1)
+    if (setsockopt (
+            sock, SOL_SOCKET, SO_REUSEADDR,
+#ifdef _WIN32
+            (void *)
+#endif
+            &(int) { 1 },
+            sizeof (int)
+        ) == -1)
         warning ("could make the socket reuse local addresses.");
+
+#ifdef _WIN32
+    if (ioctlsocket (s, FIONBIO, &(u_long) { 1 }))
+        warning ("could not make the socket non-blocking.");
+#else
+    {
+        const int opts = fcntl (sock, F_GETFL, NULL);
+        if (opts == -1)
+            warning ("could not get the file status flags of the socket.");
+
+        if (fcntl (sock, F_SETFL, max (opts, 0) | O_NONBLOCK) == -1)
+            warning ("could not make the socket non-blocking.");
+    }
+#endif
 
     if (connect (sock, (struct sockaddr *) &addr, sizeof (addr)) ==
 #ifdef _WIN32
@@ -571,17 +818,26 @@ impl_connect_server (const char *ip, int port, const char *prevf) {
         -1
 #endif
     ) {
-        if (strcmp (prevf, STRINGIFY (get_server_status)))
-            warning ("could not connect to the server.");
-        disconnect_server (sock);
-
-        return
+        message ("waiting for connection (" stringify (CONNECT_WAIT_TIMEOUT) " milliseconds max).");
 #ifdef _WIN32
-            INVALID_SOCKET
+        if (select ())
 #else
-            -1
+        if (errno != EINPROGRESS || poll (&(struct pollfd) { .fd = sock }, 1, CONNECT_WAIT_TIMEOUT) <= 0)
 #endif
-            ;
+        {
+
+            if (strcmp (prevf, stringify (get_server_status)))
+                warning ("could not connect to the server.");
+            disconnect_server (sock);
+
+            return
+#ifdef _WIN32
+                INVALID_SOCKET
+#else
+                -1
+#endif
+                ;
+        }
     }
 
     return sock;
@@ -598,20 +854,50 @@ void disconnect_server (const
     DWORD e;
 #endif
 
-    if (
+    if (socket !=
 #ifdef _WIN32
-        closesocket
-#else
-        close
-#endif
-        (socket) ==
-#ifdef _WIN32
-        SOCKET_ERROR
+        INVALID_SOCKET
 #else
         -1
 #endif
     ) {
-        warning ("could not close the socket");
+        if (shutdown (
+                socket,
+#ifdef _WIN32
+                SD_BOTH
+#else
+                SHUT_RDWR
+#endif
+            ) ==
+#ifdef _WIN32
+                SOCKET_ERROR
+#else
+                -1
+#endif
+            &&
+#ifdef _WIN32
+            WSAGetLastError () != WSAENOTCONN && WSAGetLastError () != WSAECONNABORTED
+#else
+            errno == ENOTCONN
+#endif
+        )
+            warning ("could not shut down the connection on the socket");
+
+        if (
+#ifdef _WIN32
+            closesocket
+#else
+            close
+#endif
+            (socket) ==
+#ifdef _WIN32
+            SOCKET_ERROR
+#else
+            -1
+#endif
+        ) {
+            warning ("could not close the socket");
+        }
 
 #ifdef _WIN32
         e = GetLastError ();
@@ -666,10 +952,6 @@ void disconnect_server (const
 
 cmd_t send_server (const char *ip, int port, const cmd_t cmd) {
 #ifdef _WIN32
-    DWORD e;
-#endif
-
-#ifdef _WIN32
     SOCKET
 #else
     int
@@ -711,8 +993,6 @@ cmd_t send_server (const char *ip, int port, const cmd_t cmd) {
 
         return error_command (CMD_ERROR_SEND);
     }
-
-    message ("jijiji");
 
     cmd_t resp;
     if (recv (socket, (char *) &resp, sizeof (resp), 0) ==

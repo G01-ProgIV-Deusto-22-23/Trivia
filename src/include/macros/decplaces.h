@@ -35,7 +35,7 @@
         })
 #else
     #define decplaces(x)                                                                                               \
-        __builtin_choose_expr (__builtin_constant_p (x), sizeof (STRINGIFY (x)) - 1, ({                                \
+        __builtin_choose_expr (__builtin_constant_p (x), sizeof (stringify (x)) - 1, ({                                \
                                    _Pragma ("GCC diagnostic push");                                                    \
                                    _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                              \
                                    _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                   \

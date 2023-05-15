@@ -22,7 +22,7 @@ template <typename T, size_t N2> static constexpr size_t ARRSIZE_HELPER_FUNC (T 
     return n == 1 ? N1 : N1 * N2;
 }
 
-template <typename T> static constexpr size_t ARRSIZE_HELPER_FUNC (T arr [], size_t N1, int n) {
+template <typename T> static constexpr size_t ARRSIZE_HELPER_FUNC (T [], size_t N1, int) {
     return N1;
 }
 

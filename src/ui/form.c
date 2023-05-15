@@ -119,8 +119,8 @@ void trivia_free_form (const size_t form) {
 void start_form_gc (void) {
 #ifdef _WIN32
     static CHAR FREE_FORM_SEM_NAMES [sizeof (FORMS) / sizeof (*FORMS)]
-                                    [sizeof ("TRIVIA_FREE_FORM_SEM__") + sizeof (STRINGIFY (DWORD_MAX)) +
-                                     sizeof (STRINGIFY (sizeof (FORMS) / sizeof (*FORMS))) - 2];
+                                    [sizeof ("TRIVIA_FREE_FORM_SEM__") + sizeof (stringify (DWORD_MAX)) +
+                                     sizeof (stringify (sizeof (FORMS) / sizeof (*FORMS))) - 2];
 #endif
 
     for (size_t i = 0; i <
@@ -177,7 +177,7 @@ field_attr_t impl_field_attrs (const size_t len, const FIELDTYPE *const type) {
     return (field_attr_t
     ) { .len =
             (len ? (len > MAX_FORM_FIELD_LEN
-                        ? (error ("the field cannot be longer than " STRINGIFY (MAX_FORM_FIELD_LEN)), (size_t) 0)
+                        ? (error ("the field cannot be longer than " stringify (MAX_FORM_FIELD_LEN)), (size_t) 0)
                         : len)
                  : (error ("the field cannot have a length of zero."), (size_t) 0)),
         .type = (FIELDTYPE *) type };

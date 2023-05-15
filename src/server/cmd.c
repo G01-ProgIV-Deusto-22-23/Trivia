@@ -25,7 +25,7 @@ void packet (cmd_t *const restrict dest, const char src [static 1], size_t sz, c
         sz = strlen (src);
 
     if (sz >= MAX_PACKET_SZ) {
-        warning ("only the first " STRINGIFY (MAX_PACKET_SZ) " bytes of the source will be copied.");
+        warning ("only the first " stringify (MAX_PACKET_SZ) " bytes of the source will be copied.");
         sz = MAX_PACKET_SZ;
     }
 

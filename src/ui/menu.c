@@ -144,8 +144,8 @@ static pthread_t FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
     void start_menu_gc (void) {
 #ifdef _WIN32
         static CHAR FREE_MENU_SEM_NAMES [sizeof (MENUS) / sizeof (*MENUS)]
-                                        [sizeof ("TRIVIA_FREE_MENU_SEM__") + sizeof (STRINGIFY (DWORD_MAX)) +
-                                         sizeof (STRINGIFY (sizeof (MENUS) / sizeof (*MENUS))) - 2];
+                                        [sizeof ("TRIVIA_FREE_MENU_SEM__") + sizeof (stringify (DWORD_MAX)) +
+                                         sizeof (stringify (sizeof (MENUS) / sizeof (*MENUS))) - 2];
 #endif
 
         for (size_t i = 0; i <
@@ -500,7 +500,7 @@ __attribute__ ((nonnull (2)))
             t = *(MENU_TIMEOUT + menu);
 
 #ifdef _WIN32
-            if (!(*(FREE_MENU_THREADS + menu) = CreateThread (
+            if (!(*(MENU_TIMEOUT_THREADS + menu) = CreateThread (
                       &(SECURITY_ATTRIBUTES) { .nLength              = sizeof (SECURITY_ATTRIBUTES),
                                                .lpSecurityDescriptor = NULL,
                                                .bInheritHandle       = TRUE },
@@ -516,7 +516,6 @@ __attribute__ ((nonnull (2)))
         }
 
         nodelay (menu_win (*(MENUS + menu)), true);
-        fprintf (stderr, "timeout: %d\n", *(MENU_TIMEOUT + menu));
         for (int c = 0, l = (int) strlen (MENU_TIMEOUT_MESSAGE),
                  y = getmaxy (menu_win (*(MENUS + menu))) - getbegy (menu_win (*(MENUS + menu))) - 6,
                  x = (int) strlen (mark) + 2;

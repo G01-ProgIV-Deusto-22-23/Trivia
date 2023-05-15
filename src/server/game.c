@@ -28,7 +28,8 @@ static
 #else
     pthread_t
 #endif
-        PLAYERS_THREADS [MAX_GAMES][MAX_PLAYERS];
+                   GAME_THREADS [MAX_GAMES][MAX_PLAYERS + 1];
+static atomic_bool PLAYER_THREAD_STILL_RUNNING [MAX_GAMES][MAX_PLAYERS];
 
 #ifdef _WIN32
 static const char GAME_ARG [] = "juan";
@@ -85,7 +86,7 @@ void gen_game_ids (void) {
     }
 }
 
-bool init_game (const size_t players, const bool pub) {
+const char *init_game (game_attr_t attr, const bool pub) {
     if (
 #ifndef _WIN32
         !CURGAME || *
@@ -94,28 +95,37 @@ bool init_game (const size_t players, const bool pub) {
         return false;
 
 #ifdef _WIN32
-    static STARTUPINFOA        si;
-    static PROCESS_INFORMATION pi;
-    static char                path [MAX_PATH + 1] = { 0 };
-    static char                cmd
-        [sizeof (GAME_ARG) + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
-         sizeof (STRINGIFY (MAX_PLAYERS)) - 3] = { 0 };
+    STARTUPINFOA        si;
+    PROCESS_INFORMATION pi;
+    char                path [MAX_PATH + 1] = { 0 };
+    char                cmd
+        [sizeof (GAME_ARG) + sizeof (stringify (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
+         sizeof (stringify (MAX_PLAYERS)) - 3] = { 0 };
 
     if (!GetModuleFileNameA (NULL, path, MAX_PATH + 1))
         error ("could not get the executable filename.");
 
     GetStartupInfoA (&si);
 #else
-    static pid_t p;
+    pid_t p;
 #endif
 
-    static int port;
+    int port = get_game_port_start ();
 
-    bool r = (port = get_next_free_port (get_game_port_start (), get_game_port_end ())) == -1 ||
+    if (!attr.players)
+        attr.players = MAX_PLAYERS;
+
+    if (!attr.round_time)
+        attr.round_time = DEFAULT_ROUND_TIME;
+
+    bool r = (port = get_next_free_port (port++, get_game_port_end ())) == -1 ||
 #ifdef _WIN32
              !CreateProcessA (
                  path, ({
-                     snprintf (cmd, sizeof (cmd), "%s%d %" PRISZ, GAME_ARG, port, players);
+                     snprintf (
+                         cmd, sizeof (cmd), "%s%d %" PRISZ " %" PRIu8 " %" PRIu8, GAME_ARG, port, CURGAME, attr.players,
+                         attr.round_time
+                     );
                      cmd;
                  }),
                  NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &si, &pi
@@ -124,7 +134,7 @@ bool init_game (const size_t players, const bool pub) {
              ({
                  p = fork ();
                  if (!p) {
-                     game_server (port, players);
+                     game_server (*CURGAME, port, attr);
 
                      exit (0);
                  }
@@ -142,15 +152,19 @@ bool init_game (const size_t players, const bool pub) {
                     ),
                     memcpy (
                         GAME_STRUCTS + 1,
-                        &(struct __game_struct) { .proc =
+                        &(struct __game_struct
+                        ) { .proc =
 #ifdef _WIN32
-                                                      pi.hProcess
+                                (CloseHandle (pi.hThread)
+                                     ? (void) 0
+                                     : warning ("could not close the handle to the primary thread of the new process."),
+                                 pi.hProcess)
 #else
-                                                      p
+                                p
 #endif
-                                                  ,
-                                                  .port = port,
-                                                  .pub  = pub },
+                                ,
+                            .port = port,
+                            .pub  = pub },
                         sizeof (struct __game_struct)
                     )
                 );
@@ -160,7 +174,14 @@ bool init_game (const size_t players, const bool pub) {
     memset (cmd, 0, sizeof (cmd));
 #endif
 
-    return !r;
+    return r ? ""
+             : *(GAME_IDS +
+#ifdef _WIN32
+                 CURGAME
+#else
+                 *CURGAME
+#endif
+                 - 1);
 }
 
 bool init_games (void) {
@@ -175,8 +196,8 @@ bool init_games (void) {
 #endif
 
     __builtin_choose_expr (
-        sizeof (wchar_t) == sizeof (int),
-        wmemset ((wchar_t *) PLAYER_RESULTS, -1, sizeof (PLAYER_RESULTS) / sizeof (**PLAYER_RESULTS)), ({
+        sizeof (wchar_t) == sizeof (int) && (wchar_t) -1 == (int) -1,
+        wmemset ((wchar_t *) PLAYER_RESULTS, (wchar_t) -1, sizeof (PLAYER_RESULTS) / sizeof (**PLAYER_RESULTS)), ({
             for (size_t i = 0, j; i < sizeof (PLAYER_RESULTS) / sizeof (**PLAYER_RESULTS); i++)
                 for (j = 0; j < sizeof (*PLAYER_RESULTS) / sizeof (**PLAYER_RESULTS);
                      **(PLAYER_RESULTS + i * sizeof (*PLAYER_RESULTS) / sizeof (**PLAYER_RESULTS) + j++) = -1)
@@ -194,6 +215,9 @@ bool init_games (void) {
     if (!prev)
         gen_game_ids ();
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+
     for (size_t n = (size_t) ((double) (NGAMES * PUB_GAMES) / 100.0);
 #ifdef _WIN32
          CURGAME
@@ -201,23 +225,26 @@ bool init_games (void) {
          *CURGAME
 #endif
          < n;)
-        e |= !init_game (
+        e |= !*init_game (
+            (game_attr_t) { .players =
 #ifndef _WIN32
-            *
+                                *
 #endif
-                    CURGAME < n / 3
-                ? MAX_PLAYERS >> 2
-            :
+                                        CURGAME < n / 3
+                                    ? MAX_PLAYERS >> 2
+                                :
 #ifndef _WIN32
-            *
+                                *
 #endif
-                    CURGAME < 2 * n / 3
-                ? MAX_PLAYERS >> 1
-                : MAX_PLAYERS,
+                                        CURGAME < 2 * n / 3
+                                    ? MAX_PLAYERS >> 1
+                                    : MAX_PLAYERS },
             true
         );
 
-    return e;
+#pragma GCC diagnostic pop
+
+    return !e;
 }
 
 static bool kill_game (const struct __game_struct g) {
@@ -234,7 +261,7 @@ static bool kill_game (const struct __game_struct g) {
             !(TerminateProcess (g.proc, ExitCode) && ec);
         })
 #else
-        kill (g.proc, SIGTERM) && (errno != ESRCH)
+        kill (g.proc, SIGTERM) == -1 && (errno != ESRCH)
 #endif
             ;
 }
@@ -277,10 +304,19 @@ bool end_games (void) {
     return e;
 }
 
-void game_server (const int port, const size_t players) {
+#ifndef _WIN32
+static void *watch_for_parent (void __attribute__ ((unused)) * unused) {
+    waitpid (getppid (), NULL, 0);
+    raise (SIGTERM);
+
+    return NULL;
+}
+#endif
+
+void game_server (const size_t ngame, const int port, game_attr_t attr) {
     static char LOG_FILE
-        [sizeof ("game_port_pid.log") + sizeof (STRINGIFY (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
-         sizeof (STRINGIFY (
+        [sizeof ("game_port_pid.log") + sizeof (stringify (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
+         sizeof (stringify (
 #ifdef _WIN32
              DWORD_MAX
 #else
@@ -289,29 +325,41 @@ void game_server (const int port, const size_t players) {
          )) -
          3] = { 0 };
 
+#ifndef _WIN32
+    sigaction (SIGTERM, &(struct sigaction) { .sa_handler = SIG_DFL }, NULL);
+    sigaction (SIGABRT, &(struct sigaction) { .sa_handler = SIG_DFL }, NULL);
+
+    pthread_create (*(GAME_THREADS + ngame), NULL, watch_for_parent, NULL);
+#endif
+
+    if (!attr.players)
+        attr.players = MAX_PLAYERS;
+
+    if (!attr.round_time)
+        attr.round_time = DEFAULT_ROUND_TIME;
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-extra-args"
 
-    set_log_file (
-        (char *) (sprintf (
-            LOG_FILE,
-            "game_port%d_pid%"
+    set_log_file ((char *) (sprintf (
+                                LOG_FILE,
+                                "game_port%d_pid%"
 #ifdef _WIN32
-            PRIu32
+                                "lu"
 #else
-            "d"
+                                 "d"
 #endif
-            ".log",
-            port,
+                                ".log",
+                                port,
 #ifdef _WIN32
-            GetProcessId (GetCurrentProcess ())
+                                GetProcessId (GetCurrentProcess ())
 #else
-            getpid ()
+                                 getpid ()
 #endif
-        ) == -1
-            ? (warning ("could not generate a valid log file name."), NULL)
-            : LOG_FILE)
-    );
+                            ) == -1
+                                ? (warning ("could not generate a valid log file name."), NULL)
+                                : LOG_FILE));
+    open_log_file ();
 
 #pragma GCC diagnostic pop
 
@@ -319,9 +367,12 @@ void game_server (const int port, const size_t players) {
         error ("not a valid port.");
 
     if (port < IANA_DYNAMIC_PORT_START)
-        warning ("the minimum recommended port for games is the first IANA dynamic port (" STRINGIFY (
+        warning ("the minimum recommended port for games is the first IANA dynamic port (" stringify (
             IANA_DYNAMIC_PORT_START
         ) ").");
+
+    if (get_next_free_port (port, port) == -1)
+        error ("the port is not available.");
 
     exit (0);
 }

@@ -165,7 +165,7 @@ int get_next_free_port (int start, int end) {
                 return -1;
             }
 
-            if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &(int) { 1 }, sizeof (int)) == -1)
+            if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, (void *) &(int) { 1 }, sizeof (int)) == -1)
                 warning ("could make the socket reuse local addresses.");
 
             addr.sin_port = htons (

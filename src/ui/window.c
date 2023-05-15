@@ -46,8 +46,8 @@ bool delete_windows (void) {
 }
 
 void *add_window (void *const restrict win, const int wintype) {
-    window_list_t head;
-    for (head = create_window_list (); head->next; head = head->next)
+    window_list_t head = create_window_list ();
+    for (; head->next; head = head->next)
         if (head->win == win)
             return win;
 

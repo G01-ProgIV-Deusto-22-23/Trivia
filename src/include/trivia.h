@@ -60,6 +60,14 @@
 
 #include <cJSON_Utils.h>
 
+/*
+    Por si necesitamos división con macros y tal.
+    Desactivado por el momento porque seguramente se rompan cosas.
+*/
+#ifdef TRIVIA_USE_P99
+    #include <p99/p99.h>
+#endif
+
 #include "types.h"
 #include "macros.h"
 #include "adt.h"

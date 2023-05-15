@@ -1,9 +1,79 @@
-static void restart_server2 (void) {
+static
+#ifdef _WIN32
+    DWORD
+#else
+    void *
+#endif
+    start_server3 (void __attribute__ ((unused)) * unused) {
+    start_server ();
+
+    return 0;
+}
+
+static void start_server2 (void) {
+#ifdef _WIN32
+    if (!CreateThread (
+            &(SECURITY_ATTRIBUTES
+            ) { .nLength = sizeof (SECURITY_ATTRIBUTES), .lpSecurityDescriptor = NULL, .bInheritHandle = TRUE },
+            0, NULL, start_server3, 0, NULL
+        ))
+#else
+    static pthread_t t;
+    if (pthread_create (&t, NULL, start_server3, NULL) == -1)
+#endif
+        warning ("could not create the server start thread.");
+}
+
+static
+#ifdef _WIN32
+    DWORD
+#else
+    void *
+#endif
+    restart_server3 (void __attribute__ ((unused)) * unused) {
     restart_server (get_server_port ());
+
+    return 0;
+}
+
+static void restart_server2 (void) {
+#ifdef _WIN32
+    if (!CreateThread (
+            &(SECURITY_ATTRIBUTES
+            ) { .nLength = sizeof (SECURITY_ATTRIBUTES), .lpSecurityDescriptor = NULL, .bInheritHandle = TRUE },
+            0, NULL, restart_server3, 0, NULL
+        ))
+#else
+    static pthread_t t;
+    if (pthread_create (&t, NULL, restart_server3, NULL) == -1)
+#endif
+        warning ("could not create the server restart thread.");
+}
+
+static
+#ifdef _WIN32
+    DWORD
+#else
+    void *
+#endif
+    stop_server3 (void __attribute__ ((unused)) * unused) {
+    stop_server (get_server_port ());
+
+    return 0;
 }
 
 static void stop_server2 (void) {
-    stop_server (get_server_port ());
+#ifdef _WIN32
+    if (!CreateThread (
+            &(SECURITY_ATTRIBUTES
+            ) { .nLength = sizeof (SECURITY_ATTRIBUTES), .lpSecurityDescriptor = NULL, .bInheritHandle = TRUE },
+            0, NULL, stop_server3, 0, NULL
+        ))
+#else
+    static pthread_t t;
+    if (pthread_create (&t, NULL, stop_server3, NULL) == -1)
+#endif
+        warning ("could not create the server stop thread.");
 }
 
 void server_status_menu (void) {
@@ -13,7 +83,7 @@ void server_status_menu (void) {
         s == server_off     ? ({
             const size_t _m = create_menu (
                 actionmenu, 0, 0, 0, 0, ((const char *const []) { "Encender servidor" }),
-                ((choicefunc_t *const []) { start_server })
+                ((choicefunc_t *const []) { start_server2 })
             );
             loop_menu (_m, false);
 

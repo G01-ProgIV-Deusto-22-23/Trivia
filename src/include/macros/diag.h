@@ -57,7 +57,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
             ));                                                                                                        \
             static_assert (EVAL_CT_ERROR_HELPER (                                                                      \
                 !(NARGS (__VA_ARGS__) == 1 && IS_STRING_LITERAL (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")))               \
-            ) __VA_OPT__ (, STRINGIFY (ARG1 (__VA_ARGS__))));                                                          \
+            ) __VA_OPT__ (, stringify (ARG1 (__VA_ARGS__))));                                                          \
         })
 
 #else
@@ -110,7 +110,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                     __builtin_types_compatible_p (typeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")), char []) &&          \
                     __builtin_constant_p (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")),                                      \
                 0, 1                                                                                                   \
-            )) __VA_OPT__ (, STRINGIFY (ARG1 (__VA_ARGS__))));                                                         \
+            )) __VA_OPT__ (, stringify (ARG1 (__VA_ARGS__))));                                                         \
         })
 
 #endif
@@ -464,8 +464,8 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                      }) (),                                                                                                                 \
                                      ([] () {                                                                                                               \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                                                           \
-                                             return sizeof (".\033[0m") - 1;                                                                                \
-                                         return sizeof (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                             \
+                                             return (DWORD) sizeof (".\033[0m") - 1;                                                                                \
+                                         return (DWORD) sizeof (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                             \
                                      }) (),                                                                                                                 \
                                      NULL, NULL                                                                                                             \
                                  );                                                                                                                         \
@@ -478,8 +478,8 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                      }) (),                                                                                                                 \
                                      ([] () {                                                                                                               \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                                                           \
-                                             return sizeof (".") - 1;                                                                                       \
-                                         return sizeof (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                                    \
+                                             return (DWORD) sizeof (".") - 1;                                                                                       \
+                                         return (DWORD) sizeof (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                                    \
                                      }) (),                                                                                                                 \
                                      NULL, NULL                                                                                                             \
                                  );                                                                                                                         \
@@ -726,8 +726,9 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                      "the second argument passed to the error() function-like macro must be of type errorfunc_t *."             \
                  ),                                                                                                             \
                  ct_error (                                                                                                     \
-                     !std::is_pointer<                                                                                          \
-                         std::decay<decltype (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL))>::type>::value,              \
+                     !std::is_pointer<std::decay<decltype (ARG3 (                                                               \
+                         __VA_ARGS__ __VA_OPT__ (, ) ((void *) NULL), ((void *) NULL), ((void *) NULL)                          \
+                     ))>::type>::value,                                                                                         \
                      "the third argument passed to the error() function-like macro must be of a type that decays to a pointer." \
                  ),                                                                                                             \
                  ({                                                                                                             \
@@ -773,8 +774,9 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                      }) (),                                                                                     \
                                      ([] () {                                                                                   \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                               \
-                                             return sizeof (".\033[0m") - 1;                                                    \
-                                         return sizeof (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                 \
+                                             return (DWORD) sizeof (".\033[0m") - 1;                                            \
+                                         return (DWORD) sizeof (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) -            \
+                                                1;                                                                              \
                                      }) (),                                                                                     \
                                      NULL, NULL                                                                                 \
                                  );                                                                                             \
@@ -787,8 +789,8 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                      }) (),                                                                                     \
                                      ([] () {                                                                                   \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                               \
-                                             return sizeof (".") - 1;                                                           \
-                                         return sizeof (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                        \
+                                             return (DWORD) sizeof (".") - 1;                                                   \
+                                         return (DWORD) sizeof (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                \
                                      }) (),                                                                                     \
                                      NULL, NULL                                                                                 \
                                  );                                                                                             \
@@ -797,9 +799,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                          print_backtrace (), ({                                                                                 \
                              _Pragma ("GCC diagnostic push");                                                                   \
                              _Pragma ("GCC diagnostic ignored \"-Waddress\"");                                                  \
-                             _Pragma ("GCC diagnostic ignored \"-Wincompatible-pointer-types\"");                               \
                              _Pragma ("GCC diagnostic ignored \"-Wcast-function-type\"");                                       \
-                             _Pragma ("GCC diagnostic ignored \"-Wbad-function-cast\"");                                        \
                              if (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL))                                                 \
                                  (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) ((errorfunc_t *) NULL), ((errorfunc_t *) NULL))             \
                                  ) (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL, NULL));                                       \
@@ -834,10 +834,8 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                  );                                                                                             \
                                  if (has_colors ())                                                                             \
                                      wattroff (get_log_window (), COLOR_PAIR (log_error + 1) | A_BOLD);                         \
-                                 __builtin_choose_expr (                                                                        \
-                                     sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1, (void) 0,                             \
-                                     waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))                         \
-                                 );                                                                                             \
+                                 if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != 1)                                       \
+                                     waddstr (get_log_window (), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""));                        \
                                  refresh_log_window ();                                                                         \
                              }                                                                                                  \
                              if (!isendwin ()) {                                                                                \
@@ -845,12 +843,14 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                  def_prog_mode ();                                                                              \
                                  end_ui ();                                                                                     \
                                  reset_prog_mode ();                                                                            \
-                                 for (int __error_iter__ = ({                                                                   \
-                                                               int __error_h__;                                                 \
-                                                               getmaxyx (get_log_window (), __error_h__, (int) { 0 });          \
-                                                               __error_h__;                                                     \
-                                                           }) *                                                                 \
-                                                           2;                                                                   \
+                                 int __error_ignore__;                                                                          \
+                                 for (int __error_iter__ =                                                                      \
+                                          ({                                                                                    \
+                                              int __error_h__;                                                                  \
+                                              getmaxyx (get_log_window (), __error_h__, __error_ignore__);                      \
+                                              __error_h__;                                                                      \
+                                          }) *                                                                                  \
+                                          2;                                                                                    \
                                       __error_iter__-- > 0; WriteFile (                                                         \
                                           GetStdHandle (STD_OUTPUT_HANDLE), "\n", sizeof ("\n") - 1, NULL, NULL                 \
                                       ))                                                                                        \
@@ -858,7 +858,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                              }                                                                                                  \
                              trap ();                                                                                           \
                              unreachable ();                                                                                    \
-                         })                                                                                                     \
+                         }) ();                                                                                                 \
                  }))
         #else
             #define error(...)                                                                                                                                                     \

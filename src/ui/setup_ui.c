@@ -113,8 +113,8 @@ int impl_setup_ui (
 
     log_ex:
         if (TRIVIA_WANTS_NOLOG && TRIVIA_WANTS_LOG)
-            error ("The " STRINGIFY (TRIVIA_NOLOG_ARG) " and " STRINGIFY (TRIVIA_LOG_ARG
-            ) "/" STRINGIFY (TRIVIA_LOGFILE_ARG) " arguments are mutually exclusive.");
+            error ("The " stringify (TRIVIA_NOLOG_ARG) " and " stringify (TRIVIA_LOG_ARG
+            ) "/" stringify (TRIVIA_LOGFILE_ARG) " arguments are mutually exclusive.");
     }
 
     if (TRIVIA_EXPECTING_FILENAME)

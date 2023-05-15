@@ -147,18 +147,13 @@ __attribute__ ((warn_unused_result))
          ),                                                                                                            \
          ct_error (                                                                                                    \
              !(std::is_array<decltype (attrs)>::value &&                                                               \
-               std::is_same<std::remove_cv<std::remove_extent<decltype (attr)>::type>::type, field_attr_t>::value),    \
+               std::is_same<std::remove_cv<std::remove_extent<decltype (attrs)>::type>::type, field_attr_t>::value),   \
              "the fifth argument passed to the create_form() macro must be a (const) field_attr_t []."                 \
          ),                                                                                                            \
-         ({                                                                                                            \
-             _Pragma ("GCC diagnostic push");                                                                          \
-             _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                            \
-             ct_error (                                                                                                \
-                 std::is_pointer<std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL))>::type>::value,         \
-                 "the sixth argument passed to the create_form() macro must be of pointer type."                       \
-             );                                                                                                        \
-             _Pragma ("GCC diagnostic pop");                                                                           \
-         }),                                                                                                           \
+         ct_error (                                                                                                    \
+             !std::is_pointer<std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL))>::type>::value,            \
+             "the sixth argument passed to the create_form() macro must be of pointer type."                           \
+         ),                                                                                                            \
          impl_create_form (                                                                                            \
              w, h, x, y, arrsize (attrs), (const field_attr_t *) attrs,                                                \
              (const char *const *) ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL)                                             \
@@ -234,14 +229,22 @@ __attribute__ ((warn_unused_result))
          ))
 #endif
 
-#define form(w, h, x, y, attrs, ...)                                                                                   \
-    (ct_error (NARGS (__VA_ARGS__) > 2, "the form() macro admits between 5 and 7 arguments."), ({                      \
-         _Pragma ("GCC diagnostic push");                                                                              \
-         _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                \
-         size_t __form_form__ = create_form (w, h, x, y, attrs, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL));              \
-         _Pragma ("GCC diagnostic pop");                                                                               \
-         display_form (__form_form__, ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", ""));                                      \
-     }))
+#ifdef __cplusplus
+    #define form(w, h, x, y, attrs, ...)                                                                               \
+        (ct_error (NARGS (__VA_ARGS__) > 2, "the form() macro admits between 5 and 7 arguments."), ({                  \
+             size_t __form_form__ = create_form (w, h, x, y, attrs, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL));          \
+             display_form (__form_form__, ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", ""));                                  \
+         }))
+#else
+    #define form(w, h, x, y, attrs, ...)                                                                               \
+        (ct_error (NARGS (__VA_ARGS__) > 2, "the form() macro admits between 5 and 7 arguments."), ({                  \
+             _Pragma ("GCC diagnostic push");                                                                          \
+             _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                            \
+             size_t __form_form__ = create_form (w, h, x, y, attrs, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) NULL));          \
+             _Pragma ("GCC diagnostic pop");                                                                           \
+             display_form (__form_form__, ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", ""));                                  \
+         }))
+#endif
 
     extern title_color_t get_form_title_color (const size_t);
     extern title_color_t set_form_title_color (const size_t, const title_color_t);
@@ -849,22 +852,17 @@ __attribute__ ((nonnull (8), warn_unused_result))
                      )                                                                                                                                                                                              \
                  );                                                                                                                                                                                                 \
              impl_display_menu (                                                                                                                                                                                    \
-                 __impl_create_display_menu_var__, ([] () {                                                                                                                                                         \
-                     if (std::is_same<                                                                                                                                                                              \
-                             std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((char *) NULL)))>::type,                                                                                                       \
-                             choicefunc_t *>::value)                                                                                                                                                                \
-                         return ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", "");                                                                                                                                          \
-                     return ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "");                                                                                                                                                  \
-                 }) (),                                                                                                                                                                                             \
-                 ([] () {                                                                                                                                                                                           \
-                     if (std::is_same<                                                                                                                                                                              \
-                             std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((char *) NULL)))>::type,                                                                                                       \
-                             choicefunc_t *>::value)                                                                                                                                                                \
-                         return ARG3 (                                                                                                                                                                              \
-                             __VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK, DEFAULT_MENUMARK                                                                                                       \
-                         );                                                                                                                                                                                         \
-                     return ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK);                                                                                                                  \
-                 }) ()                                                                                                                                                                                              \
+                 __impl_create_display_menu_var__,                                                                                                                                                                  \
+                 std::is_same<                                                                                                                                                                                      \
+                     std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((char *) NULL)))>::type,                                                                                                               \
+                     choicefunc_t *>::value                                                                                                                                                                         \
+                     ? ARG2 (__VA_ARGS__ __VA_OPT__ (, ) "", "")                                                                                                                                                    \
+                     : ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""),                                                                                                                                                       \
+                 std::is_same<                                                                                                                                                                                      \
+                     std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((char *) NULL)))>::type,                                                                                                               \
+                     choicefunc_t *>::value                                                                                                                                                                         \
+                     ? ARG3 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK, DEFAULT_MENUMARK)                                                                                                      \
+                     : ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK)                                                                                                                        \
              );                                                                                                                                                                                                     \
          }))
 #else
@@ -960,8 +958,8 @@ __attribute__ ((nonnull (8), warn_unused_result))
     extern const char *get_menu_exit_message (void);
     extern int         set_menu_exit_key (const int, const char *const restrict);
 
-#define DEFAULT_MENU_EXIT_KEY     KEY_F (1)
-#define DEFAULT_MENU_EXIT_MESSAGE "Pulsa F1 para salir."
+#define DEFAULT_MENU_EXIT_KEY        KEY_F (1)
+#define DEFAULT_MENU_EXIT_MESSAGE    "Pulsa F1 para salir."
 #define DEFAULT_MENU_TIMEOUT_MESSAGE "Segundos restantes: "
 
     // padding.c
@@ -1007,360 +1005,6 @@ __attribute__ ((nonnull (8), warn_unused_result))
 
 #ifdef _WIN32
     #ifdef __cplusplus
-        #define setup_ui(...)                                                                                                                 \
-            (ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments."),                            \
-             ct_error (                                                                                                                       \
-                 !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                                                     \
-                 "the argc and argv variables must be of integral and pointer/array type, respectively."                                      \
-             ),                                                                                                                               \
-             ct_error (                                                                                                                       \
-                 !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) && isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&                         \
-                   isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                                                      \
-                   isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                                                   \
-                   isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                                                 \
-                 "all the arguments passed to the set_ui_settings () must be of integral type."                                               \
-             ),                                                                                                                               \
-             ({                                                                                                                               \
-                 _Pragma ("GCC diagnostic push");                                                                                             \
-                 _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                       \
-                 _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                               \
-                 FreeConsole ();                                                                                                              \
-                 int       __setup_ui_ret__   = 0;                                                                                            \
-                 int       __setup_ui_argc__  = 0;                                                                                            \
-                 char    **__setup_ui_argv__  = NULL;                                                                                         \
-                 wchar_t **__setup_ui_wargv__ = NULL;                                                                                         \
-                 int      *__setup_ui_wargl__ = NULL;                                                                                         \
-                 if (!strcmp (__func__, "main")) {                                                                                            \
-                     __setup_ui_argc__ = __builtin_choose_expr (isint (argc), argc, 1) - 1;                                                   \
-                     __setup_ui_argv__ =                                                                                                      \
-                         (void                                                                                                                \
-                              *) (__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, (char *) NULL - 1) + 1); \
-                 } else if (!strcmp (__func__, "wmain")) {                                                                                    \
-                     __setup_ui_argc__ = __builtin_choose_expr (isint (argc), argc, 1);                                                       \
-                     __setup_ui_wargv__ =                                                                                                     \
-                         (void                                                                                                                \
-                              *) (__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, (char *) NULL - 1) + 1); \
-                     goto __setup_ui_label__;                                                                                                 \
-                 } else if (!(strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain"))) {                                               \
-                     if (!(__setup_ui_wargv__ = CommandLineToArgvW (GetCommandLineW (), &__setup_ui_argc__)))                                 \
-                         error ("failed to retrieve the program arguments.");                                                                 \
-                 __setup_ui_label__:                                                                                                          \
-                     if (--__setup_ui_argc__) {                                                                                               \
-                         if (!(__setup_ui_argv__ = _malloca (sizeof (char *) * (size_t) __setup_ui_argc__)))                                  \
-                             error ("failed to allocate memory for the program arguments.");                                                  \
-                         if (!(__setup_ui_wargl__ = _malloca (sizeof (size_t) * (size_t) __setup_ui_argc__)))                                 \
-                             error ("failed to allocate memory for the program arguments.");                                                  \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++) {                        \
-                             if (!(*(__setup_ui_argv__ + __setup_ui_iter__) = _malloca (                                                      \
-                                       ((size_t                                                                                               \
-                                        ) (*(__setup_ui_wargl__ + __setup_ui_iter__) =                                                        \
-                                               lstrlenW (*(__setup_ui_wargv__ + __setup_ui_iter__ + 1))) +                                    \
-                                        1) *                                                                                                  \
-                                       sizeof (wchar_t)                                                                                       \
-                                   )))                                                                                                        \
-                                 error ("failed to allocate memory for the program arguments.");                                              \
-                         }                                                                                                                    \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++)                          \
-                             if (!WideCharToMultiByte (                                                                                       \
-                                     CP_UTF8, 0, *(__setup_ui_wargv__ + __setup_ui_iter__ + 1),                                               \
-                                     *(__setup_ui_wargl__ + __setup_ui_iter__) + 1,                                                           \
-                                     *(__setup_ui_argv__ + __setup_ui_iter__),                                                                \
-                                     (*(__setup_ui_wargl__ + __setup_ui_iter__) + 1) * (int) sizeof (wchar_t), NULL,                          \
-                                     NULL                                                                                                     \
-                                 ))                                                                                                           \
-                                 error ("failed to retrieve the program arguments.");                                                         \
-                     }                                                                                                                        \
-                 }                                                                                                                            \
-                 if (__setup_ui_argc__ <= 1 ||                                                                                                \
-                     strncmp (*__setup_ui_argv__, get_game_arg (), strlen (get_game_arg ()))) {                                               \
-                     if (!AttachConsole (ATTACH_PARENT_PROCESS))                                                                              \
-                         if (!AllocConsole ())                                                                                                \
-                             trap (), unreachable ();                                                                                         \
-                     {                                                                                                                        \
-                         FILE *__setup_ui_f__;                                                                                                \
-                         freopen_s (&__setup_ui_f__, "CONIN$", "r", stdin);                                                                   \
-                         fclose (__setup_ui_f__);                                                                                             \
-                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stdout);                                                                 \
-                         fclose (__setup_ui_f__);                                                                                             \
-                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stderr);                                                                 \
-                         fclose (__setup_ui_f__);                                                                                             \
-                     }                                                                                                                        \
-                     if (_dup2 (                                                                                                              \
-                             _fileno (_fdopen (                                                                                               \
-                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_INPUT_HANDLE), _O_U8TEXT), "r"                                 \
-                             )),                                                                                                              \
-                             _fileno (stdin)                                                                                                  \
-                         ) == -1 ||                                                                                                           \
-                         _dup2 (                                                                                                              \
-                             _fileno (_fdopen (                                                                                               \
-                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_OUTPUT_HANDLE), _O_U8TEXT), "w"                                \
-                             )),                                                                                                              \
-                             _fileno (stdout)                                                                                                 \
-                         ) == -1 ||                                                                                                           \
-                         _dup2 (                                                                                                              \
-                             _fileno (_fdopen (                                                                                               \
-                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_ERROR_HANDLE), _O_U8TEXT), "w"                                 \
-                             )),                                                                                                              \
-                             _fileno (stderr)                                                                                                 \
-                         ) == -1)                                                                                                             \
-                         trap (), unreachable ();                                                                                             \
-                     setvbuf (stdin, NULL, _IONBF, 0);                                                                                        \
-                     setvbuf (stdout, NULL, _IONBF, 0);                                                                                       \
-                     setvbuf (stderr, NULL, _IONBF, 0);                                                                                       \
-                     SetConsoleCP (CP_UTF8);                                                                                                  \
-                     SetConsoleOutputCP (CP_UTF8);                                                                                            \
-                     {                                                                                                                        \
-                         char __setup_ui_path__ [MAX_PATH + 1];                                                                               \
-                         if (!strcmp (                                                                                                        \
-                                 basename (({                                                                                                 \
-                                     if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))                                         \
-                                         error ("could not get the executable filename.");                                                    \
-                                     __setup_ui_path__;                                                                                       \
-                                 })),                                                                                                         \
-                                 "local.exe"                                                                                                  \
-                             ))                                                                                                               \
-                             if (!SetWindowTextW (                                                                                            \
-                                     ({                                                                                                       \
-                                         HWND __setup_ui_window_handle__ = GetConsoleWindow ();                                               \
-                                         if (!__setup_ui_window_handle__)                                                                     \
-                                             error ("could not retrieve a handle to the console window.");                                    \
-                                         __setup_ui_window_handle__;                                                                          \
-                                     }),                                                                                                      \
-                                     L"Trivia: servidor local"                                                                                \
-                                 ))                                                                                                           \
-                                 warning ("could not change the window's name");                                                              \
-                     }                                                                                                                        \
-                     __setup_ui_ret__ = impl_setup_ui (                                                                                       \
-                         __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                                          \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                            \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),                        \
-                             0                                                                                                                \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)),                                                              \
-                             ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                                                                    \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                                           \
-                             ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                                                 \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                                        \
-                             ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                              \
-                         )                                                                                                                    \
-                     );                                                                                                                       \
-                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain")                        \
-                         )) {                                                                                                                 \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                               \
-                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                                            \
-                             ;                                                                                                                \
-                         _freea (__setup_ui_argv__);                                                                                          \
-                         _freea (__setup_ui_wargl__);                                                                                         \
-                         if (strcmp (__func__, "wmain"))                                                                                      \
-                             LocalFree (__setup_ui_wargv__);                                                                                  \
-                     }                                                                                                                        \
-                 } else {                                                                                                                     \
-                     __setup_ui_ret__ = (int) strtol (*__setup_ui_argv__ + strlen (get_game_arg ()), NULL, 10);                               \
-                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain")                        \
-                         )) {                                                                                                                 \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                               \
-                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                                            \
-                             ;                                                                                                                \
-                         _freea (__setup_ui_argv__);                                                                                          \
-                         _freea (__setup_ui_wargl__);                                                                                         \
-                         if (strcmp (__func__, "wmain"))                                                                                      \
-                             LocalFree (__setup_ui_wargv__);                                                                                  \
-                     }                                                                                                                        \
-                     game_server (                                                                                                            \
-                         __setup_ui_ret__,                                                                                                    \
-                         (size_t) strtol (__setup_ui_argc__ > 1 ? *(__setup_ui_argv__ + 1) : "", NULL, 10)                                    \
-                     );                                                                                                                       \
-                 }                                                                                                                            \
-                 _Pragma ("GCC diagnostic pop");                                                                                              \
-                 __setup_ui_ret__;                                                                                                            \
-             }))
-    #else
-        #define setup_ui(...)                                                                                                                 \
-            (ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments."),                            \
-             ct_error (                                                                                                                       \
-                 !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                                                     \
-                 "the argc and argv variables must be of integral and pointer/array type, respectively."                                      \
-             ),                                                                                                                               \
-             ct_error (                                                                                                                       \
-                 !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) && isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&                         \
-                   isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                                                      \
-                   isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                                                   \
-                   isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                                                 \
-                 "all the arguments passed to the set_ui_settings () must be of integral type."                                               \
-             ),                                                                                                                               \
-             ({                                                                                                                               \
-                 _Pragma ("GCC diagnostic push");                                                                                             \
-                 _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                                       \
-                 _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                                               \
-                 FreeConsole ();                                                                                                              \
-                 int       __setup_ui_ret__   = 0;                                                                                            \
-                 int       __setup_ui_argc__  = 0;                                                                                            \
-                 char    **__setup_ui_argv__  = NULL;                                                                                         \
-                 wchar_t **__setup_ui_wargv__ = NULL;                                                                                         \
-                 int      *__setup_ui_wargl__ = NULL;                                                                                         \
-                 if (!strcmp (__func__, "main")) {                                                                                            \
-                     __setup_ui_argc__ = __builtin_choose_expr (isint (argc), argc, 1) - 1;                                                   \
-                     __setup_ui_argv__ =                                                                                                      \
-                         (void                                                                                                                \
-                              *) (__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, (char *) NULL - 1) + 1); \
-                 } else if (!strcmp (__func__, "wmain")) {                                                                                    \
-                     __setup_ui_argc__ = __builtin_choose_expr (isint (argc), argc, 1);                                                       \
-                     __setup_ui_wargv__ =                                                                                                     \
-                         (void                                                                                                                \
-                              *) (__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, (char *) NULL - 1) + 1); \
-                     goto __setup_ui_label__;                                                                                                 \
-                 } else if (!(strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain"))) {                                               \
-                     if (!(__setup_ui_wargv__ = CommandLineToArgvW (GetCommandLineW (), &__setup_ui_argc__)))                                 \
-                         error ("failed to retrieve the program arguments.");                                                                 \
-                 __setup_ui_label__:                                                                                                          \
-                     if (--__setup_ui_argc__) {                                                                                               \
-                         if (!(__setup_ui_argv__ = _malloca (sizeof (char *) * (size_t) __setup_ui_argc__)))                                  \
-                             error ("failed to allocate memory for the program arguments.");                                                  \
-                         if (!(__setup_ui_wargl__ = _malloca (sizeof (size_t) * (size_t) __setup_ui_argc__)))                                 \
-                             error ("failed to allocate memory for the program arguments.");                                                  \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++) {                        \
-                             if (!(*(__setup_ui_argv__ + __setup_ui_iter__) = _malloca (                                                      \
-                                       ((size_t                                                                                               \
-                                        ) (*(__setup_ui_wargl__ + __setup_ui_iter__) =                                                        \
-                                               lstrlenW (*(__setup_ui_wargv__ + __setup_ui_iter__ + 1))) +                                    \
-                                        1) *                                                                                                  \
-                                       sizeof (wchar_t)                                                                                       \
-                                   )))                                                                                                        \
-                                 error ("failed to allocate memory for the program arguments.");                                              \
-                         }                                                                                                                    \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++)                          \
-                             if (!WideCharToMultiByte (                                                                                       \
-                                     CP_UTF8, 0, *(__setup_ui_wargv__ + __setup_ui_iter__ + 1),                                               \
-                                     *(__setup_ui_wargl__ + __setup_ui_iter__) + 1,                                                           \
-                                     *(__setup_ui_argv__ + __setup_ui_iter__),                                                                \
-                                     (*(__setup_ui_wargl__ + __setup_ui_iter__) + 1) * (int) sizeof (wchar_t), NULL,                          \
-                                     NULL                                                                                                     \
-                                 ))                                                                                                           \
-                                 error ("failed to retrieve the program arguments.");                                                         \
-                     }                                                                                                                        \
-                 }                                                                                                                            \
-                 if (__setup_ui_argc__ <= 1 ||                                                                                                \
-                     strncmp (*__setup_ui_argv__, get_game_arg (), strlen (get_game_arg ()))) {                                               \
-                     if (!AttachConsole (ATTACH_PARENT_PROCESS))                                                                              \
-                         if (!AllocConsole ())                                                                                                \
-                             trap (), unreachable ();                                                                                         \
-                     {                                                                                                                        \
-                         FILE *__setup_ui_f__;                                                                                                \
-                         freopen_s (&__setup_ui_f__, "CONIN$", "r", stdin);                                                                   \
-                         fclose (__setup_ui_f__);                                                                                             \
-                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stdout);                                                                 \
-                         fclose (__setup_ui_f__);                                                                                             \
-                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stderr);                                                                 \
-                         fclose (__setup_ui_f__);                                                                                             \
-                     }                                                                                                                        \
-                     if (_dup2 (                                                                                                              \
-                             _fileno (_fdopen (                                                                                               \
-                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_INPUT_HANDLE), _O_U8TEXT), "r"                                 \
-                             )),                                                                                                              \
-                             _fileno (stdin)                                                                                                  \
-                         ) == -1 ||                                                                                                           \
-                         _dup2 (                                                                                                              \
-                             _fileno (_fdopen (                                                                                               \
-                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_OUTPUT_HANDLE), _O_U8TEXT), "w"                                \
-                             )),                                                                                                              \
-                             _fileno (stdout)                                                                                                 \
-                         ) == -1 ||                                                                                                           \
-                         _dup2 (                                                                                                              \
-                             _fileno (_fdopen (                                                                                               \
-                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_ERROR_HANDLE), _O_U8TEXT), "w"                                 \
-                             )),                                                                                                              \
-                             _fileno (stderr)                                                                                                 \
-                         ) == -1)                                                                                                             \
-                         trap (), unreachable ();                                                                                             \
-                     setvbuf (stdin, NULL, _IONBF, 0);                                                                                        \
-                     setvbuf (stdout, NULL, _IONBF, 0);                                                                                       \
-                     setvbuf (stderr, NULL, _IONBF, 0);                                                                                       \
-                     SetConsoleCP (CP_UTF8);                                                                                                  \
-                     SetConsoleOutputCP (CP_UTF8);                                                                                            \
-                     {                                                                                                                        \
-                         char __setup_ui_path__ [MAX_PATH + 1];                                                                               \
-                         if (!strcmp (                                                                                                        \
-                                 basename (({                                                                                                 \
-                                     if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))                                         \
-                                         error ("could not get the executable filename.");                                                    \
-                                     __setup_ui_path__;                                                                                       \
-                                 })),                                                                                                         \
-                                 "local.exe"                                                                                                  \
-                             ))                                                                                                               \
-                             if (!SetWindowTextW (                                                                                            \
-                                     ({                                                                                                       \
-                                         HWND __setup_ui_window_handle__ = GetConsoleWindow ();                                               \
-                                         if (!__setup_ui_window_handle__)                                                                     \
-                                             error ("could not retrieve a handle to the console window.");                                    \
-                                         __setup_ui_window_handle__;                                                                          \
-                                     }),                                                                                                      \
-                                     L"Trivia: servidor local"                                                                                \
-                                 ))                                                                                                           \
-                                 warning ("could not change the window's name");                                                              \
-                     }                                                                                                                        \
-                     __setup_ui_ret__ = impl_setup_ui (                                                                                       \
-                         __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                                          \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                            \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),                        \
-                             0                                                                                                                \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)),                                                              \
-                             ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                                                                    \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                                           \
-                             ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                                                 \
-                         ),                                                                                                                   \
-                         __builtin_choose_expr (                                                                                              \
-                             isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                                        \
-                             ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                              \
-                         )                                                                                                                    \
-                     );                                                                                                                       \
-                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain")                        \
-                         )) {                                                                                                                 \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                               \
-                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                                            \
-                             ;                                                                                                                \
-                         _freea (__setup_ui_argv__);                                                                                          \
-                         _freea (__setup_ui_wargl__);                                                                                         \
-                         if (strcmp (__func__, "wmain"))                                                                                      \
-                             LocalFree (__setup_ui_wargv__);                                                                                  \
-                     }                                                                                                                        \
-                 } else {                                                                                                                     \
-                     __setup_ui_ret__ = (int) strtol (*__setup_ui_argv__ + strlen (get_game_arg ()), NULL, 10);                               \
-                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain")                        \
-                         )) {                                                                                                                 \
-                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                               \
-                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                                            \
-                             ;                                                                                                                \
-                         _freea (__setup_ui_argv__);                                                                                          \
-                         _freea (__setup_ui_wargl__);                                                                                         \
-                         if (strcmp (__func__, "wmain"))                                                                                      \
-                             LocalFree (__setup_ui_wargv__);                                                                                  \
-                     }                                                                                                                        \
-                     game_server (                                                                                                            \
-                         __setup_ui_ret__,                                                                                                    \
-                         (size_t) strtol (__setup_ui_argc__ > 1 ? *(__setup_ui_argv__ + 1) : "", NULL, 10)                                    \
-                     );                                                                                                                       \
-                 }                                                                                                                            \
-                 _Pragma ("GCC diagnostic pop");                                                                                              \
-                 __setup_ui_ret__;                                                                                                            \
-             }))
-    #endif
-#else
-    #ifdef __cplusplus
         #define setup_ui(...)                                                                                          \
             (ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments."),     \
              ct_error (                                                                                                \
@@ -1374,76 +1018,468 @@ __attribute__ ((nonnull (8), warn_unused_result))
                    isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                          \
                  "all the arguments passed to the set_ui_settings () must be of integral type."                        \
              ),                                                                                                        \
-             impl_setup_ui (                                                                                           \
-                 !strcmp (__func__, "main") ? argc - 1 : 0,                                                            \
-                 static_cast<const char *const *> (!strcmp (__func__, "main") ? (void *) (argv + 1) : NULL),           \
-                 ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),                        \
-                 ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0),            \
-                 ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)                                                      \
-             ))
+             ({                                                                                                        \
+                 _Pragma ("GCC diagnostic push");                                                                      \
+                 _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                \
+                 FreeConsole ();                                                                                       \
+                 int       __setup_ui_ret__     = 0;                                                                   \
+                 int       __setup_ui_argc__    = 0;                                                                   \
+                 size_t    __setup_ui_cmd_len__ = 0;                                                                   \
+                 char    **__setup_ui_argv__    = NULL;                                                                \
+                 wchar_t **__setup_ui_wargv__   = NULL;                                                                \
+                 int      *__setup_ui_wargl__   = NULL;                                                                \
+                 if (!strcmp (__func__, "main")) {                                                                     \
+                     __setup_ui_argc__ = argc;                                                                         \
+                     __setup_ui_argv__ = (char **) (void *) (argv + 1);                                                \
+                 } else if (!strcmp (__func__, "wmain")) {                                                             \
+                     __setup_ui_argc__  = argc;                                                                        \
+                     __setup_ui_wargv__ = (wchar_t **) (void *) (argv + 1);                                            \
+                     goto __setup_ui_label__;                                                                          \
+                 } else if (!(strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain"))) {                        \
+                     if (!(__setup_ui_wargv__ = CommandLineToArgvW (GetCommandLineW (), &__setup_ui_argc__)))          \
+                         error ("failed to retrieve the program arguments.");                                          \
+                 __setup_ui_label__:                                                                                   \
+                     if (--__setup_ui_argc__) {                                                                        \
+                         if (!(__setup_ui_argv__ = _malloca (sizeof (char *) * (size_t) __setup_ui_argc__)))           \
+                             error ("failed to allocate memory for the program arguments.");                           \
+                         if (!(__setup_ui_wargl__ = _malloca (sizeof (size_t) * (size_t) __setup_ui_argc__)))          \
+                             error ("failed to allocate memory for the program arguments.");                           \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++) { \
+                             if (!(*(__setup_ui_argv__ + __setup_ui_iter__) = _malloca (                               \
+                                       ((size_t) (*(__setup_ui_wargl__ + __setup_ui_iter__) =                          \
+                                                      lstrlenW (*(__setup_ui_wargv__ + __setup_ui_iter__ + 1))) +      \
+                                        1) *                                                                           \
+                                       sizeof (wchar_t)                                                                \
+                                   )))                                                                                 \
+                                 error ("failed to allocate memory for the program arguments.");                       \
+                         }                                                                                             \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++)   \
+                             if (!WideCharToMultiByte (                                                                \
+                                     CP_UTF8, 0, *(__setup_ui_wargv__ + __setup_ui_iter__ + 1),                        \
+                                     *(__setup_ui_wargl__ + __setup_ui_iter__) + 1,                                    \
+                                     *(__setup_ui_argv__ + __setup_ui_iter__),                                         \
+                                     (*(__setup_ui_wargl__ + __setup_ui_iter__) + 1) * (int) sizeof (wchar_t), NULL,   \
+                                     NULL                                                                              \
+                                 ))                                                                                    \
+                                 error ("failed to retrieve the program arguments.");                                  \
+                     }                                                                                                 \
+                 }                                                                                                     \
+                 if (__setup_ui_argc__ <= 1 ||                                                                         \
+                     (strncmp (*__setup_ui_argv__, get_game_arg (), strlen (get_game_arg ())) &&                       \
+                      strncmp (                                                                                        \
+                          *__setup_ui_argv__, get_start_server_command (),                                             \
+                          __setup_ui_cmd_len__ = strlen (get_start_server_command ())                                  \
+                      ))) {                                                                                            \
+                     if (!AttachConsole (ATTACH_PARENT_PROCESS))                                                       \
+                         if (!AllocConsole ())                                                                         \
+                             trap (), unreachable ();                                                                  \
+                     {                                                                                                 \
+                         FILE *__setup_ui_f__;                                                                         \
+                         freopen_s (&__setup_ui_f__, "CONIN$", "r", stdin);                                            \
+                         fclose (__setup_ui_f__);                                                                      \
+                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stdout);                                          \
+                         fclose (__setup_ui_f__);                                                                      \
+                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stderr);                                          \
+                         fclose (__setup_ui_f__);                                                                      \
+                     }                                                                                                 \
+                     if (_dup2 (                                                                                       \
+                             _fileno (_fdopen (                                                                        \
+                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_INPUT_HANDLE), _O_U8TEXT), "r"          \
+                             )),                                                                                       \
+                             _fileno (stdin)                                                                           \
+                         ) == -1 ||                                                                                    \
+                         _dup2 (                                                                                       \
+                             _fileno (_fdopen (                                                                        \
+                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_OUTPUT_HANDLE), _O_U8TEXT), "w"         \
+                             )),                                                                                       \
+                             _fileno (stdout)                                                                          \
+                         ) == -1 ||                                                                                    \
+                         _dup2 (                                                                                       \
+                             _fileno (_fdopen (                                                                        \
+                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_ERROR_HANDLE), _O_U8TEXT), "w"          \
+                             )),                                                                                       \
+                             _fileno (stderr)                                                                          \
+                         ) == -1)                                                                                      \
+                         trap (), unreachable ();                                                                      \
+                     setvbuf (stdin, NULL, _IONBF, 0);                                                                 \
+                     setvbuf (stdout, NULL, _IONBF, 0);                                                                \
+                     setvbuf (stderr, NULL, _IONBF, 0);                                                                \
+                     SetConsoleCP (CP_UTF8);                                                                           \
+                     SetConsoleOutputCP (CP_UTF8);                                                                     \
+                     {                                                                                                 \
+                         char __setup_ui_path__ [MAX_PATH + 1];                                                        \
+                         if (!strcmp (                                                                                 \
+                                 basename (({                                                                          \
+                                     if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))                  \
+                                         error ("could not get the executable filename.");                             \
+                                     __setup_ui_path__;                                                                \
+                                 })),                                                                                  \
+                                 "local.exe"                                                                           \
+                             ))                                                                                        \
+                             if (!SetWindowTextW (                                                                     \
+                                     ({                                                                                \
+                                         HWND __setup_ui_window_handle__ = GetConsoleWindow ();                        \
+                                         if (!__setup_ui_window_handle__)                                              \
+                                             error ("could not retrieve a handle to the console window.");             \
+                                         __setup_ui_window_handle__;                                                   \
+                                     }),                                                                               \
+                                     L"Trivia: servidor local"                                                         \
+                                 ))                                                                                    \
+                                 warning ("could not change the window's name");                                       \
+                     }                                                                                                 \
+                     __setup_ui_ret__ = impl_setup_ui (                                                                \
+                         __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                   \
+                         ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),                \
+                         ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0),    \
+                         ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)                                              \
+                     );                                                                                                \
+                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain") \
+                         )) {                                                                                          \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                        \
+                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                     \
+                             ;                                                                                         \
+                         _freea (__setup_ui_argv__);                                                                   \
+                         _freea (__setup_ui_wargl__);                                                                  \
+                         if (strcmp (__func__, "wmain"))                                                               \
+                             LocalFree (__setup_ui_wargv__);                                                           \
+                     }                                                                                                 \
+                 } else {                                                                                              \
+                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain") \
+                         )) {                                                                                          \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                        \
+                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                     \
+                             ;                                                                                         \
+                         _freea (__setup_ui_wargl__);                                                                  \
+                         if (strcmp (__func__, "wmain"))                                                               \
+                             LocalFree (__setup_ui_wargv__);                                                           \
+                     }                                                                                                 \
+                     if (!strncmp (*__setup_ui_argv__, get_start_server_command (), __setup_ui_cmd_len__)) {           \
+                         set_server_port ((int) strtol ((*(__setup_ui_argv__ + 1)) + __setup_ui_cmd_len__, NULL, 10)); \
+                         impl_start_server ();                                                                         \
+                     } else                                                                                            \
+                         game_server (                                                                                 \
+                             (size_t) strtol (__setup_ui_argc__ > 2 ? *(__setup_ui_argv__ + 1) : "", NULL, 10),        \
+                             __setup_ui_ret__ =                                                                        \
+                                 (int) strtol (*__setup_ui_argv__ + strlen (get_game_arg ()), NULL, 10),               \
+                             (game_attr_t                                                                              \
+                             ) { .players    = (uint8_t                                                                \
+                                 ) strtol (__setup_ui_argc__ > 1 ? *(__setup_ui_argv__ + 1) : "", NULL, 10),        \
+                                 .round_time = (uint8_t                                                                \
+                                 ) strtol (__setup_ui_argc__ > 3 ? *(__setup_ui_argv__ + 3) : "", NULL, 10) }          \
+                         );                                                                                            \
+                     _freea (__setup_ui_argv__);                                                                       \
+                 }                                                                                                     \
+                 _Pragma ("GCC diagnostic pop");                                                                       \
+                 __setup_ui_ret__;                                                                                     \
+             }))
     #else
-        #define setup_ui(...)                                                                                                        \
-            ({                                                                                                                       \
-                ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments.");                \
-                ct_error (                                                                                                           \
-                    !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                                         \
-                    "the argc and argv variables must be of integral and pointer/array type, respectively."                          \
-                );                                                                                                                   \
-                ct_error (                                                                                                           \
-                    !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                                                \
-                      isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&                                                             \
-                      isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                                          \
-                      isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                                       \
-                      isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                                     \
-                    "all the arguments passed to the set_ui_settings () must be of integral type."                                   \
-                );                                                                                                                   \
-                _Pragma ("GCC diagnostic push");                                                                                     \
-                _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                               \
-                _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                                    \
-                int    __setup_ui_ret__     = 0;                                                                                     \
-                size_t __setup_ui_cmd_len__ = 0;                                                                                     \
-                _Pragma ("GCC diagnostic pop");                                                                                      \
-                if (__builtin_choose_expr (isint (argc), argc, 1) - 1 == 1 &&                                                        \
-                    !strncmp (                                                                                                       \
-                        (*(__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) +                \
-                           1)),                                                                                                      \
-                        get_start_server_command (), __setup_ui_cmd_len__ = strlen (get_start_server_command ())                     \
-                    )) {                                                                                                             \
-                    set_server_port ((int) strtol (                                                                                  \
-                        (*(__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) +                \
-                           1)) +                                                                                                     \
-                            __setup_ui_cmd_len__,                                                                                    \
-                        NULL, 10                                                                                                     \
-                    ));                                                                                                              \
-                    impl_start_server ();                                                                                            \
-                } else                                                                                                               \
-                    __setup_ui_ret__ = impl_setup_ui (                                                                               \
-                        !strcmp (__func__, "main") ? __builtin_choose_expr (isint (argc), argc, 1) - 1 : 0,                          \
-                        !strcmp (__func__, "main")                                                                                   \
-                            ? (void                                                                                                  \
-                                   *) (__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) + 1) \
-                            : NULL,                                                                                                  \
-                        __builtin_choose_expr (                                                                                      \
-                            isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0                    \
-                        ),                                                                                                           \
-                        __builtin_choose_expr (                                                                                      \
-                            isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),                \
-                            0                                                                                                        \
-                        ),                                                                                                           \
-                        __builtin_choose_expr (                                                                                      \
-                            isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)),                                                      \
-                            ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                                                            \
-                        ),                                                                                                           \
-                        __builtin_choose_expr (                                                                                      \
-                            isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                                   \
-                            ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                                         \
-                        ),                                                                                                           \
-                        __builtin_choose_expr (                                                                                      \
-                            isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                                \
-                            ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                      \
-                        )                                                                                                            \
-                    );                                                                                                               \
-                __setup_ui_ret__;                                                                                                    \
+        #define setup_ui(...)                                                                                          \
+            (ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments."),     \
+             ct_error (                                                                                                \
+                 !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                              \
+                 "the argc and argv variables must be of integral and pointer/array type, respectively."               \
+             ),                                                                                                        \
+             ct_error (                                                                                                \
+                 !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) && isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&  \
+                   isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                               \
+                   isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                            \
+                   isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                          \
+                 "all the arguments passed to the set_ui_settings () must be of integral type."                        \
+             ),                                                                                                        \
+             ({                                                                                                        \
+                 _Pragma ("GCC diagnostic push");                                                                      \
+                 _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                \
+                 _Pragma ("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");                                        \
+                 FreeConsole ();                                                                                       \
+                 int       __setup_ui_ret__     = 0;                                                                   \
+                 size_t    __setup_ui_cmd_len__ = 0;                                                                   \
+                 int       __setup_ui_argc__    = 0;                                                                   \
+                 char    **__setup_ui_argv__    = NULL;                                                                \
+                 wchar_t **__setup_ui_wargv__   = NULL;                                                                \
+                 int      *__setup_ui_wargl__   = NULL;                                                                \
+                 if (!strcmp (__func__, "main")) {                                                                     \
+                     __setup_ui_argc__ = __builtin_choose_expr (isint (argc), argc, 1) - 1;                            \
+                     __setup_ui_argv__ =                                                                               \
+                         (void *) (__builtin_choose_expr (                                                             \
+                                       __builtin_classify_type (argv) == pointer_type_class, argv, (char *) NULL - 1   \
+                                   ) +                                                                                 \
+                                   1);                                                                                 \
+                 } else if (!strcmp (__func__, "wmain")) {                                                             \
+                     __setup_ui_argc__ = __builtin_choose_expr (isint (argc), argc, 1);                                \
+                     __setup_ui_wargv__ =                                                                              \
+                         (void *) (__builtin_choose_expr (                                                             \
+                                       __builtin_classify_type (argv) == pointer_type_class, argv, (char *) NULL - 1   \
+                                   ) +                                                                                 \
+                                   1);                                                                                 \
+                     goto __setup_ui_label__;                                                                          \
+                 } else if (!(strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain"))) {                        \
+                     if (!(__setup_ui_wargv__ = CommandLineToArgvW (GetCommandLineW (), &__setup_ui_argc__)))          \
+                         error ("failed to retrieve the program arguments.");                                          \
+                 __setup_ui_label__:                                                                                   \
+                     if (--__setup_ui_argc__) {                                                                        \
+                         if (!(__setup_ui_argv__ = _malloca (sizeof (char *) * (size_t) __setup_ui_argc__)))           \
+                             error ("failed to allocate memory for the program arguments.");                           \
+                         if (!(__setup_ui_wargl__ = _malloca (sizeof (size_t) * (size_t) __setup_ui_argc__)))          \
+                             error ("failed to allocate memory for the program arguments.");                           \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++) { \
+                             if (!(*(__setup_ui_argv__ + __setup_ui_iter__) = _malloca (                               \
+                                       ((size_t) (*(__setup_ui_wargl__ + __setup_ui_iter__) =                          \
+                                                      lstrlenW (*(__setup_ui_wargv__ + __setup_ui_iter__ + 1))) +      \
+                                        1) *                                                                           \
+                                       sizeof (wchar_t)                                                                \
+                                   )))                                                                                 \
+                                 error ("failed to allocate memory for the program arguments.");                       \
+                         }                                                                                             \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__; __setup_ui_iter__++)   \
+                             if (!WideCharToMultiByte (                                                                \
+                                     CP_UTF8, 0, *(__setup_ui_wargv__ + __setup_ui_iter__ + 1),                        \
+                                     *(__setup_ui_wargl__ + __setup_ui_iter__) + 1,                                    \
+                                     *(__setup_ui_argv__ + __setup_ui_iter__),                                         \
+                                     (*(__setup_ui_wargl__ + __setup_ui_iter__) + 1) * (int) sizeof (wchar_t), NULL,   \
+                                     NULL                                                                              \
+                                 ))                                                                                    \
+                                 error ("failed to retrieve the program arguments.");                                  \
+                     }                                                                                                 \
+                 }                                                                                                     \
+                 if (__setup_ui_argc__ <= 1 ||                                                                         \
+                     (strncmp (*__setup_ui_argv__, get_game_arg (), strlen (get_game_arg ())) &&                       \
+                      strncmp (                                                                                        \
+                          *__setup_ui_argv__, get_start_server_command (),                                             \
+                          __setup_ui_cmd_len__ = strlen (get_start_server_command ())                                  \
+                      ))) {                                                                                            \
+                     if (!AttachConsole (ATTACH_PARENT_PROCESS))                                                       \
+                         if (!AllocConsole ())                                                                         \
+                             trap (), unreachable ();                                                                  \
+                     {                                                                                                 \
+                         FILE *__setup_ui_f__;                                                                         \
+                         freopen_s (&__setup_ui_f__, "CONIN$", "r", stdin);                                            \
+                         fclose (__setup_ui_f__);                                                                      \
+                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stdout);                                          \
+                         fclose (__setup_ui_f__);                                                                      \
+                         freopen_s (&__setup_ui_f__, "CONOUT$", "w", stderr);                                          \
+                         fclose (__setup_ui_f__);                                                                      \
+                     }                                                                                                 \
+                     if (_dup2 (                                                                                       \
+                             _fileno (_fdopen (                                                                        \
+                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_INPUT_HANDLE), _O_U8TEXT), "r"          \
+                             )),                                                                                       \
+                             _fileno (stdin)                                                                           \
+                         ) == -1 ||                                                                                    \
+                         _dup2 (                                                                                       \
+                             _fileno (_fdopen (                                                                        \
+                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_OUTPUT_HANDLE), _O_U8TEXT), "w"         \
+                             )),                                                                                       \
+                             _fileno (stdout)                                                                          \
+                         ) == -1 ||                                                                                    \
+                         _dup2 (                                                                                       \
+                             _fileno (_fdopen (                                                                        \
+                                 _open_osfhandle ((intptr_t) GetStdHandle (STD_ERROR_HANDLE), _O_U8TEXT), "w"          \
+                             )),                                                                                       \
+                             _fileno (stderr)                                                                          \
+                         ) == -1)                                                                                      \
+                         trap (), unreachable ();                                                                      \
+                     setvbuf (stdin, NULL, _IONBF, 0);                                                                 \
+                     setvbuf (stdout, NULL, _IONBF, 0);                                                                \
+                     setvbuf (stderr, NULL, _IONBF, 0);                                                                \
+                     SetConsoleCP (CP_UTF8);                                                                           \
+                     SetConsoleOutputCP (CP_UTF8);                                                                     \
+                     {                                                                                                 \
+                         char __setup_ui_path__ [MAX_PATH + 1];                                                        \
+                         if (!strcmp (                                                                                 \
+                                 basename (({                                                                          \
+                                     if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))                  \
+                                         error ("could not get the executable filename.");                             \
+                                     __setup_ui_path__;                                                                \
+                                 })),                                                                                  \
+                                 "local.exe"                                                                           \
+                             ))                                                                                        \
+                             if (!SetWindowTextW (                                                                     \
+                                     ({                                                                                \
+                                         HWND __setup_ui_window_handle__ = GetConsoleWindow ();                        \
+                                         if (!__setup_ui_window_handle__)                                              \
+                                             error ("could not retrieve a handle to the console window.");             \
+                                         __setup_ui_window_handle__;                                                   \
+                                     }),                                                                               \
+                                     L"Trivia: servidor local"                                                         \
+                                 ))                                                                                    \
+                                 warning ("could not change the window's name");                                       \
+                     }                                                                                                 \
+                     __setup_ui_ret__ = impl_setup_ui (                                                                \
+                         __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                   \
+                         __builtin_choose_expr (                                                                       \
+                             isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0     \
+                         ),                                                                                            \
+                         __builtin_choose_expr (                                                                       \
+                             isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0), \
+                             0                                                                                         \
+                         ),                                                                                            \
+                         __builtin_choose_expr (                                                                       \
+                             isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)),                                       \
+                             ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                                             \
+                         ),                                                                                            \
+                         __builtin_choose_expr (                                                                       \
+                             isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                    \
+                             ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                          \
+                         ),                                                                                            \
+                         __builtin_choose_expr (                                                                       \
+                             isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                 \
+                             ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                       \
+                         )                                                                                             \
+                     );                                                                                                \
+                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain") \
+                         )) {                                                                                          \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                        \
+                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                     \
+                             ;                                                                                         \
+                         _freea (__setup_ui_argv__);                                                                   \
+                         _freea (__setup_ui_wargl__);                                                                  \
+                         if (strcmp (__func__, "wmain"))                                                               \
+                             LocalFree (__setup_ui_wargv__);                                                           \
+                     }                                                                                                 \
+                 } else {                                                                                              \
+                     if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain") \
+                         )) {                                                                                          \
+                         for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                        \
+                              _freea (*(__setup_ui_argv__ + __setup_ui_iter__++)))                                     \
+                             ;                                                                                         \
+                         _freea (__setup_ui_wargl__);                                                                  \
+                         if (strcmp (__func__, "wmain"))                                                               \
+                             LocalFree (__setup_ui_wargv__);                                                           \
+                     }                                                                                                 \
+                     if (!strncmp (*__setup_ui_argv__, get_start_server_command (), __setup_ui_cmd_len__)) {           \
+                         set_server_port ((int) strtol (                                                               \
+                             (*(__builtin_choose_expr (                                                                \
+                                    __builtin_classify_type (__setup_ui_argv__) == pointer_type_class,                 \
+                                    __setup_ui_argv__, NULL                                                            \
+                                ) +                                                                                    \
+                                1)) +                                                                                  \
+                                 __setup_ui_cmd_len__,                                                                 \
+                             NULL, 10                                                                                  \
+                         ));                                                                                           \
+                         impl_start_server ();                                                                         \
+                     } else                                                                                            \
+                         game_server (                                                                                 \
+                             (size_t) strtol (__setup_ui_argc__ > 2 ? *(__setup_ui_argv__ + 1) : "", NULL, 10),        \
+                             __setup_ui_ret__ =                                                                        \
+                                 (int) strtol (*__setup_ui_argv__ + strlen (get_game_arg ()), NULL, 10),               \
+                             (game_attr_t                                                                              \
+                             ) { .players    = (uint8_t                                                                \
+                                 ) strtol (__setup_ui_argc__ > 1 ? *(__setup_ui_argv__ + 1) : "", NULL, 10),        \
+                                 .round_time = (uint8_t                                                                \
+                                 ) strtol (__setup_ui_argc__ > 3 ? *(__setup_ui_argv__ + 3) : "", NULL, 10) }          \
+                         );                                                                                            \
+                     _freea (__setup_ui_argv__);                                                                       \
+                 }                                                                                                     \
+                 _Pragma ("GCC diagnostic pop");                                                                       \
+                 __setup_ui_ret__;                                                                                     \
+             }))
+    #endif
+#else
+    #ifdef __cplusplus
+        #define setup_ui(...)                                                                                          \
+            ({                                                                                                         \
+                ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments."),  \
+                    ct_error (                                                                                         \
+                        !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                       \
+                        "the argc and argv variables must be of integral and pointer/array type, respectively."        \
+                    );                                                                                                 \
+                ct_error (                                                                                             \
+                    !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                                  \
+                      isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&                                               \
+                      isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                            \
+                      isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                         \
+                      isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                       \
+                    "all the arguments passed to the set_ui_settings () must be of integral type."                     \
+                );                                                                                                     \
+                _Pragma ("GCC diagnostic push");                                                                       \
+                _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                 \
+                _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                      \
+                int    __setup_ui_ret__     = 0;                                                                       \
+                size_t __setup_ui_cmd_len__ = 0;                                                                       \
+                _Pragma ("GCC diagnostic pop");                                                                        \
+                if (argc - 1 == 1 && !strncmp (                                                                        \
+                                         (*(argv + 1)), get_start_server_command (),                                   \
+                                         __setup_ui_cmd_len__ = strlen (get_start_server_command ())                   \
+                                     )) {                                                                              \
+                    set_server_port ((int) strtol ((*(argv + 1)) + __setup_ui_cmd_len__, NULL, 10));                   \
+                    impl_start_server ();                                                                              \
+                    exit (0);                                                                                          \
+                } else                                                                                                 \
+                    __setup_ui_ret__ = impl_setup_ui (                                                                 \
+                        !strcmp (__func__, "main") ? argc - 1 : 0,                                                     \
+                        static_cast<const char *const *> (!strcmp (__func__, "main") ? (void *) (argv + 1) : NULL),    \
+                        ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),                 \
+                        ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0),     \
+                        ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)                                               \
+                    );                                                                                                 \
+                __setup_ui_ret__;                                                                                      \
+            })
+    #else
+        #define setup_ui(...)                                                                                          \
+            ({                                                                                                         \
+                ct_error (NARGS (__VA_ARGS__) > 5, "the setup_ui() macro must be passed between 0 and 5 arguments.");  \
+                ct_error (                                                                                             \
+                    !(isint (argc) && __builtin_classify_type (argv) == pointer_type_class),                           \
+                    "the argc and argv variables must be of integral and pointer/array type, respectively."            \
+                );                                                                                                     \
+                ct_error (                                                                                             \
+                    !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                                  \
+                      isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&                                               \
+                      isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)) &&                                            \
+                      isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)) &&                                         \
+                      isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0))),                                       \
+                    "all the arguments passed to the set_ui_settings () must be of integral type."                     \
+                );                                                                                                     \
+                _Pragma ("GCC diagnostic push");                                                                       \
+                _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                 \
+                _Pragma ("GCC diagnostic ignored \"-Wshadow=compatible-local\"");                                      \
+                int    __setup_ui_ret__     = 0;                                                                       \
+                size_t __setup_ui_cmd_len__ = 0;                                                                       \
+                _Pragma ("GCC diagnostic pop");                                                                        \
+                if (__builtin_choose_expr (isint (argc), argc, 1) - 1 == 1 &&                                          \
+                    !strncmp (                                                                                         \
+                        (*(__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) +  \
+                           1)),                                                                                        \
+                        get_start_server_command (), __setup_ui_cmd_len__ = strlen (get_start_server_command ())       \
+                    )) {                                                                                               \
+                    set_server_port ((int) strtol (                                                                    \
+                        (*(__builtin_choose_expr (__builtin_classify_type (argv) == pointer_type_class, argv, NULL) +  \
+                           1)) +                                                                                       \
+                            __setup_ui_cmd_len__,                                                                      \
+                        NULL, 10                                                                                       \
+                    ));                                                                                                \
+                    impl_start_server ();                                                                              \
+                    exit (0);                                                                                          \
+                } else                                                                                                 \
+                    __setup_ui_ret__ = impl_setup_ui (                                                                 \
+                        !strcmp (__func__, "main") ? __builtin_choose_expr (isint (argc), argc, 1) - 1 : 0,            \
+                        !strcmp (__func__, "main")                                                                     \
+                            ? (void *) (__builtin_choose_expr (                                                        \
+                                            __builtin_classify_type (argv) == pointer_type_class, argv, NULL           \
+                                        ) +                                                                            \
+                                        1)                                                                             \
+                            : NULL,                                                                                    \
+                        __builtin_choose_expr (                                                                        \
+                            isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0      \
+                        ),                                                                                             \
+                        __builtin_choose_expr (                                                                        \
+                            isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0),  \
+                            0                                                                                          \
+                        ),                                                                                             \
+                        __builtin_choose_expr (                                                                        \
+                            isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0)),                                        \
+                            ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), 0                                              \
+                        ),                                                                                             \
+                        __builtin_choose_expr (                                                                        \
+                            isint (ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0)),                                     \
+                            ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0), 0                                           \
+                        ),                                                                                             \
+                        __builtin_choose_expr (                                                                        \
+                            isint (ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)),                                  \
+                            ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                        \
+                        )                                                                                              \
+                    );                                                                                                 \
+                __setup_ui_ret__;                                                                                      \
             })
     #endif
 #endif

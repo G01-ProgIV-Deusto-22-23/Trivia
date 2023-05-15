@@ -24,7 +24,7 @@ extern "C" {
     pid_t
 #endif
                 BT_PID;
-    static char BT_DIGITS [sizeof (STRINGIFY ((typeof (BT_PID)) -1)) - 1];
+    static char BT_DIGITS [sizeof (stringify ((typeof (BT_PID)) -1)) - 1];
 
     int get_backtrace_fd (void) {
         return BT_FD;

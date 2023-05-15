@@ -17,8 +17,12 @@ extern "C" {
 #define DEFAULT_GAME_PORT_START DEFAULT_SERVER_PORT + 1
 #define DEFAULT_GAME_PORT_END   IANA_DYNAMIC_PORT_END
 
-#define MAX_PLAYERS 20
+#define MAX_PLAYERS        20
+#define DEFAULT_ROUND_TIME 20
 
+#define CONNECT_WAIT_TIMEOUT 3000
+
+    cmd_t success_command (void);
     cmd_t error_command (const uint32_t);
     cmd_t kill_command (void);
     cmd_t game_command (const game_attr_t);
@@ -36,13 +40,13 @@ extern "C" {
     extern const char *get_game_arg (void);
 #endif
 
-    extern size_t get_games (void);
-    extern size_t set_games (const size_t);
-    extern void   gen_game_ids (void);
-    extern bool   init_game (const size_t, const bool);
-    extern bool   init_games (void);
-    extern bool   end_games (void);
-    extern void   game_server (const int, const size_t);
+    extern size_t      get_games (void);
+    extern size_t      set_games (const size_t);
+    extern void        gen_game_ids (void);
+    extern const char *init_game (game_attr_t, const bool);
+    extern bool        init_games (void);
+    extern bool        end_games (void);
+    extern void        game_server (const size_t, const int, game_attr_t);
 
     extern const char     *get_start_server_command (void);
     extern server_status_t get_server_status (void);
@@ -74,7 +78,6 @@ extern "C" {
     extern int set_game_port_start (int);
     extern int get_game_port_end (void);
     extern int set_game_port_end (int);
-    extern int get_next_free_port (int, int);
     extern int get_next_free_port (int, int);
 
 #ifdef __cplusplus

@@ -34,7 +34,7 @@ CFLAGS := \
 CXXFLAGS := \
 	-std=$(STDCXX) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing -ffast-math -fmax-errors=1 \
 	-fpermissive -D_GNU_SOURCE -I $(EXTERNINCLUDE) -static --static -static-libgcc -static-libstdc++ \
-	-include $(SRCINCLUDE)/trivia.h -include $(SRCINCLUDE)/macros/null.h
+	-include $(SRCINCLUDE)/trivia.h
 
 ifeq ($(RUNTIME_DIAGS), false)
 	CFLAGS += -DDISABLE_RUNTIME_DIAGS
@@ -42,12 +42,12 @@ ifeq ($(RUNTIME_DIAGS), false)
 endif
 
 DFLAGS := \
-	-ggdb3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
+	-ggdb3 -pg -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
 	-Wshadow=local -Wstrict-prototypes -Wwrite-strings -Wconversion \
 	-Wcast-align -Wnull-dereference -Wformat=2 -Wno-format-y2k -Wnonnull
 
 DXXFLAGS := \
-	-ggdb3 -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
+	-ggdb3 -pg -Wall -Wextra -Winline -Wpointer-arith -Wfloat-equal -Wundef \
 	-Wshadow=local -Wwrite-strings -Wconversion -Wnonnull \
 	-Wcast-align -Wnull-dereference -Wformat=2 -Wno-format-y2k
 
@@ -75,8 +75,8 @@ linux: BINDIR   := $(BINDIR)/linux
 windows: CC       := $(GCC_WINDOWS)
 windows: CXX      := $(GXX_WINDOWS)
 windows: LIBDIR   := $(LIBDIR)/windows
-windows: CFLAGS   += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
-windows: CXXFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: CFLAGS   += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR) -lws2_32
+windows: CXXFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR) -lws2_32
 windows: OBJDIR   := $(OBJDIR)/windows
 windows: BINDIR   := $(BINDIR)/windows
 
@@ -137,8 +137,8 @@ LOCALOBJSW := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/windows/local_ui_%.o,
 
 REMOTEL     := $(BINDIR)/linux/remote
 REMOTEW     := $(BINDIR)/windows/remote.exe
-REMOTEOBJSL := $(patsubst $(SRCDIR)/remote/ui/%.c, $(OBJDIR)/linux/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.c))
-REMOTEOBJSW := $(patsubst $(SRCDIR)/remote/ui/%.c, $(OBJDIR)/windows/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.c))
+REMOTEOBJSL := $(patsubst $(SRCDIR)/remote/ui/%.cpp, $(OBJDIR)/linux/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.cpp))
+REMOTEOBJSW := $(patsubst $(SRCDIR)/remote/ui/%.cpp, $(OBJDIR)/windows/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.cpp))
 
 linux:   init $(LOCALL) $(REMOTEL)
 windows: init $(LOCALW) $(REMOTEW)
@@ -213,7 +213,7 @@ $(LOCALL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
 
 $(LOCALW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
-	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS)
 
 $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
@@ -222,15 +222,15 @@ $(OBJDIR)/windows/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
 
 $(REMOTEL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(REMOTEOBJSL)
-	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSL) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSL) $(LIBS)
 
 $(REMOTEW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(REMOTEOBJSW)
-	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS)
 
-$(OBJDIR)/linux/remote_ui_%.o: $(SRCDIR)/remote/ui/%.c
+$(OBJDIR)/linux/remote_ui_%.o: $(SRCDIR)/remote/ui/%.cpp
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
 
-$(OBJDIR)/windows/remote_ui_%.o: $(SRCDIR)/remote/ui/%.c
+$(OBJDIR)/windows/remote_ui_%.o: $(SRCDIR)/remote/ui/%.cpp
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
 
 clean:
