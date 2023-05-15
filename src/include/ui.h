@@ -88,12 +88,11 @@ extern "C" {
          ({                                                                                                            \
              _Pragma ("GCC diagnostic push");                                                                          \
              _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                    \
-             field_attr_t __int_field_fa__ = impl_field_attrs (len, TYPE_INTEGER);                                     \
+             field_attr_t __int_field_fa__ = impl_field_attrs (len ? len : decplaces (LONG_MAX), TYPE_INTEGER);        \
              _Pragma ("GCC diagnostic pop");                                                                           \
-             (NARGS (__VA_ARGS__ >= 2)) {                                                                              \
-                 NARGS (__VA_ARGS__) >= 2,                                                                             \
-                     __int_field_fa__.type_args.integer.min = ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0);                    \
-                 __int_field_fa__.type_args.integer.max     = ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX);   \
+             if (NARGS (__VA_ARGS__ >= 2)) {                                                                           \
+                 __int_field_fa__.type_args.integer.min = ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0);                        \
+                 __int_field_fa__.type_args.integer.max = ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX);       \
              }                                                                                                         \
              __int_field_fa__;                                                                                         \
          }))

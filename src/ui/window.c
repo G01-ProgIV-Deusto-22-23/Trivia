@@ -94,14 +94,11 @@ static bool remove_window (window_list_t node) {
     return false;
 }
 
-WINDOW *
-    impl_create_window (const uint32_t w, const uint32_t h, const uint32_t x, const uint32_t y, const int notlogwin) {
+WINDOW *impl_create_window (uint32_t w, uint32_t h, uint32_t x, uint32_t y, const int notlogwin) {
+    fitwin (w, h, x, y);
+
     WINDOW *win;
-    if (!(win = newwin (
-              (int) (h <= get_ver_padding () * 2 ? h : h - get_ver_padding () * 2),
-              (int) (w <= get_hor_padding () * 2 ? w : w - get_hor_padding () * 2), (int) (y + get_ver_padding ()),
-              (int) (x + get_hor_padding ())
-          )))
+    if (!(win = newwin ((int) h, (int) w, (int) y, (int) x)))
         error ("could not create a window.");
 
     return add_window (win, notlogwin);

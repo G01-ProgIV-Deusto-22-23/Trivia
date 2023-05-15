@@ -1,6 +1,11 @@
 #ifndef TRIVIA_REMOTE_H
 #define TRIVIA_REMOTE_H
 
-void locate_server (void);
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+locate_server (void);
 
 #endif

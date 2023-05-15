@@ -438,8 +438,8 @@ size_t
     }
 
     if (!form_sub ((*(FORMS + form))->form)) {
-        uint32_t _w = (uint32_t
-        ) (getmaxx (form_win ((*(FORMS + form))->form)) - getbegx (form_win ((*(FORMS + form))->form)) - 3);
+        uint32_t _w = (uint32_t) (getmaxx (form_win ((*(FORMS + form))->form)) -
+                                  getbegx (form_win ((*(FORMS + form))->form)) - 3);
         uint32_t _h =
             (uint32_t) (getmaxy (form_win ((*(FORMS + form))->form)) - getbegy (form_win ((*(FORMS + form))->form))) /
             2;
@@ -484,7 +484,7 @@ size_t
         int   r;
         char *pos = (*(FORMS + form))->data + (sizeof (size_t) + sizeof (field_attr_t)) * (*(FORMS + form))->nfields +
                     sizeof (size_t);
-        for (size_t i = 0; i < (*(FORMS + form))->nfields;
+        for (size_t i  = 0; i < (*(FORMS + form))->nfields;
              pos      += *((size_t *) (void *) (*(FORMS + form))->data + i++ + 1) + 1)
             mvwprintw (
                 form_win ((*(FORMS + form))->form),
@@ -542,14 +542,14 @@ size_t
         bool failedchange = false;
         for (int c = 0, i = field_index (current_field ((*(FORMS + form))->form)),
                  pos = (int) ({
-                     char *buf = field_buffer (*form_fields ((*(FORMS + form))->form), 0);
+                     char *buf  = field_buffer (*form_fields ((*(FORMS + form))->form), 0);
                      buf       += ({
                          size_t j = 0;
                          for (; isspace (*(buf + j)); j++)
                              ;
                          j;
                      });
-                     size_t j  = strlen (buf);
+                     size_t j   = strlen (buf);
                      for (; j && isspace (*(buf + j - 1)); j--)
                          ;
                      j;
@@ -678,7 +678,7 @@ size_t
             move_left:
                 bool jmp = false;
                 if (({
-                        int err = form_driver ((*(FORMS + form))->form, REQ_LEFT_CHAR);
+                        int err  = form_driver ((*(FORMS + form))->form, REQ_LEFT_CHAR);
                         pos     -= (jmp = (pos && (err == E_OK || err == E_REQUEST_DENIED)));
                         !(err == E_OK || err == E_REQUEST_DENIED);
                     }))
@@ -690,7 +690,7 @@ size_t
 
             else if (c == KEY_RIGHT) {
                 if (({
-                        int err = form_driver ((*(FORMS + form))->form, REQ_RIGHT_CHAR);
+                        int err  = form_driver ((*(FORMS + form))->form, REQ_RIGHT_CHAR);
                         pos     += pos < ({
                                    int fl;
                                    field_info (
@@ -728,7 +728,7 @@ size_t
                         int err = form_driver ((*(FORMS + form))->form, REQ_DEL_CHAR);
                         if (err == E_OK) {
                             FIELD *f;
-                            char  *buf = field_buffer (f = current_field ((*(FORMS + form))->form), 0);
+                            char  *buf  = field_buffer (f = current_field ((*(FORMS + form))->form), 0);
                             buf        += ({
                                 size_t j = 0;
                                 for (; isspace (*(buf + j)); j++)
@@ -740,7 +740,7 @@ size_t
                                 for (; j && isspace (*(buf + j - 1)); j--)
                                     ;
                                 j;
-                            }))        = '\0';
+                            }))         = '\0';
                             memmove (
                                 *(FORM_FIELD_TEMPBUF + form) + pos, *(FORM_FIELD_TEMPBUF + form) + pos + 1,
                                 strlen (*(FORM_FIELD_TEMPBUF + form) + pos + 1) + 1
@@ -798,7 +798,7 @@ size_t
             (field_attr_t *) (void *) ((*(FORMS + form))->data + sizeof (size_t) * ((*(FORMS + form))->nfields + 1));
         const char *buf;
         form_driver ((*(FORMS + form))->form, REQ_FIRST_FIELD);
-        for (size_t i = 0; i < (*(FORMS + form))->nfields;
+        for (size_t i  = 0; i < (*(FORMS + form))->nfields;
              invalid  |= (
 #if __WORDSIZE == 64
                             UINT64_C (1)
@@ -820,46 +820,19 @@ size_t
                             })
                           : (attrs + i)->type == TYPE_INTEGER
                               ? ({
-                                    long low    = (attrs + i)->type_args.integer.min;
-                                    long high   = (attrs + i)->type_args.integer.max;
-                                    bool result = false;
+                                    long low  = (attrs + i)->type_args.integer.min;
+                                    long high = (attrs + i)->type_args.integer.max;
+                                    long v    = strtol (buf, NULL, 10);
+                                    fprintf (stderr, "v: %ld\n", v);
 
-                                    buf += *buf == '-';
-                                    if (*buf) {
-                                        int      l;
-                                        wchar_t *list = _nc_Widen_String ((char *) buf, &l);
-
-                                        if (list) {
-                                            bool blank = result = true;
-
-                                            for (int n = 0; n < l; n++) {
-                                                if (blank) {
-                                                    if (!(result = (*(list + n) == ' ')))
-                                                        break;
-
-                                                    continue;
-                                                }
-
-                                                if ((blank = (*(list + n) == ' ')))
-                                                    continue;
-
-                                                if (!(result =
-                                                          (iswdigit ((wint_t) (*(list + n))) ||
-                                                           isdigit ((unsigned char) (*(list + n))))))
-                                                    break;
-                                            }
-
-                                            free (list);
-                                        }
-                                    }
-
-                                    if (result) {
-                                        long v = atol (buf);
-
-                                        result = !(v < low || v > high);
-                                    }
-
-                                    result;
+                                    !(errno == ERANGE || (!v && ({
+                                          bool r = true;
+                                          for (size_t j = strlen (buf);
+                                               j && (r = isspace (*(buf + j - 1)) || *(buf + j - 1) == '0'); j--)
+                                              ;
+                                          !r;
+                                      })) ||
+                                      v < low || v > high);
                                 })
                               : ({
                                     int      l;
