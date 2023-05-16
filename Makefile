@@ -26,6 +26,7 @@ STDC               := gnu11
 STDCXX             := gnu++11
 OPTIMIZATION_LEVEL := 3
 RUNTIME_DIAGS      := true
+P99                := false
 
 CFLAGS := \
 	-std=$(STDC) -O$(OPTIMIZATION_LEVEL) -DNCURSES_STATIC -fno-strict-aliasing -ffast-math -fmax-errors=1 \
@@ -38,7 +39,12 @@ CXXFLAGS := \
 
 ifeq ($(RUNTIME_DIAGS), false)
 	CFLAGS += -DDISABLE_RUNTIME_DIAGS
-	CXXFLAGS += --DISABLE_RUNTIME_DIAGS
+	CXXFLAGS += -DISABLE_RUNTIME_DIAGS
+endif
+
+ifeq ($(P99), true)
+	CFLAGS += -DTRIVIA_USE_P99
+	CXXFLAGS += -DTRIVIA_USE_P99
 endif
 
 DFLAGS := \

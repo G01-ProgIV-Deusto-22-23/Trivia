@@ -20,7 +20,13 @@ extern "C" {
 #define MAX_PLAYERS        20
 #define DEFAULT_ROUND_TIME 20
 
-#define CONNECT_WAIT_TIMEOUT 3000
+#define ONE_MB (1 << 20)
+
+#define CONNECT_TIMEOUT 5000
+#define TRANS_TIMEOUT   10000
+#define SEND_TIMEOUT    TRANS_TIMEOUT
+#define RECV_TIMEOUT    TRANS_TIMEOUT
+#define MAX_RECV        ct_next2pow (ONE_MB / ct_next2pow (sizeof (packet_t) - offsetof (packet_t, text)))
 
     cmd_t success_command (void);
     cmd_t error_command (const uint32_t);
@@ -49,6 +55,7 @@ extern "C" {
     extern void        game_server (const size_t, const int, game_attr_t);
 
     extern const char     *get_start_server_command (void);
+    extern cmd_t          *get_default_recv_buf (void);
     extern server_status_t get_server_status (void);
     extern void            impl_start_server (void);
     extern void            start_server (void);
@@ -68,7 +75,7 @@ extern "C" {
                                int
 #endif
     );
-    extern cmd_t send_server (const char *, int, const cmd_t);
+    extern cmd_t send_server (const char *const restrict, const int, const cmd_t, cmd_t *const restrict, const size_t);
 
 #define connect_server(a, p) impl_connect_server (a, p, __func__)
 

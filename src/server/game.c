@@ -16,20 +16,20 @@ static size_t
 #ifndef _WIN32
     *
 #endif
-                            CURGAME                  = 0;
-static map_t                GAMES                    = NULL;
-static struct __game_struct GAME_STRUCTS [MAX_GAMES] = { 0 };
-static char                 GAME_IDS [MAX_GAMES][5]  = { 0 };
-static size_t               NPLAYERS [MAX_GAMES]     = { 0 };
-static int                  PLAYER_RESULTS [MAX_GAMES][MAX_PLAYERS];
+                            CURGAME                         = 0;
+static map_t                GAMES                           = NULL;
+static struct __game_struct GAME_STRUCTS [MAX_GAMES]        = { 0 };
+static char                 GAME_IDS [MAX_GAMES][5]         = { 0 };
+static size_t __attribute__ ((unused)) NPLAYERS [MAX_GAMES] = { 0 };
+static int PLAYER_RESULTS [MAX_GAMES][MAX_PLAYERS];
 static
 #ifdef _WIN32
     HANDLE
 #else
     pthread_t
 #endif
-                   GAME_THREADS [MAX_GAMES][MAX_PLAYERS + 1];
-static atomic_bool PLAYER_THREAD_STILL_RUNNING [MAX_GAMES][MAX_PLAYERS];
+        GAME_THREADS [MAX_GAMES][MAX_PLAYERS + 1];
+static atomic_bool __attribute__ ((unused)) PLAYER_THREAD_STILL_RUNNING [MAX_GAMES][MAX_PLAYERS];
 
 #ifdef _WIN32
 static const char GAME_ARG [] = "juan";
@@ -74,13 +74,13 @@ void gen_game_ids (void) {
         srand ((unsigned) v);
         v += (unsigned) rand ();
 
-        **(GAME_IDS + i)       = *(l + v % (sizeof (l) - 1));
+        **(GAME_IDS + i)        = *(l + v % (sizeof (l) - 1));
         v                      /= sizeof (l) - 1;
-        *(*(GAME_IDS + i) + 1) = *(l + v % (sizeof (l) - 1));
+        *(*(GAME_IDS + i) + 1)  = *(l + v % (sizeof (l) - 1));
         v                      /= sizeof (l) - 1;
-        *(*(GAME_IDS + i) + 2) = *(l + v % (sizeof (l) - 1));
+        *(*(GAME_IDS + i) + 2)  = *(l + v % (sizeof (l) - 1));
         v                      /= sizeof (l) - 1;
-        *(*(GAME_IDS + i) + 3) = *(l + v % (sizeof (l) - 1));
+        *(*(GAME_IDS + i) + 3)  = *(l + v % (sizeof (l) - 1));
 
         v += 7777;
     }
@@ -280,7 +280,7 @@ static bool kill_games (void) {
 #ifndef _WIN32
              *
 #endif
-             CURGAME = 0;
+             CURGAME  = 0;
          i < n; e    |= kill_game (*(g + i++)) ? (warning ("could not kill game."), true) : false)
         ;
 
@@ -347,14 +347,14 @@ void game_server (const size_t ngame, const int port, game_attr_t attr) {
 #ifdef _WIN32
                                 "lu"
 #else
-                                 "d"
+                                "d"
 #endif
                                 ".log",
                                 port,
 #ifdef _WIN32
                                 GetProcessId (GetCurrentProcess ())
 #else
-                                 getpid ()
+                                getpid ()
 #endif
                             ) == -1
                                 ? (warning ("could not generate a valid log file name."), NULL)

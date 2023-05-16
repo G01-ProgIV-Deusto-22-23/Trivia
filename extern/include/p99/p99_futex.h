@@ -25,20 +25,20 @@
 #include "p99_threads.h"
 #include "p99_posix_default.h"
 
-P99_DECLARE_STRUCT(p99_futex_c11);
+P99_DECLARE_STRUCT (p99_futex_c11);
 
 #if defined(DOXYGEN)
-#define P00_FUTEX_INLINE(NAME) p99_inline
+    #define P00_FUTEX_INLINE(NAME) p99_inline
 
 #elif (defined(__linux__) && !defined(NO_FUTEX)) || defined(DOXYGEN)
-typedef _Atomic(unsigned) p99_futex;
-#define P00_FUTEX_INLINE(NAME) p99_inline
+typedef _Atomic (unsigned) p99_futex;
+    #define P00_FUTEX_INLINE(NAME) p99_inline
 
 #else
 typedef p99_futex_c11 p99_futex;
-/* The C11 implementation needs setjmp in its internals so the
-   functions must be implemented as weak symbols. */
-#define P00_FUTEX_INLINE(NAME) P99_WEAK(NAME)
+    /* The C11 implementation needs setjmp in its internals so the
+       functions must be implemented as weak symbols. */
+    #define P00_FUTEX_INLINE(NAME) P99_WEAK (NAME)
 #endif
 
 /**
@@ -49,7 +49,6 @@ typedef p99_futex_c11 p99_futex;
 /**
  ** @}
  **/
-
 
 /**
  ** @addtogroup futex Fast User space locking and signaling
@@ -160,10 +159,8 @@ typedef p99_futex_c11 p99_futex;
  ** @see p99_notifier for a derived data structure to have a group of threads wait for an event
  ** @see p99_count for a resource counter
  **/
-struct p99_futex { };
+struct p99_futex {};
 #endif
-
-
 
 /**
  ** @def P99_FUTEX_INITIALIZER(INITIAL)
@@ -175,20 +172,19 @@ struct p99_futex { };
  ** @brief the maximum number of waiters that an ::p99_futex may have
  ** @related p99_futex
  **/
-# define P99_FUTEX_MAX_WAITERS (INT_MAX+0U)
-
+#define P99_FUTEX_MAX_WAITERS (INT_MAX + 0U)
 
 /**
  ** @brief Initialize an ::p99_futex object.
  ** @related p99_futex
  **/
-p99_inline p99_futex* p99_futex_init(p99_futex* p00_c, unsigned p00_ini);
+p99_inline p99_futex *p99_futex_init (p99_futex *p00_c, unsigned p00_ini);
 
 /**
  ** @brief Destroy an ::p99_futex object.
  ** @related p99_futex
  **/
-p99_inline void p99_futex_destroy(p99_futex* p00_c);
+p99_inline void p99_futex_destroy (p99_futex *p00_c);
 
 /**
  ** @brief increment the counter of @a p00_fut atomically by @a p00_hmuch.
@@ -216,24 +212,25 @@ p99_inline void p99_futex_destroy(p99_futex* p00_c);
  ** @remark @a p00_wmax defaults to ::P99_FUTEX_MAX_WAITERS
  ** @related p99_futex
  **/
-P99_DEFARG_DOCU(p99_futex_add)
-P00_FUTEX_INLINE(p99_futex_add) unsigned p99_futex_add(p99_futex volatile* p00_fut, unsigned p00_hmuch,
-    unsigned p00_cstart, unsigned p00_clen,
-    unsigned p00_wmin, unsigned p00_wmax);
+P99_DEFARG_DOCU (p99_futex_add)
+P00_FUTEX_INLINE (p99_futex_add)
+unsigned p99_futex_add (
+    volatile p99_futex *p00_fut, unsigned p00_hmuch, unsigned p00_cstart, unsigned p00_clen, unsigned p00_wmin,
+    unsigned p00_wmax
+);
 
 #ifndef DOXYGEN
-#define p99_futex_add(...) P99_CALL_DEFARG(p99_futex_add, 6, __VA_ARGS__)
-#define p99_futex_add_defarg_3() 1u
-#define p99_futex_add_defarg_4() 0u
-#define p99_futex_add_defarg_5() P99_FUTEX_MAX_WAITERS
+    #define p99_futex_add(...)       P99_CALL_DEFARG (p99_futex_add, 6, __VA_ARGS__)
+    #define p99_futex_add_defarg_3() 1u
+    #define p99_futex_add_defarg_4() 0u
+    #define p99_futex_add_defarg_5() P99_FUTEX_MAX_WAITERS
 #endif
-
 
 /**
  ** @brief Obtain the value of futex @a p00_fut atomically.
  ** @related p99_futex
  **/
-P00_FUTEX_INLINE(p99_futex_load) unsigned p99_futex_load(p99_futex volatile* p00_fut);
+P00_FUTEX_INLINE (p99_futex_load) unsigned p99_futex_load (volatile p99_futex *p00_fut);
 
 /**
  ** @brief Unconditionally and atomically set the futex @a p00_fut to
@@ -257,16 +254,18 @@ P00_FUTEX_INLINE(p99_futex_load) unsigned p99_futex_load(p99_futex volatile* p00
  ** @remark @a p00_wmax defaults to ::P99_FUTEX_MAX_WAITERS
  ** @related p99_futex
  **/
-P99_DEFARG_DOCU(p99_futex_exchange)
-P00_FUTEX_INLINE(p99_futex_exchange) unsigned p99_futex_exchange(p99_futex volatile* p00_fut, unsigned p00_desired,
-    unsigned p00_cstart, unsigned p00_clen,
-    unsigned p00_wmin, unsigned p00_wmax);
+P99_DEFARG_DOCU (p99_futex_exchange)
+P00_FUTEX_INLINE (p99_futex_exchange)
+unsigned p99_futex_exchange (
+    volatile p99_futex *p00_fut, unsigned p00_desired, unsigned p00_cstart, unsigned p00_clen, unsigned p00_wmin,
+    unsigned p00_wmax
+);
 
 #ifndef DOXYGEN
-#define p99_futex_exchange(...) P99_CALL_DEFARG(p99_futex_exchange, 6, __VA_ARGS__)
-#define p99_futex_exchange_defarg_3() 1u
-#define p99_futex_exchange_defarg_4() 0u
-#define p99_futex_exchange_defarg_5() P99_FUTEX_MAX_WAITERS
+    #define p99_futex_exchange(...)       P99_CALL_DEFARG (p99_futex_exchange, 6, __VA_ARGS__)
+    #define p99_futex_exchange_defarg_3() 1u
+    #define p99_futex_exchange_defarg_4() 0u
+    #define p99_futex_exchange_defarg_5() P99_FUTEX_MAX_WAITERS
 #endif
 
 /**
@@ -279,10 +278,8 @@ P00_FUTEX_INLINE(p99_futex_exchange) unsigned p99_futex_exchange(p99_futex volat
  **
  ** @see P99_FUTEX_COMPARE_EXCHANGE for more detailed explanations
  **/
-P00_FUTEX_INLINE(p99_futex_wakeup)
-void p99_futex_wakeup(p99_futex volatile* p00_fut,
-                      unsigned p00_wmin, unsigned p00_wmax);
-
+P00_FUTEX_INLINE (p99_futex_wakeup)
+void p99_futex_wakeup (volatile p99_futex *p00_fut, unsigned p00_wmin, unsigned p00_wmax);
 
 /**
  ** @brief Unconditionally wait for futex @a p00_fut
@@ -294,10 +291,8 @@ void p99_futex_wakeup(p99_futex volatile* p00_fut,
  ** @remark Such a waiting thread will not be subject to spurious wake
  ** ups when receiving signals.
  **/
-P00_FUTEX_INLINE(p99_futex_wait)
-void p99_futex_wait(p99_futex volatile* p00_fut);
-
-
+P00_FUTEX_INLINE (p99_futex_wait)
+void p99_futex_wait (volatile p99_futex *p00_fut);
 
 #ifdef DOXYGEN
 /**
@@ -559,8 +554,8 @@ void p99_futex_wait(p99_futex volatile* p00_fut);
  ** }
  ** @endcode
  **/
-P00_DOCUMENT_IDENTIFIER_ARGUMENT(P99_FUTEX_COMPARE_EXCHANGE, 1)
-#define P99_FUTEX_COMPARE_EXCHANGE(FUTEX, ACT, EXPECTED, DESIRED, WAKEMIN, WAKEMAX)
+P00_DOCUMENT_IDENTIFIER_ARGUMENT (P99_FUTEX_COMPARE_EXCHANGE, 1)
+    #define P99_FUTEX_COMPARE_EXCHANGE(FUTEX, ACT, EXPECTED, DESIRED, WAKEMIN, WAKEMAX)
 #endif
 
 /**
@@ -568,10 +563,9 @@ P00_DOCUMENT_IDENTIFIER_ARGUMENT(P99_FUTEX_COMPARE_EXCHANGE, 1)
  **/
 
 #if (defined(__linux__) && !defined(NO_FUTEX)) || defined(DOXYGEN)
-#include "p99_futex_linux.h"
+    #include "p99_futex_linux.h"
 #else
-#include "p99_futex_c11.h"
+    #include "p99_futex_c11.h"
 #endif
-
 
 #endif

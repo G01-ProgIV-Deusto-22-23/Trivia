@@ -19,8 +19,8 @@
 /* See the License for the specific language governing permissions and          */
 /* limitations under the License.                                               */
 /*                                                                              */
-#ifndef     P99_NEW_H_
-# define    P99_NEW_H_
+#ifndef P99_NEW_H_
+#define P99_NEW_H_
 
 #include "p99_c99.h"
 #include "p99_int.h"
@@ -38,7 +38,7 @@
  ** @{
  **/
 
-P99_MACRO_END(dummy);
+P99_MACRO_END (dummy);
 
 /**
  ** @brief Zero out all bits in the object to which @a X points.
@@ -60,8 +60,8 @@ P99_MACRO_END(dummy);
  ** @see P99_MEMZERO for a macro that initializes to a default value
  ** that is guaranteed to correspond to the type.
  **/
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_PZERO, 0)
-#define P99_PZERO(X, N) (memset((X), 0, sizeof(X[0]) * N))
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_PZERO, 0)
+#define P99_PZERO(X, N) (memset ((X), 0, sizeof (X [0]) * N))
 
 /**
  ** @brief Zero out all bits in the object @a X.
@@ -74,65 +74,56 @@ P00_DOCUMENT_PERMITTED_ARGUMENT(P99_PZERO, 0)
  ** @see P99_MEMZERO for a macro that initializes to a default value
  ** that is guaranteed to correspond to the type.
  **/
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_TZERO, 0)
-#define P99_TZERO(X) (memset(&(X), 0, sizeof(X)))
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_TZERO, 0)
+#define P99_TZERO(X) (memset (&(X), 0, sizeof (X)))
 
-p99_inline
-unsigned char
-(*p00_memcpy(size_t p00_len, unsigned char (*p00_tar)[p00_len], unsigned char const (*p00_src)[p00_len]))[] {
-  memcpy(&(*p00_tar)[0], &(*p00_src)[0], p00_len);
-  return p00_tar;
+p99_inline unsigned char (
+    *p00_memcpy (size_t p00_len, unsigned char (*p00_tar) [p00_len], const unsigned char (*p00_src) [p00_len])
+) [] {
+    memcpy (&(*p00_tar) [0], &(*p00_src) [0], p00_len);
+    return p00_tar;
 }
 
-P00_DOCUMENT_TYPE_ARGUMENT(P99_ASUB, 1)
-#define P99_ASUB(X, T, N, L)                                   \
-(                                                              \
- (T(*)[L                                                       \
-       /* check for validity                                   \
-          / !!(L && (sizeof(T[N+L]) < sizeof(*X)))*/])         \
- (P99_LVAL(T*, &((*X)[N])))                                    \
-)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_ASUB, 1)
+#define P99_ASUB(X, T, N, L)                                                                                           \
+    ((T (*) [L /* check for validity                                                                                   \
+                  / !!(L && (sizeof(T[N+L]) < sizeof(*X)))*/                                                           \
+    ]) (P99_LVAL (T *, &((*X) [N]))))
 
-p99_inline
-unsigned char
-(*p00_initialize(size_t p00_len, unsigned char (*p00_base)[p00_len], size_t p00_init))[] {
-  for (; (p00_init * 2u) <= p00_len; p00_init *= 2u) {
-    p00_memcpy(p00_init,
-               P99_ASUB(p00_base, unsigned char, p00_init, p00_init),
-               P99_ASUB(p00_base, unsigned char const, 0, p00_init));
-  }
-  if (p00_len > p00_init) {
-    p00_len -= p00_init;
-    p00_memcpy(p00_len,
-               P99_ASUB(p00_base, unsigned char, p00_init, p00_len),
-               P99_ASUB(p00_base, unsigned char const, 0, p00_len));
-  }
-  return p00_base;
+p99_inline unsigned char (*p00_initialize (size_t p00_len, unsigned char (*p00_base) [p00_len], size_t p00_init)) [] {
+    for (; (p00_init * 2u) <= p00_len; p00_init *= 2u) {
+        p00_memcpy (
+            p00_init, P99_ASUB (p00_base, unsigned char, p00_init, p00_init),
+            P99_ASUB (p00_base, const unsigned char, 0, p00_init)
+        );
+    }
+    if (p00_len > p00_init) {
+        p00_len -= p00_init;
+        p00_memcpy (
+            p00_len, P99_ASUB (p00_base, unsigned char, p00_init, p00_len),
+            P99_ASUB (p00_base, const unsigned char, 0, p00_len)
+        );
+    }
+    return p00_base;
 }
 
 #if ((P99_COMPILER & P99_COMPILER_GNU) && (P99_GCC_VERSION < 40704UL))
-# define P00_ABLESS_BUG 1
+    #define P00_ABLESS_BUG 1
 #endif
 
 #if defined(P99_TYPEOF) && !P00_ABLESS_BUG
-# define P00_ABLESS(X, ...) ((P99_TYPEOF(__VA_ARGS__)*restrict)(unsigned char(*)[sizeof(__VA_ARGS__)]){ X })
+    #define P00_ABLESS(X, ...) ((P99_TYPEOF (__VA_ARGS__) *restrict) (unsigned char (*) [sizeof (__VA_ARGS__)]) { X })
 #else
-# define P00_ABLESS(X, ...) ((void*restrict)(unsigned char(*)[sizeof(__VA_ARGS__)]){ X })
+    #define P00_ABLESS(X, ...) ((void *restrict) (unsigned char (*) [sizeof (__VA_ARGS__)]) { X })
 #endif
 
-#define P00_APLAIN(X, N) ((unsigned char(*)[N])(X))
-#define P99_APLAIN(...)                                        \
-(P99_IF_LT_2(P99_NARG(__VA_ARGS__))                            \
- (P00_APLAIN(__VA_ARGS__, sizeof(*__VA_ARGS__)))               \
- (P00_APLAIN(__VA_ARGS__))                                     \
- )
+#define P00_APLAIN(X, N) ((unsigned char (*) [N]) (X))
+#define P99_APLAIN(...)                                                                                                \
+    (P99_IF_LT_2 (P99_NARG (__VA_ARGS__)) (P00_APLAIN (__VA_ARGS__, sizeof (*__VA_ARGS__))) (P00_APLAIN (__VA_ARGS__)))
 
-p99_inline
-void* p00_memset(void* p00_tar, void const* p00_src, size_t p00_size, size_t p00_nb) {
-  p00_initialize(p00_nb * p00_size,
-                 P00_APLAIN(memcpy(p00_tar, p00_src, p00_size), p00_size),
-                 p00_size);
-  return p00_tar;
+p99_inline void *p00_memset (void *p00_tar, const void *p00_src, size_t p00_size, size_t p00_nb) {
+    p00_initialize (p00_nb * p00_size, P00_APLAIN (memcpy (p00_tar, p00_src, p00_size), p00_size), p00_size);
+    return p00_tar;
 }
 
 /**
@@ -148,8 +139,8 @@ void* p00_memset(void* p00_tar, void const* p00_src, size_t p00_size, size_t p00
  ** @warning @c *TA must be large enough to hold the @a N copies,
  ** otherwise the behavior is undefined.
  **/
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_MEMSET, 1)
-#define P99_MEMSET(TA, SO, N) p00_memset((TA), (void const*)&(SO), sizeof(SO), N)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_MEMSET, 1)
+#define P99_MEMSET(TA, SO, N) p00_memset ((TA), (void const *) &(SO), sizeof (SO), N)
 
 /**
  ** @brief A type oriented replacement for @c memset with argument @c 0.
@@ -161,8 +152,8 @@ P00_DOCUMENT_PERMITTED_ARGUMENT(P99_MEMSET, 1)
  ** @warning @c *TA must be large enough to hold the @a N copies,
  ** otherwise the behavior is undefined.
  **/
-P00_DOCUMENT_TYPE_ARGUMENT(P99_MEMZERO, 0)
-#define P99_MEMZERO(T, TA, N) p00_memset((TA), (void const*)&P99_LVAL(const T), sizeof(T), N)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_MEMZERO, 0)
+#define P99_MEMZERO(T, TA, N) p00_memset ((TA), (void const *) &P99_LVAL (const T), sizeof (T), N)
 
 /**
  ** @}
@@ -188,27 +179,24 @@ P00_DOCUMENT_TYPE_ARGUMENT(P99_MEMZERO, 0)
  ** particular, as in the second example, when you might have a dynamic
  ** data structure with pointers.
  **/
-#define P99_MALLOC(X) malloc(sizeof(X))
+#define P99_MALLOC(X) malloc (sizeof (X))
 
+#define P00_VMALLOC(X) P00_ABLESS (P99_MALLOC (X), X)
 
-#define P00_VMALLOC(X) P00_ABLESS(P99_MALLOC(X), X)
+#define P00_INITIALIZE(X, L)                                                                                           \
+    p00_initialize (sizeof (*X), P00_APLAIN (memcpy ((X), (L), sizeof (*L)), sizeof (*X)), sizeof (*L))
 
-#define P00_INITIALIZE(X, L)                                         \
-p00_initialize(sizeof(*X),                                           \
-               P00_APLAIN(memcpy((X), (L), sizeof(*L)), sizeof(*X)), \
-               sizeof(*L))
+P00_DOCUMENT_WARN_VLA_ARGUMENT (P99_INITIALIZE, 0)
+P00_DOCUMENT_WARN_VLA_ARGUMENT (P99_INITIALIZE, 1)
+#define P99_INITIALIZE(X, L) P00_ABLESS (P00_INITIALIZE ((X), (L)), *(X))
 
-P00_DOCUMENT_WARN_VLA_ARGUMENT(P99_INITIALIZE, 0)
-P00_DOCUMENT_WARN_VLA_ARGUMENT(P99_INITIALIZE, 1)
-#define P99_INITIALIZE(X, L) P00_ABLESS(P00_INITIALIZE((X), (L)), *(X))
+#define P00_ALLOC(X, L)                                                                                                \
+    P00_ABLESS (                                                                                                       \
+        p00_initialize (sizeof (X), P00_APLAIN (memcpy (P99_MALLOC (X), (&L), sizeof (L)), sizeof (X)), sizeof (L)),   \
+        (X)                                                                                                            \
+    )
 
-#define P00_ALLOC(X, L)                                                                  \
-P00_ABLESS(p00_initialize(sizeof(X),                                                     \
-                          P00_APLAIN(memcpy(P99_MALLOC(X), (&L), sizeof(L)), sizeof(X)), \
-                          sizeof(L)),                                                    \
-           (X))
-
-#define P99_ALLOC(...) P99_IF_GT(P99_NARG(__VA_ARGS__), 1)(P00_ALLOC(__VA_ARGS__))(P00_VMALLOC(__VA_ARGS__))
+#define P99_ALLOC(...) P99_IF_GT (P99_NARG (__VA_ARGS__), 1) (P00_ALLOC (__VA_ARGS__)) (P00_VMALLOC (__VA_ARGS__))
 
 /**
  ** @brief A type oriented @c realloc wrapper
@@ -226,15 +214,14 @@ P00_ABLESS(p00_initialize(sizeof(X),                                            
  ** not be used as a replacement for @c free, since the second
  ** argument can not be tricked to result in a size of 0.
  **/
-#define P99_REALLOC(X, T) realloc((X), sizeof(T))
+#define P99_REALLOC(X, T) realloc ((X), sizeof (T))
 
-p99_inline
-void* p00_calloc(void const* p00_src, size_t p00_size, size_t p00_nb) {
-  return p00_memset(malloc(p00_size*p00_nb), p00_src, p00_size, p00_nb);
+p99_inline void *p00_calloc (const void *p00_src, size_t p00_size, size_t p00_nb) {
+    return p00_memset (malloc (p00_size * p00_nb), p00_src, p00_size, p00_nb);
 }
 
-#define P00_CALLOC0(T, N) p00_calloc((void const*)&P99_LVAL(const T), sizeof(T), N)
-#define P00_CALLOC(...) P00_CALLOC0(__VA_ARGS__)
+#define P00_CALLOC0(T, N) p00_calloc ((void const *) &P99_LVAL (const T), sizeof (T), N)
+#define P00_CALLOC(...)   P00_CALLOC0 (__VA_ARGS__)
 
 #ifdef P00_DOXYGEN
 /**
@@ -265,19 +252,18 @@ void* p00_calloc(void const* p00_src, size_t p00_size, size_t p00_nb) {
  ** by an all-zero-bit object, this might or might not be different
  ** from using plain @c calloc.
  **/
-P00_DOCUMENT_TYPE_ARGUMENT(P99_CALLOC, 0)
-#define P99_CALLOC(T, N)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_CALLOC, 0)
+    #define P99_CALLOC(T, N)
 #else
-P00_DOCUMENT_TYPE_ARGUMENT(P99_CALLOC, 0)
-#define P99_CALLOC(...) P00_CALLOC(P99_CALL_DEFARG_LIST(P00_CALLOC, 2, __VA_ARGS__))
+P00_DOCUMENT_TYPE_ARGUMENT (P99_CALLOC, 0)
+    #define P99_CALLOC(...) P00_CALLOC (P99_CALL_DEFARG_LIST (P00_CALLOC, 2, __VA_ARGS__))
 #endif
 
 #define P00_CALLOC_defarg_1() 1
 
-#define P00_NEW(T) P99_PASTE2(T, _init)(P99_MALLOC(T))
+#define P00_NEW(T) P99_PASTE2 (T, _init) (P99_MALLOC (T))
 
-#define P00_NEW_ARGS(T, ...) P99_PASTE2(T, _init)(P99_MALLOC(T), __VA_ARGS__)
-
+#define P00_NEW_ARGS(T, ...) P99_PASTE2 (T, _init) (P99_MALLOC (T), __VA_ARGS__)
 
 /**
  ** @brief Allocate an element of type @c T as given by the first
@@ -312,7 +298,7 @@ P00_DOCUMENT_TYPE_ARGUMENT(P99_CALLOC, 0)
  ** @see P99_CALL_DEFARG if you want to provide default arguments to
  ** the @c T_init function.
  **/
-#define P99_NEW(...) P99_IF_LT(P99_NARG(__VA_ARGS__), 2)(P00_NEW(__VA_ARGS__))(P00_NEW_ARGS(__VA_ARGS__))
+#define P99_NEW(...) P99_IF_LT (P99_NARG (__VA_ARGS__), 2) (P00_NEW (__VA_ARGS__)) (P00_NEW_ARGS (__VA_ARGS__))
 
 #ifdef P00_DOXYGEN
 /**
@@ -325,63 +311,62 @@ P00_DOCUMENT_TYPE_ARGUMENT(P99_CALLOC, 0)
  ** Other arguments after the type argument are interpreted as storage
  ** class specifiers for the functions. Default is ::p99_inline.
  **/
-P00_DOCUMENT_TYPE_ARGUMENT(P99_DECLARE_DELETE, 0)
-#define P99_DECLARE_DELETE(T)                                                                             \
-/*! @brief Operator @c delete for type T   **/                                                            \
-/*! @attention @ref T ## _destroy  is supposed to exist and to be callable with just one T * argument **/ \
-/*! @attention @a el show have been allocated through P99_NEW */                                          \
-/*! @see P99_NEW */                                                                                       \
-/*! @related T */                                                                                         \
-  void P99_PASTE2(T, _delete)(T const*p00_el) { }
+P00_DOCUMENT_TYPE_ARGUMENT (P99_DECLARE_DELETE, 0)
+    #define P99_DECLARE_DELETE(T)                                                                                      \
+        /*! @brief Operator @c delete for type T   **/                                                                 \
+        /*! @attention @ref T ## _destroy  is supposed to exist and to be callable with just one T * argument **/      \
+        /*! @attention @a el show have been allocated through P99_NEW */                                               \
+        /*! @see P99_NEW */                                                                                            \
+        /*! @related T */                                                                                              \
+        void P99_PASTE2 (T, _delete) (T const *p00_el) {}
 
-#define P99_DEFINE_DELETE(T) P99_INSTANTIATE(void, P99_PASTE2(T, _delete), T const*)
+    #define P99_DEFINE_DELETE(T) P99_INSTANTIATE (void, P99_PASTE2 (T, _delete), T const *)
 #else
-P00_DOCUMENT_TYPE_ARGUMENT(P99_DECLARE_DELETE, 0)
-#define P99_DECLARE_DELETE(...)                                \
-P99_IF_LT(P99_NARG(__VA_ARGS__), 2)                            \
-(P00_DECLARE_DELETE(__VA_ARGS__, p99_inline))                  \
-(P00_DECLARE_DELETE(__VA_ARGS__))                              \
-P99_MACRO_END(P99_DECLARE_DELETE)
-#define P99_DEFINE_DELETE(...) P00_DEFINE_DELETE(__VA_ARGS__,)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_DECLARE_DELETE, 0)
+    #define P99_DECLARE_DELETE(...)                                                                                    \
+        P99_IF_LT (P99_NARG (__VA_ARGS__), 2)                                                                          \
+        (P00_DECLARE_DELETE (__VA_ARGS__, p99_inline)) (P00_DECLARE_DELETE (__VA_ARGS__))                              \
+            P99_MACRO_END (P99_DECLARE_DELETE)
+    #define P99_DEFINE_DELETE(...) P00_DEFINE_DELETE (__VA_ARGS__, )
 #endif
 
-#define P00_DECLARE_DELETE(T, ...)                             \
-__VA_ARGS__                                                    \
-void P99_PASTE2(T, _delete)(T const*p00_el) {                  \
-  if (p00_el) {                                                \
-    T* p00_e = (T*)p00_el;                                     \
-    P99_PASTE2(T, _destroy)(p00_e);                            \
-    free((void*)p00_e);                                        \
-  }                                                            \
-}
+#define P00_DECLARE_DELETE(T, ...)                                                                                     \
+    __VA_ARGS__                                                                                                        \
+    void P99_PASTE2 (T, _delete) (T const *p00_el) {                                                                   \
+        if (p00_el) {                                                                                                  \
+            T *p00_e = (T *) p00_el;                                                                                   \
+            P99_PASTE2 (T, _destroy) (p00_e);                                                                          \
+            free ((void *) p00_e);                                                                                     \
+        }                                                                                                              \
+    }
 
-#define P00_DEFINE_DELETE(T, ...) P99_INSTANTIATE(void, P99_PASTE2(T, _delete), T const*)
+#define P00_DEFINE_DELETE(T, ...) P99_INSTANTIATE (void, P99_PASTE2 (T, _delete), T const *)
 
 P99_CONST_FUNCTION
-p99_inline
-size_t p99_maxof(size_t p00_m, size_t p00_n) {
-  return p00_m < p00_n ? p00_n : p00_m;
+p99_inline size_t p99_maxof (size_t p00_m, size_t p00_n) {
+    return p00_m < p00_n ? p00_n : p00_m;
 }
 
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_MINOF, 0)
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_MINOF, 1)
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_MINOF, 0)
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_MINOF, 1)
 #define P99_MAXOF(A, B) ((A) < (B) ? (B) : (A))
 
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_MAXOF, 0)
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_MAXOF, 1)
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_MAXOF, 0)
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_MAXOF, 1)
 #define P99_MINOF(A, B) ((A) < (B) ? (A) : (B))
 
-#define P00_SIZEOF2(T, ...) sizeof(P99_TOKJOIN(., P99_LVAL(const T), __VA_ARGS__))
+#define P00_SIZEOF2(T, ...) sizeof (P99_TOKJOIN (., P99_LVAL (const T), __VA_ARGS__))
 
 #ifdef P00_DOXYGEN
-/**
- ** @brief Determine the size of field @a F in structure @a T.
- **
- ** Additional parameters in the argument list are joined to @a F with dots.
- **/
-#define P99_SIZEOF(T, F, ...) P99_IF_EQ(P99_NARG(__VA_ARGS__), 1)(sizeof(__VA_ARGS__))(P00_SIZEOF2(__VA_ARGS__))
+    /**
+     ** @brief Determine the size of field @a F in structure @a T.
+     **
+     ** Additional parameters in the argument list are joined to @a F with dots.
+     **/
+    #define P99_SIZEOF(T, F, ...)                                                                                      \
+        P99_IF_EQ (P99_NARG (__VA_ARGS__), 1) (sizeof (__VA_ARGS__)) (P00_SIZEOF2 (__VA_ARGS__))
 #else
-#define P99_SIZEOF(...) P99_IF_EQ(P99_NARG(__VA_ARGS__), 1)(sizeof(__VA_ARGS__))(P00_SIZEOF2(__VA_ARGS__))
+    #define P99_SIZEOF(...) P99_IF_EQ (P99_NARG (__VA_ARGS__), 1) (sizeof (__VA_ARGS__)) (P00_SIZEOF2 (__VA_ARGS__))
 #endif
 
 /**
@@ -443,21 +428,21 @@ P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_MAXOF, 1)
  ** @brief For a pointer @a P to a flexible @c struct member @a F in
  ** @c struct T find the start address of the container.
  **/
-P00_DOCUMENT_TYPE_ARGUMENT(P99_FHEAD, 0)
-#define P99_FHEAD(T, F, P) ((T*)(((char*)P) - offsetof(T, F)))
+P00_DOCUMENT_TYPE_ARGUMENT (P99_FHEAD, 0)
+#define P99_FHEAD(T, F, P) ((T *) (((char *) P) - offsetof (T, F)))
 
 /**
  ** @def P99_FSIZEOF
  ** @brief Compute the size for an instance of @c struct T that is
  ** able to hold @a N items in flexible @c struct member @a F.
  **/
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_FSIZEOF, 2)
-P00_DOCUMENT_TYPE_ARGUMENT(P99_FSIZEOF, 0)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FSIZEOF, 1)
-#define P99_FSIZEOF(T, F, N) P99_MAXOF(sizeof(T), offsetof(T, F) + P99_SIZEOF(T, F[0]) * N)
-#define P00_FSIZEOF(T, F, M) p99_maxof(sizeof(T), offsetof(T, F) + M)
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_FSIZEOF, 2)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_FSIZEOF, 0)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_FSIZEOF, 1)
+#define P99_FSIZEOF(T, F, N) P99_MAXOF (sizeof (T), offsetof (T, F) + P99_SIZEOF (T, F [0]) * N)
+#define P00_FSIZEOF(T, F, M) p99_maxof (sizeof (T), offsetof (T, F) + M)
 
-#define P00_FREALLOC(P, T, F, M) realloc(P, P00_FSIZEOF(T, F, M))
+#define P00_FREALLOC(P, T, F, M) realloc (P, P00_FSIZEOF (T, F, M))
 /**
  ** @def P99_FREALLOC
  ** @brief Reallocate an instance @a P of @c struct T such that it is
@@ -469,10 +454,10 @@ P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FSIZEOF, 1)
  ** can be moved to a different location, and therefore the return
  ** value must always be checked.
  **/
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_FREALLOC, 3)
-P00_DOCUMENT_TYPE_ARGUMENT(P99_FREALLOC, 1)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FREALLOC, 2)
-#define P99_FREALLOC(P, T, F, N) realloc(P, P99_FSIZEOF(T, F, N))
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_FREALLOC, 3)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_FREALLOC, 1)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_FREALLOC, 2)
+#define P99_FREALLOC(P, T, F, N) realloc (P, P99_FSIZEOF (T, F, N))
 
 /**
  ** @def P99_FMALLOC
@@ -481,11 +466,11 @@ P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FREALLOC, 2)
  **
  ** No initialization of the instance is performed.
  **/
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_FMALLOC, 2)
-P00_DOCUMENT_TYPE_ARGUMENT(P99_FMALLOC, 0)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FMALLOC, 1)
-#define P99_FMALLOC(T, F, N) malloc(P99_FSIZEOF(T, F, N))
-#define P00_FMALLOC(T, F, M) malloc(P00_FSIZEOF(T, F, M))
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_FMALLOC, 2)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_FMALLOC, 0)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_FMALLOC, 1)
+#define P99_FMALLOC(T, F, N) malloc (P99_FSIZEOF (T, F, N))
+#define P00_FMALLOC(T, F, M) malloc (P00_FSIZEOF (T, F, M))
 /**
  ** @def P99_FCALLOC
  ** @brief Allocate an instance of @c struct T that is able to hold @a
@@ -493,11 +478,11 @@ P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FMALLOC, 1)
  **
  ** Initialization of the instance is performed as for @c calloc.
  **/
-P00_DOCUMENT_MULTIPLE_ARGUMENT(P99_FCALLOC, 2)
-P00_DOCUMENT_TYPE_ARGUMENT(P99_FCALLOC, 0)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FCALLOC, 1)
-#define P99_FCALLOC(T, F, N) calloc(P99_FSIZEOF(T, F, N),1)
-#define P00_FCALLOC(T, F, M) calloc(P00_FSIZEOF(T, F, M),1)
+P00_DOCUMENT_MULTIPLE_ARGUMENT (P99_FCALLOC, 2)
+P00_DOCUMENT_TYPE_ARGUMENT (P99_FCALLOC, 0)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_FCALLOC, 1)
+#define P99_FCALLOC(T, F, N) calloc (P99_FSIZEOF (T, F, N), 1)
+#define P00_FCALLOC(T, F, M) calloc (P00_FSIZEOF (T, F, M), 1)
 
 /**
  ** @}
@@ -507,4 +492,4 @@ P00_DOCUMENT_PERMITTED_ARGUMENT(P99_FCALLOC, 1)
  ** @}
  **/
 
-#endif      /* !P99_NEW_H_ */
+#endif /* !P99_NEW_H_ */

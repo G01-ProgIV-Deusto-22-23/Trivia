@@ -11,6 +11,8 @@ static char START_SERVER_COMMAND [] = "$TRIVIA_INIT_SERVER";
 
 static _Atomic server_status_t *SERVER_STATUS = NULL;
 
+static cmd_t PREALLOC_RECV_BUF [MAX_RECV];
+
 #ifdef _WIN32
 static HANDLE TERM_THREAD = NULL;
 static HANDLE MAP_FILE    = NULL;
@@ -26,6 +28,10 @@ static
 
 const char *get_start_server_command (void) {
     return START_SERVER_COMMAND;
+}
+
+cmd_t *get_default_recv_buf (void) {
+    return PREALLOC_RECV_BUF;
 }
 
 static void unmap_status (void) {
@@ -60,6 +66,11 @@ static void unmap_status (void) {
 
 server_status_t get_server_status (void) {
     if (!SERVER_STATUS) {
+        const cmd_t cmd = { .cmd = cmd_packet };
+        for (size_t i                   = 0; i < sizeof (PREALLOC_RECV_BUF) / sizeof (*PREALLOC_RECV_BUF);
+             *(PREALLOC_RECV_BUF + i++) = cmd)
+            ;
+
 #ifdef _WIN32
         if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
             error ("could not open the shared memory resource.");
@@ -139,6 +150,8 @@ server_status_t get_server_status (void) {
                                       : server_off
                                 : server_on)
     );
+
+    disconnect_server (sock);
 
 #ifdef _WIN32
     FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
@@ -503,14 +516,33 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         )
             continue;
 
+        message ("client established a connection.");
+
+#ifdef _WIN32
+        if (ioctlsocket (client_sock, FIONBIO, &(u_long) { 1 }))
+            warning ("could not make the socket non-blocking.");
+#else
+        {
+            const int opts = fcntl (client_sock, F_GETFL, NULL);
+            if (opts == -1)
+                warning ("could not get the file status flags of the socket.");
+
+            if (fcntl (sock, F_SETFL, max (opts, 0) | O_NONBLOCK) == -1)
+                warning ("could not make the socket non-blocking.");
+        }
+#endif
+
         if ((recvlen = recv (client_sock, (void *) &cmd, sizeof (cmd_t), 0)) ==
 #ifdef _WIN32
             SOCKET_ERROR
 #else
             -1
 #endif
-        )
+        ) {
+            warning ("could not receive any data from the client.");
+
             continue;
+        }
 
         if (!recvlen) {
             message ("the client closed the connection");
@@ -525,16 +557,32 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         }
 
         if (cmd.cmd == cmd_game) {
-            send (
-                client_sock, (packet (&cmd, init_game (cmd.info.game, 0), 0, false), (void *) &cmd), sizeof (cmd_t), 0
-            );
+            if (send (
+                    client_sock, (packet (&cmd, init_game (cmd.info.game, 0), 0, false), (void *) &cmd), sizeof (cmd_t),
+                    0
+                ) ==
+#ifdef _WIN32
+                SOCKET_ERROR
+#else
+                -1
+#endif
+            )
+                warning ("could not send the details of the game to the client.");
+
+            disconnect_server (client_sock);
 
             continue;
         }
 
-    end:
         message ("kill command received.");
-        send (client_sock, (cmd = success_command (), (void *) &cmd), sizeof (cmd_t), 0);
+        if (send (client_sock, (cmd = success_command (), (void *) &cmd), sizeof (cmd_t), 0) ==
+#ifdef _WIN32
+            SOCKET_ERROR
+#else
+            -1
+#endif
+        )
+            warning ("could not send the command feedback to the client.");
 
         disconnect_server (client_sock);
         disconnect_server (sock);
@@ -600,6 +648,11 @@ void start_server (void) {
         return;
 
     if (!SERVER_STATUS) {
+        const cmd_t cmd = { .cmd = cmd_packet };
+        for (size_t i                   = 0; i < sizeof (PREALLOC_RECV_BUF) / sizeof (*PREALLOC_RECV_BUF);
+             *(PREALLOC_RECV_BUF + i++) = cmd)
+            ;
+
         int fd;
         if (sprintf (SHARED_MEMORY_NAME, _SHARED_MEMORY_NAME "%d", SERVER_PORT) == -1)
             error ("could not open the shared memory resource.");
@@ -651,6 +704,8 @@ void start_server (void) {
         return;
     }
 
+    close_log_file ();
+
     if (sprintf (COMMAND, "%s%d", START_SERVER_COMMAND, SERVER_PORT) == -1 ||
         execvp (
             ({
@@ -667,7 +722,7 @@ void start_server (void) {
 }
 
 void stop_server (int port) {
-    send_server (NULL, port, kill_command ());
+    send_server (NULL, port, kill_command (), NULL, 0);
 }
 
 void restart_server (int port) {
@@ -798,7 +853,7 @@ impl_connect_server (const char *ip, int port, const char *prevf) {
         warning ("could make the socket reuse local addresses.");
 
 #ifdef _WIN32
-    if (ioctlsocket (s, FIONBIO, &(u_long) { 1 }))
+    if (ioctlsocket (sock, FIONBIO, &(u_long) { 1 }))
         warning ("could not make the socket non-blocking.");
 #else
     {
@@ -818,25 +873,30 @@ impl_connect_server (const char *ip, int port, const char *prevf) {
         -1
 #endif
     ) {
-        message ("waiting for connection (" stringify (CONNECT_WAIT_TIMEOUT) " milliseconds max).");
-#ifdef _WIN32
-        if (select ())
-#else
-        if (errno != EINPROGRESS || poll (&(struct pollfd) { .fd = sock }, 1, CONNECT_WAIT_TIMEOUT) <= 0)
-#endif
+        message ("waiting for connection (" stringify (CONNECT_TIMEOUT) " milliseconds max).");
+
         {
-
-            if (strcmp (prevf, stringify (get_server_status)))
-                warning ("could not connect to the server.");
-            disconnect_server (sock);
-
-            return
 #ifdef _WIN32
-                INVALID_SOCKET
+            int r;
+            if (!(r = WSAPoll (&(WSAPOLLFD) { .fd = sock }, 1, CONNECT_TIMEOUT)) || r == SOCKET_ERROR)
 #else
-                -1
+            struct pollfd pollfd = { .fd = sock, .events = POLLRDHUP };
+            if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
 #endif
-                ;
+            {
+                if (strcmp (prevf, stringify (get_server_status)))
+                    warning ("could not connect to the server.");
+                disconnect_server (sock);
+
+                return
+#ifdef _WIN32
+                    INVALID_SOCKET
+#else
+                    -1
+#endif
+                    ;
+            }
         }
     }
 
@@ -950,7 +1010,9 @@ void disconnect_server (const
 #endif
 }
 
-cmd_t send_server (const char *ip, int port, const cmd_t cmd) {
+cmd_t send_server (
+    const char *const restrict ip, const int port, const cmd_t cmd, cmd_t *const restrict recv_buf, const size_t recv_sz
+) {
 #ifdef _WIN32
     SOCKET
 #else
@@ -1002,11 +1064,58 @@ cmd_t send_server (const char *ip, int port, const cmd_t cmd) {
         -1
 #endif
     ) {
-        warning ("could not get a response from the server.");
-        disconnect_server (socket);
+        message ("waiting for packet receival (" stringify (RECV_TIMEOUT) " milliseconds max).");
 
-        return error_command (CMD_ERROR_RECV);
+        {
+#ifdef _WIN32
+            int r;
+            if (!(r = WSAPoll (&(WSAPOLLFD) { .fd = socket }, 1, RECV_TIMEOUT)) || r == SOCKET_ERROR)
+#else
+            struct pollfd pollfd = { .fd = socket, .events = POLLIN | POLLPRI };
+            if (errno != EINPROGRESS || poll (&pollfd, 1, RECV_TIMEOUT) < 0 || !(pollfd.revents & (POLLIN | POLLPRI)))
+#endif
+            {
+                warning ("could not get a response from the server.");
+                disconnect_server (socket);
+
+                return error_command (CMD_ERROR_RECV);
+            }
+        }
     }
+
+    if (resp.cmd == cmd_packet_cont && recv_buf) {
+        for (size_t i = 0; i < recv_sz;) {
+            if (recv (socket, recv_buf + i++, sizeof (cmd_t), 0) ==
+#ifdef _WIN32
+                SOCKET_ERROR
+#else
+                -1
+#endif
+            ) {
+                message ("waiting for packet receival (" stringify (RECV_TIMEOUT) " milliseconds max).");
+
+#ifdef _WIN32
+                {
+                    int r;
+                    if (!(r = WSAPoll (&(WSAPOLLFD) { .fd = socket }, 1, RECV_TIMEOUT)) || r == SOCKET_ERROR)
+#else
+                struct pollfd pollfd = { .fd = socket, .events = POLLIN | POLLPRI };
+                if (errno != EINPROGRESS || poll (&pollfd, 1, RECV_TIMEOUT) < 0 ||
+                    !(pollfd.revents & (POLLIN | POLLPRI)))
+#endif
+                    {
+                        warning ("could not receive a packet from the server");
+
+                        break;
+                    }
+#ifdef _WIN32
+                }
+#endif
+            }
+        }
+    }
+
+    disconnect_server (socket);
 
     return resp;
 }

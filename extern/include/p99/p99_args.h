@@ -19,8 +19,8 @@
 /* See the License for the specific language governing permissions and          */
 /* limitations under the License.                                               */
 /*                                                                              */
-#ifndef     P99_ARGS_H_
-# define    P99_ARGS_H_
+#ifndef P99_ARGS_H_
+#define P99_ARGS_H_
 
 /**
  ** @file
@@ -47,7 +47,7 @@
  ** the empty) argument
  ** @see P99_NARG for a macro that returns 0 if the list is empty
  **/
-#define P00_NARG(...) P00_NARG_1(__VA_ARGS__)
+#define P00_NARG(...) P00_NARG_1 (__VA_ARGS__)
 
 #define P00_IS__EQ__(...) ,
 
@@ -72,39 +72,34 @@
  ** The particular cases where X receives @c 0, @c 1 or a
  ** variable number of arguments should be fine.
  **/
-#define P99_IS_EMPTY(...)                                                 \
-P00_ISEMPTY(                                                              \
-            /* test if there is just one argument, that might be empty */ \
-             P99_HAS_COMMA(__VA_ARGS__),                                  \
-             /* test if P99_IS__EQ__ together with the argument           \
-                adds a comma */                                           \
-             P99_HAS_COMMA(P00_IS__EQ__ __VA_ARGS__),                     \
-             /* test if the argument together with a parenthesis          \
-                adds a comma */                                           \
-             P99_HAS_COMMA(__VA_ARGS__ (/*empty*/)),                      \
-             /* test if placing it between P99_IS__EQ__ and the           \
-                parenthesis adds a comma */                               \
-             P99_HAS_COMMA(P00_IS__EQ__ __VA_ARGS__ (/*empty*/))          \
-             )
+#define P99_IS_EMPTY(...)                                                                                              \
+    P00_ISEMPTY (                             /* test if there is just one argument, that might be empty */            \
+                 P99_HAS_COMMA (__VA_ARGS__), /* test if P99_IS__EQ__ together with the argument                       \
+                                                 adds a comma */                                                       \
+                 P99_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__), /* test if the argument together with a parenthesis         \
+                                                              adds a comma */                                          \
+                 P99_HAS_COMMA (__VA_ARGS__ (/*empty*/)),  /* test if placing it between P99_IS__EQ__ and the          \
+                                                              parenthesis adds a comma */                              \
+                 P99_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ (/*empty*/))                                                  \
+    )
 
-#define P00_ISEMPTY(_0, _1, _2, _3) P99_HAS_COMMA(P99_PASTE5(P00_IS_EMPTY_CASE_, _0, _1, _2, _3))
-#define P00_IS_EMPTY_CASE_0000 P00_IS_EMPTY_CASE_0000
-#define P00_IS_EMPTY_CASE_0001 ,
-#define P00_IS_EMPTY_CASE_0010 P00_IS_EMPTY_CASE_0010
-#define P00_IS_EMPTY_CASE_0011 P00_IS_EMPTY_CASE_0011
-#define P00_IS_EMPTY_CASE_0100 P00_IS_EMPTY_CASE_0100
-#define P00_IS_EMPTY_CASE_0101 P00_IS_EMPTY_CASE_0101
-#define P00_IS_EMPTY_CASE_0110 P00_IS_EMPTY_CASE_0110
-#define P00_IS_EMPTY_CASE_0111 P00_IS_EMPTY_CASE_0111
-#define P00_IS_EMPTY_CASE_1000 P00_IS_EMPTY_CASE_1000
-#define P00_IS_EMPTY_CASE_1001 P00_IS_EMPTY_CASE_1001
-#define P00_IS_EMPTY_CASE_1010 P00_IS_EMPTY_CASE_1010
-#define P00_IS_EMPTY_CASE_1011 P00_IS_EMPTY_CASE_1011
-#define P00_IS_EMPTY_CASE_1100 P00_IS_EMPTY_CASE_1100
-#define P00_IS_EMPTY_CASE_1101 P00_IS_EMPTY_CASE_1101
-#define P00_IS_EMPTY_CASE_1110 P00_IS_EMPTY_CASE_1110
-#define P00_IS_EMPTY_CASE_1111 P00_IS_EMPTY_CASE_1111
-
+#define P00_ISEMPTY(_0, _1, _2, _3) P99_HAS_COMMA (P99_PASTE5 (P00_IS_EMPTY_CASE_, _0, _1, _2, _3))
+#define P00_IS_EMPTY_CASE_0000      P00_IS_EMPTY_CASE_0000
+#define P00_IS_EMPTY_CASE_0001      ,
+#define P00_IS_EMPTY_CASE_0010      P00_IS_EMPTY_CASE_0010
+#define P00_IS_EMPTY_CASE_0011      P00_IS_EMPTY_CASE_0011
+#define P00_IS_EMPTY_CASE_0100      P00_IS_EMPTY_CASE_0100
+#define P00_IS_EMPTY_CASE_0101      P00_IS_EMPTY_CASE_0101
+#define P00_IS_EMPTY_CASE_0110      P00_IS_EMPTY_CASE_0110
+#define P00_IS_EMPTY_CASE_0111      P00_IS_EMPTY_CASE_0111
+#define P00_IS_EMPTY_CASE_1000      P00_IS_EMPTY_CASE_1000
+#define P00_IS_EMPTY_CASE_1001      P00_IS_EMPTY_CASE_1001
+#define P00_IS_EMPTY_CASE_1010      P00_IS_EMPTY_CASE_1010
+#define P00_IS_EMPTY_CASE_1011      P00_IS_EMPTY_CASE_1011
+#define P00_IS_EMPTY_CASE_1100      P00_IS_EMPTY_CASE_1100
+#define P00_IS_EMPTY_CASE_1101      P00_IS_EMPTY_CASE_1101
+#define P00_IS_EMPTY_CASE_1110      P00_IS_EMPTY_CASE_1110
+#define P00_IS_EMPTY_CASE_1111      P00_IS_EMPTY_CASE_1111
 
 #define P00_NARG_EMPTY_1(VAL) 0
 #define P00_NARG_EMPTY_0(VAL) VAL
@@ -117,15 +112,13 @@ P00_ISEMPTY(                                                              \
  **
  ** @see P00_NARG for a macro in which an empty list is considered to have 1 argument.
  **/
-#define P99_NARG(...) P00_NARG__1(P99_IS_EMPTY(__VA_ARGS__), P00_NARG(__VA_ARGS__))
-#define P00_NARG__1(B, VAL) P00_NARG__2(P99_PASTE2(P00_NARG_EMPTY_, B), VAL)
-#define P00_NARG__2(B, VAL) B(VAL)
-
+#define P99_NARG(...)       P00_NARG__1 (P99_IS_EMPTY (__VA_ARGS__), P00_NARG (__VA_ARGS__))
+#define P00_NARG__1(B, VAL) P00_NARG__2 (P99_PASTE2 (P00_NARG_EMPTY_, B), VAL)
+#define P00_NARG__2(B, VAL) B (VAL)
 
 /**
  ** @}
  **/
-
 
 /**
  ** @addtogroup preprocessor_text
@@ -142,16 +135,16 @@ P00_ISEMPTY(                                                              \
  **
  ** For a list of predefined tokens for which this is implemented see @ref preprocessor_text
  **/
-#define P99_TOK_EQ(TOK, ...)  P00_TOK_EQ_(P99_PASTE3(P00_IS_, TOK, _EQ_), __VA_ARGS__)
-#define P00_TOK_EQ_(MAC, ...)  P00_TOK_EQ__(MAC, __VA_ARGS__)
-#define P00_TOK_EQ__(MAC, ...) P99_HAS_COMMA(P99_PASTE2(P00_TOK_EQ_, P00_NARG(MAC ## __VA_ARGS__ (~) MAC ## __VA_ARGS__))(~))
+#define P99_TOK_EQ(TOK, ...)  P00_TOK_EQ_ (P99_PASTE3 (P00_IS_, TOK, _EQ_), __VA_ARGS__)
+#define P00_TOK_EQ_(MAC, ...) P00_TOK_EQ__ (MAC, __VA_ARGS__)
+#define P00_TOK_EQ__(MAC, ...)                                                                                         \
+    P99_HAS_COMMA (P99_PASTE2 (P00_TOK_EQ_, P00_NARG (MAC##__VA_ARGS__ (~) MAC##__VA_ARGS__)) (~))
 
 #define P00_TOK_EQ_0(...) ~
 #define P00_TOK_EQ_1(...) ~
 #define P00_TOK_EQ_2(...) ,
 #define P00_TOK_EQ_3(...) ~
 #define P00_TOK_EQ_4(...) ~
-
 
 /**
  ** @}
@@ -215,7 +208,7 @@ P00_ISEMPTY(                                                              \
  **/
 #define P99_VA_ARGS(X) size_t X /*!< the number of arguments that follow */, ...
 
-#define P00_FSYMB(NAME) P99_PASTE5(NAME, _f, sy, mb, _)
+#define P00_FSYMB(NAME) P99_PASTE5 (NAME, _f, sy, mb, _)
 
 /**
  ** @brief Mangle @a NAME
@@ -223,7 +216,7 @@ P00_ISEMPTY(                                                              \
  ** This should only be used in declaration and definition of the
  ** function that is hidden behind the macro @a NAME.
  **/
-#define P99_FSYMB(NAME) P00_FSYMB(NAME)
+#define P99_FSYMB(NAME) P00_FSYMB (NAME)
 
 /**
  ** @brief Meta-macro to generate calls to functions with variable
@@ -234,8 +227,7 @@ P00_ISEMPTY(                                                              \
  ** the list.
  ** @see P99_VA_ARGS
  **/
-#define P99_LENGTH_VA_ARG(...) ((size_t)P99_NARG(__VA_ARGS__)), __VA_ARGS__
-
+#define P99_LENGTH_VA_ARG(...) ((size_t) P99_NARG (__VA_ARGS__)), __VA_ARGS__
 
 /**
  ** @brief Helper macro to declare a variable length parameter list.
@@ -282,13 +274,11 @@ P00_ISEMPTY(                                                              \
  ** @see P99_VA_ARGS
  ** @see P99_FSYMB
  **/
-#define P99_LENGTH_ARR_ARG(T, ...) ((size_t)P99_NARG(__VA_ARGS__)), (T[]){ __VA_ARGS__ }
-
+#define P99_LENGTH_ARR_ARG(T, ...)                                                                                     \
+    ((size_t) P99_NARG (__VA_ARGS__)), (T []) { __VA_ARGS__ }
 
 /**
  ** @}
  **/
 
-
-
-#endif      /* !P99_ARGS_H_ */
+#endif /* !P99_ARGS_H_ */

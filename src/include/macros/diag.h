@@ -464,8 +464,9 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                      }) (),                                                                                                                 \
                                      ([] () {                                                                                                               \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                                                           \
-                                             return (DWORD) sizeof (".\033[0m") - 1;                                                                                \
-                                         return (DWORD) sizeof (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                             \
+                                             return (DWORD) sizeof (".\033[0m") - 1;                                                                        \
+                                         return (DWORD) sizeof (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) -                                        \
+                                                1;                                                                                                          \
                                      }) (),                                                                                                                 \
                                      NULL, NULL                                                                                                             \
                                  );                                                                                                                         \
@@ -478,8 +479,8 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                      }) (),                                                                                                                 \
                                      ([] () {                                                                                                               \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                                                           \
-                                             return (DWORD) sizeof (".") - 1;                                                                                       \
-                                         return (DWORD) sizeof (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                                    \
+                                             return (DWORD) sizeof (".") - 1;                                                                               \
+                                         return (DWORD) sizeof (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                            \
                                      }) (),                                                                                                                 \
                                      NULL, NULL                                                                                                             \
                                  );                                                                                                                         \
@@ -1066,7 +1067,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                  write (STDERR_FILENO, ": line ", sizeof (": line ") - 1), ({                                                   \
                      char     __error_line_digits__ [10];                                                                       \
                      uint32_t __error_line__      = (uint32_t) __LINE__;                                                        \
-                     uint32_t __error_decplaces__ = (uint32_t) decplaces (__LINE__);                                            \
+                     uint32_t __error_decplaces__ = (uint32_t) decplaces ((uint32_t) __LINE__);                                            \
                      for (uint32_t __error_iter__ = 1; __error_line__; __error_line__ /= 10)                                    \
                          *(__error_line_digits__ + __error_decplaces__ - __error_iter__++) =                                    \
                              (char) (__error_line__ % 10) + '0';                                                                \

@@ -29,19 +29,18 @@
 ** Last update Thu Oct 21 11:40:09 2010 Jens Gustedt
 */
 
-#ifndef     P99_SWAP_H_
-# define    P99_SWAP_H_
+#ifndef P99_SWAP_H_
+#define P99_SWAP_H_
 
 #include "p99_int.h"
 
-p99_inline
-void p00_swap2(void* p00_p0, void* p00_p1, size_t p00_size, void*restrict p00_t0, void*restrict p00_t1) {
-  if (p00_p0 != p00_p1) {
-    memcpy(p00_t0, p00_p0, p00_size);
-    memcpy(p00_t1, p00_p1, p00_size);
-    memcpy(p00_p1, p00_t0, p00_size);
-    memcpy(p00_p0, p00_t1, p00_size);
-  }
+p99_inline void p00_swap2 (void *p00_p0, void *p00_p1, size_t p00_size, void *restrict p00_t0, void *restrict p00_t1) {
+    if (p00_p0 != p00_p1) {
+        memcpy (p00_t0, p00_p0, p00_size);
+        memcpy (p00_t1, p00_p1, p00_size);
+        memcpy (p00_p1, p00_t0, p00_size);
+        memcpy (p00_p0, p00_t1, p00_size);
+    }
 }
 
 /**
@@ -52,23 +51,21 @@ void p00_swap2(void* p00_p0, void* p00_p1, size_t p00_size, void*restrict p00_t0
  ** all allocation is done on the stack.
  ** @see p99_swap1
  **/
-p99_inline
-void p99_swap2(void* p00_p0, void* p00_p1, size_t p00_size) {
-  if (p00_p0 != p00_p1) {
-    char* p00_t0 = malloc(2 * p00_size);
-    char* p00_t1 = p00_t0 + p00_size;
-    p00_swap2(p00_p0, p00_p1, p00_size, p00_t0, p00_t1);
-    free(p00_t0);
-  }
+p99_inline void p99_swap2 (void *p00_p0, void *p00_p1, size_t p00_size) {
+    if (p00_p0 != p00_p1) {
+        char *p00_t0 = malloc (2 * p00_size);
+        char *p00_t1 = p00_t0 + p00_size;
+        p00_swap2 (p00_p0, p00_p1, p00_size, p00_t0, p00_t1);
+        free (p00_t0);
+    }
 }
 
-p99_inline
-void p00_swap1(void* p00_p0, void* p00_p1, size_t p00_size, void*restrict p00_t0) {
-  if (p00_p0 != p00_p1) {
-    memcpy(p00_t0, p00_p0, p00_size);
-    memcpy(p00_p0, p00_p1, p00_size);
-    memcpy(p00_p1, p00_t0, p00_size);
-  }
+p99_inline void p00_swap1 (void *p00_p0, void *p00_p1, size_t p00_size, void *restrict p00_t0) {
+    if (p00_p0 != p00_p1) {
+        memcpy (p00_t0, p00_p0, p00_size);
+        memcpy (p00_p0, p00_p1, p00_size);
+        memcpy (p00_p1, p00_t0, p00_size);
+    }
 }
 
 /**
@@ -79,41 +76,36 @@ void p00_swap1(void* p00_p0, void* p00_p1, size_t p00_size, void*restrict p00_t0
  ** all allocation is done on the stack.
  ** @see p99_swap2
  **/
-p99_inline
-void p99_swap1(void* p00_p0, void* p00_p1, size_t p00_size) {
-  if (p00_p0 != p00_p1) {
-    void* p00_t0 = malloc(p00_size);
-    p00_swap1(p00_p0, p00_p1, p00_size, p00_t0);
-    free(p00_t0);
-  }
+p99_inline void p99_swap1 (void *p00_p0, void *p00_p1, size_t p00_size) {
+    if (p00_p0 != p00_p1) {
+        void *p00_t0 = malloc (p00_size);
+        p00_swap1 (p00_p0, p00_p1, p00_size, p00_t0);
+        free (p00_t0);
+    }
 }
 
-#define P00_SWAP2(_0, _1)                                      \
-p00_swap2(                                                     \
-          /* check if the two are assignment compatible */     \
-          P99_SIGN_PROMOTE(&(_0), ((_0) = (_1), (void*)0)),    \
-          P99_SIGN_PROMOTE(&(_1), ((_1) = (_0), (void*)0)),    \
-          sizeof(_0),                                          \
-          /* only works if sizeof(_0) >= sizeof(_1) */         \
-          (char[sizeof(_0)]){                                  \
-            [(intmax_t)sizeof(_0) - sizeof(_1)] = 0,           \
-              },                                               \
-          /* only works if sizeof(_0) <= sizeof(_1) */         \
-          (char[sizeof(_0)]){                                  \
-            [(intmax_t)sizeof(_1) - sizeof(_0)] = 0,           \
-              })
+#define P00_SWAP2(_0, _1)                                                                                              \
+    p00_swap2 (/* check if the two are assignment compatible */                                                        \
+               P99_SIGN_PROMOTE (&(_0), ((_0) = (_1), (void *) 0)),                                                    \
+               P99_SIGN_PROMOTE (&(_1), ((_1) = (_0), (void *) 0)),                                                    \
+               sizeof (_0), /* only works if sizeof(_0) >= sizeof(_1) */                                               \
+               (char [sizeof (_0)]) {                                                                                  \
+                   [(intmax_t) sizeof (_0) - sizeof (_1)] = 0,                                                         \
+               }, /* only works if sizeof(_0) <= sizeof(_1) */                                                         \
+               (char [sizeof (_0)]) {                                                                                  \
+                   [(intmax_t) sizeof (_1) - sizeof (_0)] = 0,                                                         \
+               }                                                                                                       \
+    )
 
-#define P00_SWAP1(_0, _1)                                      \
-p00_swap1(                                                     \
-          /* check if the two are assignment compatible */     \
-          P99_SIGN_PROMOTE(&(_0), ((_0) = (_1), (void*)0)),    \
-          P99_SIGN_PROMOTE(&(_1), ((_1) = (_0), (void*)0)),    \
-          sizeof(_0),                                          \
-          /* only works if sizeof(_0) <= sizeof(_1) */         \
-          (char[sizeof(_0)]){                                  \
-            [(intmax_t)sizeof(_1) - sizeof(_0)] = 0,           \
-              })
-
+#define P00_SWAP1(_0, _1)                                                                                              \
+    p00_swap1 (/* check if the two are assignment compatible */                                                        \
+               P99_SIGN_PROMOTE (&(_0), ((_0) = (_1), (void *) 0)),                                                    \
+               P99_SIGN_PROMOTE (&(_1), ((_1) = (_0), (void *) 0)),                                                    \
+               sizeof (_0), /* only works if sizeof(_0) <= sizeof(_1) */                                               \
+               (char [sizeof (_0)]) {                                                                                  \
+                   [(intmax_t) sizeof (_1) - sizeof (_0)] = 0,                                                         \
+               }                                                                                                       \
+    )
 
 /**
  ** @brief Swap the contents of the arguments.
@@ -167,21 +159,19 @@ p00_swap1(                                                     \
  **   representation.
  **
  **/
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_SWAP, 0)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_SWAP, 1)
-#define P99_SWAP(_0, _1) ((sizeof(_0) > sizeof(uintmax_t)) ? P00_SWAP1(_0, _1) : P00_SWAP2(_0, _1))
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_SWAP, 0)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_SWAP, 1)
+#define P99_SWAP(_0, _1) ((sizeof (_0) > sizeof (uintmax_t)) ? P00_SWAP1 (_0, _1) : P00_SWAP2 (_0, _1))
 
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_QSORT, 0)
+#define P99_QSORT(TAB, NB, ...)                                                                                        \
+    P99_IF_LT (P99_NARG (__VA_ARGS__), 2)                                                                              \
+    (qsort ((TAB), (NB), sizeof (TAB) [0], __VA_ARGS__)) (qsort_s ((TAB), (NB), sizeof (TAB) [0], __VA_ARGS__))
 
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_QSORT, 0)
-#define P99_QSORT(TAB, NB, ...)                                \
-P99_IF_LT(P99_NARG(__VA_ARGS__), 2)                            \
-(qsort((TAB), (NB), sizeof (TAB)[0], __VA_ARGS__))             \
-(qsort_s((TAB), (NB), sizeof (TAB)[0], __VA_ARGS__))
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_ASORT, 0)
+#define P99_ASORT(TAB, ...)                                                                                            \
+    P99_IF_LT (P99_NARG (__VA_ARGS__), 2)                                                                              \
+    (qsort ((TAB), P99_ALEN (TAB), sizeof (TAB) [0], __VA_ARGS__)                                                      \
+    ) (qsort_s ((TAB), P99_ALEN (TAB), sizeof (TAB) [0], __VA_ARGS__))
 
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_ASORT, 0)
-#define P99_ASORT(TAB, ...)                                    \
-P99_IF_LT(P99_NARG(__VA_ARGS__), 2)                            \
-(qsort((TAB), P99_ALEN(TAB), sizeof (TAB)[0], __VA_ARGS__))    \
-(qsort_s((TAB), P99_ALEN(TAB), sizeof (TAB)[0], __VA_ARGS__))
-
-#endif      /* !P99_SWAP_H_ */
+#endif /* !P99_SWAP_H_ */

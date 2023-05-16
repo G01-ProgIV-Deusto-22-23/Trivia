@@ -73,7 +73,7 @@
  ** @see p99_notifier_unset
  **/
 #ifdef P00_DOXYGEN
-struct p99_notifier { };
+struct p99_notifier {};
 #else
 typedef p99_futex p99_notifier;
 #endif
@@ -82,25 +82,23 @@ typedef p99_futex p99_notifier;
  ** @brief Initialize a notifier to value @a p00_v
  ** @related p99_notifier
  **/
-P99_DEFARG_DOCU(p99_notifier_init)
-p99_inline
-p99_notifier* p99_notifier_init(p99_notifier* p00_n, unsigned p00_v) {
-  return p99_futex_init(p00_n, p00_v);
+P99_DEFARG_DOCU (p99_notifier_init)
+
+p99_inline p99_notifier *p99_notifier_init (p99_notifier *p00_n, unsigned p00_v) {
+    return p99_futex_init (p00_n, p00_v);
 }
 
 #ifndef DOXYGEN
-#define p99_notifier_init(...) P99_CALL_DEFARG(p99_notifier_init, 2, __VA_ARGS__)
-#define p99_notifier_init_defarg_1() 0U
+    #define p99_notifier_init(...)       P99_CALL_DEFARG (p99_notifier_init, 2, __VA_ARGS__)
+    #define p99_notifier_init_defarg_1() 0U
 #endif
-
 
 /**
  ** @brief destroy a notifier
  ** @related p99_notifier
  **/
-p99_inline
-void p99_notifier_destroy(p99_notifier* p00_n) {
-  p99_futex_destroy(p00_n);
+p99_inline void p99_notifier_destroy (p99_notifier *p00_n) {
+    p99_futex_destroy (p00_n);
 }
 
 /**
@@ -112,35 +110,37 @@ void p99_notifier_destroy(p99_notifier* p00_n) {
  ** @remark @a p00_v defaults to @c 1.
  ** @related p99_notifier
  **/
-P99_DEFARG_DOCU(p99_notifier_block)
-P00_FUTEX_INLINE(p99_notifier_block)
-void p99_notifier_block(p99_notifier volatile* p00_n, unsigned p00_v) {
-  P99_FUTEX_COMPARE_EXCHANGE(p00_n, p00_act,
-                             /* wait for p00_v */
-                             (p00_act == p00_v),
-                             /* never update */
-                             p00_act,
-                             /* never wakeup others */
-                             0u, 0u);
+P99_DEFARG_DOCU (p99_notifier_block)
+P00_FUTEX_INLINE (p99_notifier_block)
+
+void p99_notifier_block (volatile p99_notifier *p00_n, unsigned p00_v) {
+    P99_FUTEX_COMPARE_EXCHANGE (
+        p00_n, p00_act,
+        /* wait for p00_v */
+        (p00_act == p00_v),
+        /* never update */
+        p00_act,
+        /* never wakeup others */
+        0u, 0u
+    );
 }
 
 #ifndef DOXYGEN
-#define p99_notifier_block(...) P99_CALL_DEFARG(p99_notifier_block, 2, __VA_ARGS__)
-#define p99_notifier_block_defarg_1() 1U
+    #define p99_notifier_block(...)       P99_CALL_DEFARG (p99_notifier_block, 2, __VA_ARGS__)
+    #define p99_notifier_block_defarg_1() 1U
 #endif
 
 /**
  ** @brief Initialize an ::p99_notifier object.
  **/
-# define P99_NOTIFIER_INITIALIZER P99_FUTEX_INITIALIZER(0u)
+#define P99_NOTIFIER_INITIALIZER P99_FUTEX_INITIALIZER (0u)
 
 /**
  ** @brief Return the value of the notifier. Non blocking.
  ** @related p99_notifier
  **/
-p99_inline
-unsigned p99_notifier_load(p99_notifier volatile* p00_n) {
-  return p99_futex_load(p00_n);
+p99_inline unsigned p99_notifier_load (volatile p99_notifier *p00_n) {
+    return p99_futex_load (p00_n);
 }
 
 /**
@@ -150,36 +150,41 @@ unsigned p99_notifier_load(p99_notifier volatile* p00_n) {
  ** @remark @a p00_v defaults to @c 1.
  ** @related p99_notifier
  **/
-P99_DEFARG_DOCU(p99_notifier_set)
-P99_SETJMP_INLINE(p99_notifier_set)
-void p99_notifier_set(p99_notifier volatile* p00_n, unsigned p00_v) {
-  if (p00_v)
-    P99_FUTEX_COMPARE_EXCHANGE(p00_n,
-                               // name of the local variable
-                               p00_l,
-                               // never wait
-                               true,
-                               // the new value
-                               p00_v,
-                               // no enforced wake up
-                               0u,
-                               // wake up all waiters only if there was a change
-                               ((p00_l != p00_v) ? P99_FUTEX_MAX_WAITERS : 0u));
-  else
-    P99_FUTEX_COMPARE_EXCHANGE(p00_n,
-                               // name of the local variable
-                               p00_l,
-                               // never wait
-                               true,
-                               // the new value
-                               p00_v,
-                               // never wake up anybody
-                               0u, 0u);
+P99_DEFARG_DOCU (p99_notifier_set)
+P99_SETJMP_INLINE (p99_notifier_set)
+
+void p99_notifier_set (volatile p99_notifier *p00_n, unsigned p00_v) {
+    if (p00_v)
+        P99_FUTEX_COMPARE_EXCHANGE (
+            p00_n,
+            // name of the local variable
+            p00_l,
+            // never wait
+            true,
+            // the new value
+            p00_v,
+            // no enforced wake up
+            0u,
+            // wake up all waiters only if there was a change
+            ((p00_l != p00_v) ? P99_FUTEX_MAX_WAITERS : 0u)
+        );
+    else
+        P99_FUTEX_COMPARE_EXCHANGE (
+            p00_n,
+            // name of the local variable
+            p00_l,
+            // never wait
+            true,
+            // the new value
+            p00_v,
+            // never wake up anybody
+            0u, 0u
+        );
 }
 
 #ifndef DOXYGEN
-#define p99_notifier_set(...) P99_CALL_DEFARG(p99_notifier_set, 2, __VA_ARGS__)
-#define p99_notifier_set_defarg_1() 1U
+    #define p99_notifier_set(...)       P99_CALL_DEFARG (p99_notifier_set, 2, __VA_ARGS__)
+    #define p99_notifier_set_defarg_1() 1U
 #endif
 
 /**
@@ -190,14 +195,12 @@ void p99_notifier_set(p99_notifier volatile* p00_n, unsigned p00_v) {
  **
  ** @related p99_notifier
  **/
-p99_inline
-void p99_notifier_unset(p99_notifier volatile* p00_n) {
-  p99_futex_exchange(p00_n, 0u, 1u, 0u, 0u, 0u);
+p99_inline void p99_notifier_unset (volatile p99_notifier *p00_n) {
+    p99_futex_exchange (p00_n, 0u, 1u, 0u, 0u, 0u);
 }
 
 /**
  ** @}
  **/
-
 
 #endif

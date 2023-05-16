@@ -820,10 +820,7 @@ size_t
                             })
                           : (attrs + i)->type == TYPE_INTEGER
                               ? ({
-                                    long low  = (attrs + i)->type_args.integer.min;
-                                    long high = (attrs + i)->type_args.integer.max;
-                                    long v    = strtol (buf, NULL, 10);
-                                    fprintf (stderr, "v: %ld\n", v);
+                                    long v = strtol (buf, NULL, 10);
 
                                     !(errno == ERANGE || (!v && ({
                                           bool r = true;
@@ -832,7 +829,7 @@ size_t
                                               ;
                                           !r;
                                       })) ||
-                                      v < low || v > high);
+                                      v < (attrs + i)->type_args.integer.min || v > (attrs + i)->type_args.integer.max);
                                 })
                               : ({
                                     int      l;

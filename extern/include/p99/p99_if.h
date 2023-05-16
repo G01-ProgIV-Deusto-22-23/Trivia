@@ -19,8 +19,8 @@
 /* See the License for the specific language governing permissions and          */
 /* limitations under the License.                                               */
 /*                                                                              */
-#ifndef     P99_IF_H_
-# define    P99_IF_H_
+#ifndef P99_IF_H_
+#define P99_IF_H_
 
 /**
  ** @file
@@ -69,9 +69,9 @@
 #define P00_CLAUSE1(...) __VA_ARGS__ P00_IGNORE
 #define P00_CLAUSE2(...) P00_IDENT
 
-#define P00__IF_CLAUSE(A,B,C,...) C
-#define P00_IF_CLAUSE(EXP) P00__IF_CLAUSE(EXP, P00_CLAUSE1, P00_CLAUSE2, ~)
-#define P00_IF_NOT_CLAUSE(EXP) P00__IF_CLAUSE(EXP, P00_CLAUSE2, P00_CLAUSE1, ~)
+#define P00__IF_CLAUSE(A, B, C, ...) C
+#define P00_IF_CLAUSE(EXP)           P00__IF_CLAUSE (EXP, P00_CLAUSE1, P00_CLAUSE2, ~)
+#define P00_IF_NOT_CLAUSE(EXP)       P00__IF_CLAUSE (EXP, P00_CLAUSE2, P00_CLAUSE1, ~)
 
 /**
  ** @brief Test if two words @a A and @a B are equal.
@@ -89,68 +89,68 @@
  **
  ** the macro ::P00_IF_0_EQ_0 must exist. (Which it does in this case).
  **/
-#define P99_IF_EQ(A, B) P00_IF_CLAUSE(P99_PASTE4(P00_IS_,A,_EQ_,B)())
+#define P99_IF_EQ(A, B) P00_IF_CLAUSE (P99_PASTE4 (P00_IS_, A, _EQ_, B) ())
 
 /**
  ** @brief Test if two words @a A and @a B are unequal.
  **
  ** @see P99_IF_EQ
  **/
-#define P99_IF_NE(A, B) P00_IF_NOT_CLAUSE(P99_PASTE4(P00_IS_,A,_EQ_,B)())
+#define P99_IF_NE(A, B) P00_IF_NOT_CLAUSE (P99_PASTE4 (P00_IS_, A, _EQ_, B) ())
 
-#define P99_IF_GE_0(A) P00_IF_CLAUSE(P99_PASTE4(P00_IS_,A,_GE_,0)())
-#define P99_IF_LT_0(A) P00_IF_NOT_CLAUSE(P99_PASTE4(P00_IS_,A,_GE_,0)())
+#define P99_IF_GE_0(A) P00_IF_CLAUSE (P99_PASTE4 (P00_IS_, A, _GE_, 0) ())
+#define P99_IF_LT_0(A) P00_IF_NOT_CLAUSE (P99_PASTE4 (P00_IS_, A, _GE_, 0) ())
 
 /**
  ** @brief Test two decimal numbers @a A and @a B for whether @a A is greater
  ** than or equal to @a B.
  **/
-#define P99_IF_GE(A, B) P99_IF_EQ_1(P99_IS_GE(A, B))
+#define P99_IF_GE(A, B) P99_IF_EQ_1 (P99_IS_GE (A, B))
 
 /**
  ** @brief Test two decimal numbers @a A and @a B for whether @a A is less
  ** than or equal to @a B.
  **/
-#define P99_IF_LE(A, B) P99_IF_EQ_1(P99_IS_LE(A, B))
+#define P99_IF_LE(A, B) P99_IF_EQ_1 (P99_IS_LE (A, B))
 
 /**
  ** @brief Test two decimal numbers @a A and @a B for whether @a A is strictly
  ** less than @a B.
  **/
-#define P99_IF_LT(A, B) P99_IF_EQ_1(P99_IS_LT(A, B))
+#define P99_IF_LT(A, B) P99_IF_EQ_1 (P99_IS_LT (A, B))
 
 /**
  ** @brief Test two decimal numbers @a A and @a B for whether @a A is strictly
  ** greater than @a B.
  **/
-#define P99_IF_GT(A, B) P99_IF_EQ_1(P99_IS_GT(A, B))
+#define P99_IF_GT(A, B) P99_IF_EQ_1 (P99_IS_GT (A, B))
 
 /**
  ** @brief Test if token N is the token 0.
  **/
-#define P99_IF_EQ_0(N) P99_IF_EQ(0, N)
+#define P99_IF_EQ_0(N) P99_IF_EQ (0, N)
 
 /**
  ** @brief Test if token N is the token 1.
  **/
-#define P99_IF_EQ_1(N) P99_IF_EQ(1, N)
+#define P99_IF_EQ_1(N) P99_IF_EQ (1, N)
 
 /**
  ** @brief Test if token N is the token 2.
  **/
-#define P99_IF_EQ_2(N) P99_IF_EQ(2, N)
+#define P99_IF_EQ_2(N) P99_IF_EQ (2, N)
 
 /**
  ** @brief Test if token N is the token 3.
  **/
-#define P99_IF_EQ_3(N) P99_IF_EQ(3, N)
+#define P99_IF_EQ_3(N) P99_IF_EQ (3, N)
 
 /**
  ** @brief Test if token N is the token 4.
  **/
-#define P99_IF_EQ_4(N) P99_IF_EQ(4, N)
+#define P99_IF_EQ_4(N) P99_IF_EQ (4, N)
 
-#define P99_IF_EMPTY(...) P99_IF_EQ_1(P99_IS_EMPTY(__VA_ARGS__))
+#define P99_IF_EMPTY(...) P99_IF_EQ_1 (P99_IS_EMPTY (__VA_ARGS__))
 
 /**
  ** @brief A preprocessor control structure
@@ -164,15 +164,14 @@
  **
  ** Observe the parenthesis around tokens_A and tokens_B.
  **/
-#define P99_IF_ELSE(...) P99_IF_EQ_0(P99_IS_EQ_0(__VA_ARGS__))
+#define P99_IF_ELSE(...) P99_IF_EQ_0 (P99_IS_EQ_0 (__VA_ARGS__))
 
-#define P99_IF_void(...) P99_IF_EQ_1(P99_IS_EQ_void(__VA_ARGS__))
+#define P99_IF_void(...) P99_IF_EQ_1 (P99_IS_EQ_void (__VA_ARGS__))
 
-#define P99_IF_VOID(...) P99_IF_EQ_1(P99_IS_VOID(__VA_ARGS__))
+#define P99_IF_VOID(...) P99_IF_EQ_1 (P99_IS_VOID (__VA_ARGS__))
 
-
-#define P00_PRAGMA_(STR) _Pragma(STR)
-#define P00_PRAGMA(...) P00_PRAGMA_(#__VA_ARGS__)
+#define P00_PRAGMA_(STR) _Pragma (STR)
+#define P00_PRAGMA(...)  P00_PRAGMA_ (#__VA_ARGS__)
 
 /**
  ** @brief An wrapper of the _Pragma keyword
@@ -181,21 +180,28 @@
  ** argument to @c _Pragma. If the argument list is empty, this
  ** evaporates and is ignored.
  **/
-#define P99_PRAGMA(...) P99_IF_EMPTY(__VA_ARGS__)()(P00_PRAGMA(__VA_ARGS__))
+#define P99_PRAGMA(...) P99_IF_EMPTY (__VA_ARGS__) () (P00_PRAGMA (__VA_ARGS__))
 
 /**
  ** @}
  **/
 
-# undef p99_has_builtin
-# undef p99_has_feature
-# undef p99_has_extension
-# undef p99_has_attribute
+#undef p99_has_builtin
+#undef p99_has_feature
+#undef p99_has_extension
+#undef p99_has_attribute
 
-# define p99_has_builtin(X) (P99_IF_EQ_1(__has_builtin(X))(1)(0) || P99_IF_EQ_1(p00_has_builtin_ ## X)(1)(0))  // Compatibility with non-clang compilers.
-# define p99_has_feature(X) (P99_IF_EQ_1(__has_feature(X))(1)(0) || P99_IF_EQ_1(p00_has_feature_ ## X)(1)(0))  // Compatibility with non-clang compilers.
-# define p99_has_extension(X) (P99_IF_EQ_1(__has_extension(X))(1)(0) || P99_IF_EQ_1(p00_has_extension_ ## X)(1)(0)) // Compatibility with non-clang compilers.
-# define p99_has_attribute(X) (P99_IF_EQ_1(__has_attribute(X))(1)(0) || P99_IF_EQ_1(p00_has_attribute_ ## X)(1)(0))  // Compatibility with non-clang compilers.
+#define p99_has_builtin(X)                                                                                             \
+    (P99_IF_EQ_1 (__has_builtin (X)) (1) (0) || P99_IF_EQ_1 (p00_has_builtin_##X) (1) (0)                              \
+    ) // Compatibility with non-clang compilers.
+#define p99_has_feature(X)                                                                                             \
+    (P99_IF_EQ_1 (__has_feature (X)) (1) (0) || P99_IF_EQ_1 (p00_has_feature_##X) (1) (0)                              \
+    ) // Compatibility with non-clang compilers.
+#define p99_has_extension(X)                                                                                           \
+    (P99_IF_EQ_1 (__has_extension (X)) (1) (0) || P99_IF_EQ_1 (p00_has_extension_##X) (1) (0)                          \
+    ) // Compatibility with non-clang compilers.
+#define p99_has_attribute(X)                                                                                           \
+    (P99_IF_EQ_1 (__has_attribute (X)) (1) (0) || P99_IF_EQ_1 (p00_has_attribute_##X) (1) (0)                          \
+    ) // Compatibility with non-clang compilers.
 
-
-#endif      /* !P99_IF_H_ */
+#endif /* !P99_IF_H_ */

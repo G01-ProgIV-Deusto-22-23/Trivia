@@ -25,25 +25,23 @@
 #include "p99_constraint.h"
 #include "p99_lifo.h"
 
-P99_POINTER_TYPE(p00_jmp_buf0);
-P99_LIFO_DECLARE(p00_jmp_buf0_ptr);
+P99_POINTER_TYPE (p00_jmp_buf0);
+P99_LIFO_DECLARE (p00_jmp_buf0_ptr);
 
-P99_DECLARE_THREAD_LOCAL(P99_LIFO(p00_jmp_buf0_ptr), p00_jmp_buf_top);
+P99_DECLARE_THREAD_LOCAL (P99_LIFO (p00_jmp_buf0_ptr), p00_jmp_buf_top);
 
-#define P00_JMP_BUF_TOP P99_THREAD_LOCAL(p00_jmp_buf_top)
+#define P00_JMP_BUF_TOP P99_THREAD_LOCAL (p00_jmp_buf_top)
 
-p99_inline
-void p00_jmp_skip(p00_jmp_buf0 * p00_des) {
-  P99_LIFO(p00_jmp_buf0_ptr)* p00_head = &P00_JMP_BUF_TOP;
-  p00_jmp_buf0 * p00_ret = 0;
-  do {
-    p00_ret = P99_LIFO_POP(p00_head);
-  } while (p00_ret && (p00_ret != p00_des));
+p99_inline void p00_jmp_skip (p00_jmp_buf0 *p00_des) {
+    P99_LIFO (p00_jmp_buf0_ptr) *p00_head = &P00_JMP_BUF_TOP;
+    p00_jmp_buf0 *p00_ret                 = 0;
+    do {
+        p00_ret = P99_LIFO_POP (p00_head);
+    } while (p00_ret && (p00_ret != p00_des));
 }
 
-p99_inline
-void p00_jmp_push(p00_jmp_buf0 * p00_des) {
-  P99_LIFO_PUSH(&P00_JMP_BUF_TOP, p00_des);
+p99_inline void p00_jmp_push (p00_jmp_buf0 *p00_des) {
+    P99_LIFO_PUSH (&P00_JMP_BUF_TOP, p00_des);
 }
 
 /**
@@ -67,42 +65,45 @@ void p00_jmp_push(p00_jmp_buf0 * p00_des) {
  ** Without the call to ::p99_jmp_report the origin of the error would
  ** be lost in the second :P99_CATCH.
  **/
-p99_inline void p99_jmp_report(errno_t p00_cond) {
-  p00_constraint_report(p00_cond, 0, 0, 0);
+p99_inline void p99_jmp_report (errno_t p00_cond) {
+    p00_constraint_report (p00_cond, 0, 0, 0);
 }
 
-p99_inline
-noreturn
-void p00_jmp_abort(errno_t p00_cond, char const* p00_file, char const* p00_context, char const* p00_info) {
-  p00_constraint_report(p00_cond, p00_file, p00_context, p00_info);
-  constraint_handler_t p00_func = atomic_load(&p00_constraint_handler);
-  if (p00_func == exit_handler_s) {
-    /* Avoid looping in exit handlers. */
-    set_constraint_handler_s(abort_handler_s);
-    /* Give the application a chance to clean up. */
-    exit(EXIT_FAILURE);
-  }
-  abort();
+p99_inline noreturn void
+    p00_jmp_abort (errno_t p00_cond, const char *p00_file, const char *p00_context, const char *p00_info) {
+    p00_constraint_report (p00_cond, p00_file, p00_context, p00_info);
+    constraint_handler_t p00_func = atomic_load (&p00_constraint_handler);
+    if (p00_func == exit_handler_s) {
+        /* Avoid looping in exit handlers. */
+        set_constraint_handler_s (abort_handler_s);
+        /* Give the application a chance to clean up. */
+        exit (EXIT_FAILURE);
+    }
+    abort ();
 }
 
-p99_inline
-noreturn
-void p00_jmp_throw(errno_t p00_cond, p00_jmp_buf0 * p00_top, char const* p00_file, char const* p00_context, char const* p00_info) {
-  if (p00_file) P00_JMP_BUF_FILE = p00_file;
-  if (p00_context) P00_JMP_BUF_CONTEXT = p00_context;
-  if (p00_info) P00_JMP_BUF_INFO = p00_info;
-  if (!p00_top) p00_top = P99_LIFO_TOP(&P00_JMP_BUF_TOP);
-  if (P99_LIKELY(p00_top)) p00_longjmp(p00_top, p00_cond);
-  else p00_jmp_abort(p00_cond, p00_file, p00_context, p00_info);
+p99_inline noreturn void p00_jmp_throw (
+    errno_t p00_cond, p00_jmp_buf0 *p00_top, const char *p00_file, const char *p00_context, const char *p00_info
+) {
+    if (p00_file)
+        P00_JMP_BUF_FILE = p00_file;
+    if (p00_context)
+        P00_JMP_BUF_CONTEXT = p00_context;
+    if (p00_info)
+        P00_JMP_BUF_INFO = p00_info;
+    if (!p00_top)
+        p00_top = P99_LIFO_TOP (&P00_JMP_BUF_TOP);
+    if (P99_LIKELY (p00_top))
+        p00_longjmp (p00_top, p00_cond);
+    else
+        p00_jmp_abort (p00_cond, p00_file, p00_context, p00_info);
 }
-
 
 /**
  ** @addtogroup try Try, catch and finally blocks
  **
  ** @{
  **/
-
 
 /**
  ** @brief Stop execution at the current point and signal an
@@ -125,88 +126,87 @@ void p00_jmp_throw(errno_t p00_cond, p00_jmp_buf0 * p00_top, char const* p00_fil
  ** thereafter.
  **/
 P00_UNWIND_DOCUMENT
-#define P99_THROW(X) p00_jmp_throw((X), p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, "throw")
+#define P99_THROW(X) p00_jmp_throw ((X), p00_unwind_top, P99_STRINGIFY (__LINE__), __func__, "throw")
 
-p99_inline
-noreturn
-void p00_throw_errno(p00_jmp_buf0 * p00_top, errno_t p00_def, char const* p00_file, char const* p00_context, char const* p00_info) {
-  errno_t p00_err = errno;
-  if (!p00_err) p00_err = (p00_def ? p00_def : EINVAL);
-  errno = 0;
-  p00_jmp_throw(p00_err, p00_top, p00_file, p00_context, p00_info);
+p99_inline noreturn void p00_throw_errno (
+    p00_jmp_buf0 *p00_top, errno_t p00_def, const char *p00_file, const char *p00_context, const char *p00_info
+) {
+    errno_t p00_err = errno;
+    if (!p00_err)
+        p00_err = (p00_def ? p00_def : EINVAL);
+    errno = 0;
+    p00_jmp_throw (p00_err, p00_top, p00_file, p00_context, p00_info);
 }
 
-p99_inline
-void p00_throw_call_range(p00_jmp_buf0 * p00_top, errno_t p00_sign, char const* p00_file, char const* p00_context, char const* p00_info) {
-  errno_t p00_err = errno;
-  if  (P99_LIKELY(!p00_err)) return;
-  switch (p00_err) {
-  case ERANGE: if (p00_sign) p00_err = p00_sign;
-  }
-  errno = 0;
-  p00_jmp_throw(p00_err, p00_top, p00_file, p00_context, p00_info);
+p99_inline void p00_throw_call_range (
+    p00_jmp_buf0 *p00_top, errno_t p00_sign, const char *p00_file, const char *p00_context, const char *p00_info
+) {
+    errno_t p00_err = errno;
+    if (P99_LIKELY (!p00_err))
+        return;
+    switch (p00_err) {
+        case ERANGE:
+            if (p00_sign)
+                p00_err = p00_sign;
+    }
+    errno = 0;
+    p00_jmp_throw (p00_err, p00_top, p00_file, p00_context, p00_info);
 }
 
-#define P00_ALMOST_ZERO(X)                                                \
-P99_GENERIC((X),                                                          \
-            ((X) > 0 ? (X) <= FLT_MIN : -(X) >= FLT_MIN),                 \
-            (float, ((X) > 0 ? (X) <= LDBL_MIN : -(X) >= LDBL_MIN)),      \
-            (long double, ((X) > 0 ? (X) <= LDBL_MIN : -(X) >= LDBL_MIN)) \
-            )
+#define P00_ALMOST_ZERO(X)                                                                                             \
+    P99_GENERIC (                                                                                                      \
+        (X), ((X) > 0 ? (X) <= FLT_MIN : -(X) >= FLT_MIN), (float, ((X) > 0 ? (X) <= LDBL_MIN : -(X) >= LDBL_MIN)),    \
+        (long double, ((X) > 0 ? (X) <= LDBL_MIN : -(X) >= LDBL_MIN))                                                  \
+    )
 
 /* Define a function for each of the standard real types, that runs
    p00_throw_call_range with the correct information of under- or
    overflow. We need this for compilers that don't support gcc's block
    expressions and @c typeof. */
-#define P00_THROW_CALL_RANGE(T, F, ...)                           \
-p99_inline                                                        \
-T P99_PASTE2(p00_throw_call_range_, T)(p00_jmp_buf0 * p00_top,    \
-                                     T p00_val,                   \
-                                     char const* p00_file,        \
-                                     char const* p00_context,     \
-                                     char const* p00_info) {      \
-  if (P99_UNLIKELY(P99_IS_ONE(p00_val, 0, __VA_ARGS__))           \
-      P99_IF_EQ_1(F)(|| P99_UNLIKELY(P00_ALMOST_ZERO(p00_val)))() \
-      )                                                           \
-    p00_throw_call_range(p00_top,                                 \
-                       /* also capture errors for floating        \
-                          types, for integer types part of this   \
-                          is redundant. */                        \
-                       ((p00_val > 0)                             \
-                        ? ((p00_val >= 1) ? INT_MAX : 0)          \
-                        : (((T)-p00_val >= 1) ? INT_MIN : 0)),    \
-                       p00_file, p00_context, p00_info);          \
-  return p00_val;                                                 \
-}                                                                 \
-P99_MACRO_END(P00_THROW_CALL_RANGE, T)
+#define P00_THROW_CALL_RANGE(T, F, ...)                                                                                \
+    p99_inline T P99_PASTE2 (p00_throw_call_range_, T) (                                                               \
+        p00_jmp_buf0 * p00_top, T p00_val, char const *p00_file, char const *p00_context, char const *p00_info         \
+    ) {                                                                                                                \
+        if (P99_UNLIKELY (P99_IS_ONE (p00_val, 0, __VA_ARGS__))                                                        \
+                P99_IF_EQ_1 (F) (|| P99_UNLIKELY (P00_ALMOST_ZERO (p00_val))) ())                                      \
+            p00_throw_call_range (                                                                                     \
+                p00_top, /* also capture errors for floating                                                           \
+                            types, for integer types part of this                                                      \
+                            is redundant. */                                                                           \
+                ((p00_val > 0) ? ((p00_val >= 1) ? INT_MAX : 0) : (((T) -p00_val >= 1) ? INT_MIN : 0)), p00_file,      \
+                p00_context, p00_info                                                                                  \
+            );                                                                                                         \
+        return p00_val;                                                                                                \
+    }                                                                                                                  \
+    P99_MACRO_END (P00_THROW_CALL_RANGE, T)
 
-P00_THROW_CALL_RANGE(_Bool, 0, 1);
-P00_THROW_CALL_RANGE(char, 0, CHAR_MAX, CHAR_MIN);
-P00_THROW_CALL_RANGE(schar, 0, SCHAR_MAX, SCHAR_MIN);
-P00_THROW_CALL_RANGE(short, 0, SHRT_MAX, SHRT_MIN);
-P00_THROW_CALL_RANGE(int, 0, INT_MAX, INT_MIN);
-P00_THROW_CALL_RANGE(long, 0, LONG_MAX, LONG_MIN);
-P00_THROW_CALL_RANGE(llong, 0, LLONG_MAX, LLONG_MIN);
-P00_THROW_CALL_RANGE(uchar, 0, UCHAR_MAX);
-P00_THROW_CALL_RANGE(ushort, 0, USHRT_MAX);
-P00_THROW_CALL_RANGE(unsigned, 0, UINT_MAX);
-P00_THROW_CALL_RANGE(ulong, 0, ULONG_MAX);
-P00_THROW_CALL_RANGE(ullong, 0, ULLONG_MAX);
-# ifdef HUGE_VALF
-P00_THROW_CALL_RANGE(float, 1, HUGE_VALF, -HUGE_VALF);
-# endif
-# ifdef HUGE_VAL
-P00_THROW_CALL_RANGE(double, 1, HUGE_VAL, -HUGE_VAL);
-# endif
-# ifdef HUGE_VALL
-P00_THROW_CALL_RANGE(ldouble, 1, HUGE_VALL, -HUGE_VALL);
-# endif
+P00_THROW_CALL_RANGE (_Bool, 0, 1);
+P00_THROW_CALL_RANGE (char, 0, CHAR_MAX, CHAR_MIN);
+P00_THROW_CALL_RANGE (schar, 0, SCHAR_MAX, SCHAR_MIN);
+P00_THROW_CALL_RANGE (short, 0, SHRT_MAX, SHRT_MIN);
+P00_THROW_CALL_RANGE (int, 0, INT_MAX, INT_MIN);
+P00_THROW_CALL_RANGE (long, 0, LONG_MAX, LONG_MIN);
+P00_THROW_CALL_RANGE (llong, 0, LLONG_MAX, LLONG_MIN);
+P00_THROW_CALL_RANGE (uchar, 0, UCHAR_MAX);
+P00_THROW_CALL_RANGE (ushort, 0, USHRT_MAX);
+P00_THROW_CALL_RANGE (unsigned, 0, UINT_MAX);
+P00_THROW_CALL_RANGE (ulong, 0, ULONG_MAX);
+P00_THROW_CALL_RANGE (ullong, 0, ULLONG_MAX);
+#ifdef HUGE_VALF
+P00_THROW_CALL_RANGE (float, 1, HUGE_VALF, -HUGE_VALF);
+#endif
+#ifdef HUGE_VAL
+P00_THROW_CALL_RANGE (double, 1, HUGE_VAL, -HUGE_VAL);
+#endif
+#ifdef HUGE_VALL
+P00_THROW_CALL_RANGE (ldouble, 1, HUGE_VALL, -HUGE_VALL);
+#endif
 
-#define P00_THROW_CALL_RANGE_CASE(T) ,(T, P99_PASTE2(p00_throw_call_range_, T))
+#define P00_THROW_CALL_RANGE_CASE(T) , (T, P99_PASTE2 (p00_throw_call_range_, T))
 
-#define P00_THROW_CALL_RANGE_(F, CASES, ...)                                              \
-P99_GENERIC((F)(__VA_ARGS__), P00_ROBUST CASES)                                           \
-  (p00_unwind_top, F(__VA_ARGS__), P99_STRINGIFY(__LINE__), __func__, #F ", range check")
+#define P00_THROW_CALL_RANGE_(F, CASES, ...)                                                                           \
+    P99_GENERIC ((F) (__VA_ARGS__), P00_ROBUST CASES)                                                                  \
+    (p00_unwind_top, F (__VA_ARGS__), P99_STRINGIFY (__LINE__), __func__, #F ", range check")
 
 #define P99_THROW_CALL_RANGE_ARG_0 permitted
 #define P99_THROW_CALL_RANGE_ARG_1 permitted
@@ -243,17 +243,13 @@ P99_GENERIC((F)(__VA_ARGS__), P00_ROBUST CASES)                                 
  ** @remark This is only implemented for the real arithmetic types by
  ** means of a type generic macro.
  **/
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_THROW_CALL_RANGE, 0)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_THROW_CALL_RANGE, 1)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_THROW_CALL_RANGE, 2)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_THROW_CALL_RANGE, 3)
-P00_DOCUMENT_PERMITTED_ARGUMENT(P99_THROW_CALL_RANGE, 4)
-#define P99_THROW_CALL_RANGE(F, ...)                           \
-  P00_THROW_CALL_RANGE_                                        \
-  (F,                                                          \
-   (P99_SER(P00_THROW_CALL_RANGE_CASE, P99_STD_REAL_TYPES)),   \
-   __VA_ARGS__)
-
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_THROW_CALL_RANGE, 0)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_THROW_CALL_RANGE, 1)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_THROW_CALL_RANGE, 2)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_THROW_CALL_RANGE, 3)
+P00_DOCUMENT_PERMITTED_ARGUMENT (P99_THROW_CALL_RANGE, 4)
+#define P99_THROW_CALL_RANGE(F, ...)                                                                                   \
+    P00_THROW_CALL_RANGE_ (F, (P99_SER (P00_THROW_CALL_RANGE_CASE, P99_STD_REAL_TYPES)), __VA_ARGS__)
 
 /**
  ** @brief Capture, clean and throw the current value of @c errno
@@ -268,26 +264,25 @@ P00_DOCUMENT_PERMITTED_ARGUMENT(P99_THROW_CALL_RANGE, 4)
  ** @see P99_THROW
  **/
 #if defined(noreturn) || defined(_Noreturn)
-#define P99_THROW_ERRNO p00_throw_errno(p00_unwind_top, EINVAL, P99_STRINGIFY(__LINE__), __func__, "THROW_ERRNO")
+    #define P99_THROW_ERRNO p00_throw_errno (p00_unwind_top, EINVAL, P99_STRINGIFY (__LINE__), __func__, "THROW_ERRNO")
 #else
-#define P99_THROW_ERRNO                                        \
-do {                                                           \
-  errno_t p00_err = errno;                                     \
-  if (!p00_err) p00_err = EINVAL;                              \
-  errno = 0;                                                   \
-  P99_THROW(p00_err);                                          \
- } while(0)
+    #define P99_THROW_ERRNO                                                                                            \
+        do {                                                                                                           \
+            errno_t p00_err = errno;                                                                                   \
+            if (!p00_err)                                                                                              \
+                p00_err = EINVAL;                                                                                      \
+            errno = 0;                                                                                                 \
+            P99_THROW (p00_err);                                                                                       \
+        } while (0)
 #endif
 
-p99_inline
-int p00_throw_call_zero(int p00_err,
-                        errno_t p00_def,
-                        p00_jmp_buf0 * p00_top,
-                        char const* p00_file,
-                        char const* p00_context,
-                        char const* p00_info) {
-  if (P99_UNLIKELY(p00_err)) p00_throw_errno(p00_top, p00_def, p00_file, p00_context, p00_info);
-  return 0;
+p99_inline int p00_throw_call_zero (
+    int p00_err, errno_t p00_def, p00_jmp_buf0 *p00_top, const char *p00_file, const char *p00_context,
+    const char *p00_info
+) {
+    if (P99_UNLIKELY (p00_err))
+        p00_throw_errno (p00_top, p00_def, p00_file, p00_context, p00_info);
+    return 0;
 }
 
 /**
@@ -309,23 +304,26 @@ int p00_throw_call_zero(int p00_err,
  ** @see P99_THROW_CALL_VOIDP for a similar macro that checks a
  ** pointer return value
  **/
-#define P99_THROW_CALL_ZERO(F, E, ...)                                                                            \
-p00_throw_call_zero(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, #F ", non-zero return")
+#define P99_THROW_CALL_ZERO(F, E, ...)                                                                                 \
+    p00_throw_call_zero (F (__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY (__LINE__), __func__, #F ", non-zero return")
 
 #ifndef NDEBUG
-/**
- ** @brief Replacement for @c assert that throw a catchable exception
- **
- ** The first argument @a E is the error code that will be passed down
- ** the line.
- **
- ** @remark As for @c assert such an assertion is disabled at compile
- ** time if the macro @c NDEBUG is defined.
- **/
-#define P99_THROW_ASSERT(E, ...)                                                                                                          \
-(void)p00_throw_call_zero(!(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, "failed assertion: ``" #__VA_ARGS__ "''")
+    /**
+     ** @brief Replacement for @c assert that throw a catchable exception
+     **
+     ** The first argument @a E is the error code that will be passed down
+     ** the line.
+     **
+     ** @remark As for @c assert such an assertion is disabled at compile
+     ** time if the macro @c NDEBUG is defined.
+     **/
+    #define P99_THROW_ASSERT(E, ...)                                                                                   \
+        (void) p00_throw_call_zero (                                                                                   \
+            !(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY (__LINE__), __func__,                                     \
+            "failed assertion: ``" #__VA_ARGS__ "''"                                                                   \
+        )
 #else
-#define P99_THROW_ASSERT(...) P99_NOP
+    #define P99_THROW_ASSERT(...) P99_NOP
 #endif
 
 /**
@@ -336,18 +334,15 @@ p00_throw_call_zero(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), 
  ** failure is inverted, that is 0 is considered a failure and all
  ** other values are considered success.
  **/
-#define P99_THROW_CALL_NOT_ZERO(F, E, ...)                                                                     \
-p00_throw_call_zero(!F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, #F ", zero return")
+#define P99_THROW_CALL_NOT_ZERO(F, E, ...)                                                                             \
+    p00_throw_call_zero (!F (__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY (__LINE__), __func__, #F ", zero return")
 
-p99_inline
-int p00_throw_call_thrd(int p00_err,
-                        p00_jmp_buf0 * p00_top,
-                        char const* p00_file,
-                        char const* p00_context,
-                        char const* p00_info) {
-  if (P99_UNLIKELY(p00_err != thrd_success))
-    p00_jmp_throw(p00_err, p00_top, p00_file, p00_context, p00_info);
-  return 0;
+p99_inline int p00_throw_call_thrd (
+    int p00_err, p00_jmp_buf0 *p00_top, const char *p00_file, const char *p00_context, const char *p00_info
+) {
+    if (P99_UNLIKELY (p00_err != thrd_success))
+        p00_jmp_throw (p00_err, p00_top, p00_file, p00_context, p00_info);
+    return 0;
 }
 
 /**
@@ -371,22 +366,20 @@ int p00_throw_call_thrd(int p00_err,
  ** @see P99_THROW_CALL_VOIDP for a similar macro that checks a
  ** pointer return value
  **/
-#define P99_THROW_CALL_THRD(F, ...)                                                                            \
-p00_throw_call_thrd(F(__VA_ARGS__), p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, #F ", no thrd_success")
+#define P99_THROW_CALL_THRD(F, ...)                                                                                    \
+    p00_throw_call_thrd (F (__VA_ARGS__), p00_unwind_top, P99_STRINGIFY (__LINE__), __func__, #F ", no thrd_success")
 
-p99_inline
-int p00_throw_call_neg(int p00_neg,
-                       errno_t p00_def,
-                       p00_jmp_buf0 * p00_top,
-                       char const* p00_file,
-                       char const* p00_context,
-                       char const* p00_info) {
-  if (P99_UNLIKELY(p00_neg < 0)) p00_throw_errno(p00_top, p00_def, p00_file, p00_context, p00_info);
-  return p00_neg;
+p99_inline int p00_throw_call_neg (
+    int p00_neg, errno_t p00_def, p00_jmp_buf0 *p00_top, const char *p00_file, const char *p00_context,
+    const char *p00_info
+) {
+    if (P99_UNLIKELY (p00_neg < 0))
+        p00_throw_errno (p00_top, p00_def, p00_file, p00_context, p00_info);
+    return p00_neg;
 }
 
-#define P00_THROW_CALL_NEG(F, E, ...)                                                                       \
-p00_throw_call_neg(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, #F ", neg return")
+#define P00_THROW_CALL_NEG(F, E, ...)                                                                                  \
+    p00_throw_call_neg (F (__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY (__LINE__), __func__, #F ", neg return")
 
 /**
  ** @brief Wrap a function call to @a F such that it throws an error
@@ -407,22 +400,20 @@ p00_throw_call_neg(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), _
  ** @see P99_THROW_CALL_VOIDP for a similar macro that checks a
  ** pointer return value
  **/
-#define P99_THROW_CALL_NEG(F, E, ...) P00_THROW_CALL_NEG(F, E, __VA_ARGS__)
+#define P99_THROW_CALL_NEG(F, E, ...) P00_THROW_CALL_NEG (F, E, __VA_ARGS__)
 
-p99_inline
-int p00_throw_call_negate(int p00_neg,
-                          errno_t p00_def,
-                          p00_jmp_buf0 * p00_top,
-                          char const* p00_file,
-                          char const* p00_context,
-                          char const* p00_info) {
-  P99_UNUSED(p00_def);
-  if (P99_UNLIKELY(p00_neg < 0)) p00_jmp_throw(-p00_neg, p00_top, p00_file, p00_context, p00_info);
-  return p00_neg;
+p99_inline int p00_throw_call_negate (
+    int p00_neg, errno_t p00_def, p00_jmp_buf0 *p00_top, const char *p00_file, const char *p00_context,
+    const char *p00_info
+) {
+    P99_UNUSED (p00_def);
+    if (P99_UNLIKELY (p00_neg < 0))
+        p00_jmp_throw (-p00_neg, p00_top, p00_file, p00_context, p00_info);
+    return p00_neg;
 }
 
-#define P00_THROW_CALL_NEGATE(F, E, ...)                                                                       \
-p00_throw_call_negate(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, #F ", neg return")
+#define P00_THROW_CALL_NEGATE(F, E, ...)                                                                               \
+    p00_throw_call_negate (F (__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY (__LINE__), __func__, #F ", neg return")
 
 /**
  ** @brief Wrap a function call to @a F such that it throws an error
@@ -448,22 +439,19 @@ p00_throw_call_negate(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__)
  ** @see P99_THROW_CALL_VOIDP for a similar macro that checks a
  ** pointer return value
  **/
-#define P99_THROW_CALL_NEGATE(F, E, ...) P00_THROW_CALL_NEGATE(F, E, __VA_ARGS__)
+#define P99_THROW_CALL_NEGATE(F, E, ...) P00_THROW_CALL_NEGATE (F, E, __VA_ARGS__)
 
-p99_inline
-void* p00_throw_call_voidp(void* p00_p,
-                           errno_t p00_def,
-                           p00_jmp_buf0 * p00_top,
-                           char const* p00_file,
-                           char const* p00_context,
-                           char const* p00_info) {
-  if (P99_UNLIKELY(!p00_p || (p00_p == (void*)-1))) p00_throw_errno(p00_top, p00_def, p00_file, p00_context, p00_info);
-  return p00_p;
+p99_inline void *p00_throw_call_voidp (
+    void *p00_p, errno_t p00_def, p00_jmp_buf0 *p00_top, const char *p00_file, const char *p00_context,
+    const char *p00_info
+) {
+    if (P99_UNLIKELY (!p00_p || (p00_p == (void *) -1)))
+        p00_throw_errno (p00_top, p00_def, p00_file, p00_context, p00_info);
+    return p00_p;
 }
 
-#define P00_THROW_CALL_VOIDP(F, E, ...)                                                                           \
-p00_throw_call_voidp(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__), __func__, #F ", invalid return")
-
+#define P00_THROW_CALL_VOIDP(F, E, ...)                                                                                \
+    p00_throw_call_voidp (F (__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY (__LINE__), __func__, #F ", invalid return")
 
 /**
  ** @brief Wrap a function call to @a F such that it throws an error
@@ -486,7 +474,7 @@ p00_throw_call_voidp(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__),
  ** return value is negative
  **
  **/
-#define P99_THROW_CALL_VOIDP(F, E, ...) P00_THROW_CALL_VOIDP(F, E, __VA_ARGS__)
+#define P99_THROW_CALL_VOIDP(F, E, ...) P00_THROW_CALL_VOIDP (F, E, __VA_ARGS__)
 
 /**
  ** @brief Stop execution at the current point inside a ::P99_FINALLY
@@ -494,8 +482,7 @@ p00_throw_call_voidp(F(__VA_ARGS__), E, p00_unwind_top, P99_STRINGIFY(__LINE__),
  ** here to the next level.
  **/
 P00_UNWIND_DOCUMENT
-#define P99_RETHROW p00_jmp_throw(p00_code, p00_unwind_top, 0, 0, 0)
-
+#define P99_RETHROW p00_jmp_throw (p00_code, p00_unwind_top, 0, 0, 0)
 
 /**
  ** @brief Create a block that can catch exceptions
@@ -584,29 +571,30 @@ P00_UNWIND_DOCUMENT
  **
  **/
 P00_UNWIND_DOCUMENT
-#define P99_TRY                                                \
-P99_UNWIND_PROTECT                                             \
-/* one phase for the try, one for the finally */               \
-for (register unsigned p00_pha = 0; p00_pha < 2u; ++p00_pha)   \
-  /* Restrict the first phase to the try */                    \
-  if (!p00_pha)                                                \
-    P00_BLK_START                                              \
-      P00_BLK_BEFORE(p00_jmp_push(p00_unwind_top))             \
-      do
+#define P99_TRY                                                                                                        \
+    P99_UNWIND_PROTECT                                                                                                 \
+    /* one phase for the try, one for the finally */                                                                   \
+    for (register unsigned p00_pha = 0; p00_pha < 2u; ++p00_pha)                                                       \
+        /* Restrict the first phase to the try */                                                                      \
+        if (!p00_pha)                                                                                                  \
+            P00_BLK_START                                                                                              \
+    P00_BLK_BEFORE (p00_jmp_push (p00_unwind_top))                                                                     \
+    do
 
-#define P00_FINALLY                                                 \
-while (0); else case 0:                                             \
-P00_BLK_START                                                       \
-P00_BLK_BEFORE(p00_code = p00_unwind_top[0].p00_code)               \
-P00_BLK_BEFORE(p00_unw = !!p00_code)                                \
-/* make sure that this phase is executed at most once */            \
-P00_BLK_BEFORE(p00_pha = 2u)                                        \
-/* unwind the lifo to the current point */                          \
-P00_BLK_BEFORE(p00_jmp_skip(p00_unwind_top))                        \
-/* Hide the top most jump buffer, such that throw or rethrow inside \
-   the catch or finally blocks goes to the next level. */           \
-P00_BLK_DECL(p00_jmp_buf0*, p00_unwind_top, p00_unwind_prev)
-
+#define P00_FINALLY                                                                                                    \
+    while (0)                                                                                                          \
+        ;                                                                                                              \
+else case 0:                                                                                                           \
+    P00_BLK_START                                                                                                      \
+    P00_BLK_BEFORE (p00_code = p00_unwind_top [0].p00_code)                                                            \
+    P00_BLK_BEFORE (p00_unw = !!p00_code)                                                                              \
+    /* make sure that this phase is executed at most once */                                                           \
+    P00_BLK_BEFORE (p00_pha = 2u)                                                                                      \
+    /* unwind the lifo to the current point */                                                                         \
+    P00_BLK_BEFORE (p00_jmp_skip (p00_unwind_top))                                                                     \
+    /* Hide the top most jump buffer, such that throw or rethrow inside                                                \
+       the catch or finally blocks goes to the next level. */                                                          \
+    P00_BLK_DECL (p00_jmp_buf0 *, p00_unwind_top, p00_unwind_prev)
 
 /**
  ** @brief Designate a block that is executed regardless of the
@@ -630,9 +618,9 @@ P00_BLK_DECL(p00_jmp_buf0*, p00_unwind_top, p00_unwind_prev)
  ** @see P99_CATCH
  **/
 P00_UNWIND_DOCUMENT
-#define P99_FINALLY                                            \
-P00_FINALLY                                                    \
-P00_BLK_AFTER(p00_unw ? P99_RETHROW : P99_NOP)
+#define P99_FINALLY                                                                                                    \
+    P00_FINALLY                                                                                                        \
+    P00_BLK_AFTER (p00_unw ? P99_RETHROW : P99_NOP)
 
 /**
  ** @brief Designate a block that is executed regardless of the
@@ -676,15 +664,14 @@ P00_BLK_AFTER(p00_unw ? P99_RETHROW : P99_NOP)
  ** @see P99_RETHROW
  **/
 P00_UNWIND_DOCUMENT
-#define P99_CATCH(...)                                                                        \
-P00_FINALLY                                                                                   \
-P99_IF_EMPTY(__VA_ARGS__)()(P00_BLK_BEFORE(__VA_ARGS__ = p00_code))                           \
-P00_BLK_BEFORE(p00_unw = 0)                                                                   \
-P00_BLK_AFTER(p00_code ? (void)((P00_JMP_BUF_FILE = 0), (P00_JMP_BUF_CONTEXT = 0)) : P99_NOP)
+#define P99_CATCH(...)                                                                                                 \
+    P00_FINALLY                                                                                                        \
+    P99_IF_EMPTY (__VA_ARGS__)                                                                                         \
+    () (P00_BLK_BEFORE (__VA_ARGS__ = p00_code)) P00_BLK_BEFORE (p00_unw = 0)                                          \
+        P00_BLK_AFTER (p00_code ? (void) ((P00_JMP_BUF_FILE = 0), (P00_JMP_BUF_CONTEXT = 0)) : P99_NOP)
 
 /**
  ** @}
  **/
-
 
 #endif

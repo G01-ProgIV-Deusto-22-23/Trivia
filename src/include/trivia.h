@@ -61,9 +61,10 @@
 #include <cJSON_Utils.h>
 
 /*
-    Por si necesitamos división con macros y tal.
+    Por si necesitamos división con macros y tal (https://gustedt.gitlabpages.inria.fr/p99/p99-html/)
     Desactivado por el momento porque seguramente se rompan cosas.
 */
+
 #ifdef TRIVIA_USE_P99
     #include <p99/p99.h>
 #endif

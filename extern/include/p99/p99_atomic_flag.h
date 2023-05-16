@@ -31,9 +31,9 @@
  **
  ** @related atomic_flag
  **/
-p99_inline
-void atomic_flag_lock(volatile atomic_flag *p00_objp) {
-  while (atomic_flag_test_and_set_explicit(p00_objp, memory_order_acquire));
+p99_inline void atomic_flag_lock (volatile atomic_flag *p00_objp) {
+    while (atomic_flag_test_and_set_explicit (p00_objp, memory_order_acquire))
+        ;
 }
 
 /**
@@ -47,9 +47,8 @@ void atomic_flag_lock(volatile atomic_flag *p00_objp) {
  **
  ** @related atomic_flag
  **/
-p99_inline
-_Bool atomic_flag_trylock(volatile atomic_flag *p00_objp) {
-  return !atomic_flag_test_and_set_explicit(p00_objp, memory_order_acquire);
+p99_inline _Bool atomic_flag_trylock (volatile atomic_flag *p00_objp) {
+    return !atomic_flag_test_and_set_explicit (p00_objp, memory_order_acquire);
 }
 
 /**
@@ -59,9 +58,8 @@ _Bool atomic_flag_trylock(volatile atomic_flag *p00_objp) {
  **
  ** @related atomic_flag
  **/
-p99_inline
-void atomic_flag_unlock(volatile atomic_flag *p00_objp) {
-  atomic_flag_clear_explicit(p00_objp, memory_order_release);
+p99_inline void atomic_flag_unlock (volatile atomic_flag *p00_objp) {
+    atomic_flag_clear_explicit (p00_objp, memory_order_release);
 }
 
 /**
@@ -87,13 +85,12 @@ void atomic_flag_unlock(volatile atomic_flag *p00_objp) {
  **
  ** @see P99_MUTUAL_EXCLUDE that is more suited for larger sections.
  **/
-#define P99_SPIN_EXCLUDE(FLAGP)   P00_SPIN_EXCLUDE(FLAGP, P99_UNIQ(flg))
+#define P99_SPIN_EXCLUDE(FLAGP) P00_SPIN_EXCLUDE (FLAGP, P99_UNIQ (flg))
 
-#define P00_SPIN_EXCLUDE(FLAGP, ID)                            \
-P00_BLK_START                                                  \
-P00_BLK_DECL(register atomic_flag volatile*const, ID, (FLAGP)) \
-P00_BLK_BEFAFT(atomic_flag_lock(ID),                           \
-               atomic_flag_unlock(ID))                         \
-P00_BLK_END
+#define P00_SPIN_EXCLUDE(FLAGP, ID)                                                                                    \
+    P00_BLK_START                                                                                                      \
+    P00_BLK_DECL (register atomic_flag volatile *const, ID, (FLAGP))                                                   \
+    P00_BLK_BEFAFT (atomic_flag_lock (ID), atomic_flag_unlock (ID))                                                    \
+    P00_BLK_END
 
 #endif

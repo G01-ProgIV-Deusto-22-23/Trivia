@@ -20,8 +20,8 @@
 /* See the License for the specific language governing permissions and          */
 /* limitations under the License.                                               */
 /*                                                                              */
-#ifndef     P99_H_
-# define    P99_H_
+#ifndef P99_H_
+#define P99_H_
 
 /**
  ** @file
@@ -1441,8 +1441,6 @@
  **
  **/
 
-
-
 #include "p99_choice.h"
 P99_WARN_REDUNDANT_DECLS_PUSH
 #include "p99_defarg.h"
@@ -1455,4 +1453,4 @@ P99_WARN_REDUNDANT_DECLS_PUSH
 #include "p99_arith.h"
 P99_WARN_REDUNDANT_DECLS_POP
 
-#endif      /* !P99_H_ */
+#endif /* !P99_H_ */
