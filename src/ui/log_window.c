@@ -17,6 +17,19 @@ extern "C" {
     static int      LAST_LOG_LINE       = 0;
     static char     LOG_FILENAME [sizeof (LOG_FILENAME_TEMPLATE)];
 
+    int stderr_to_null (void) {
+        return set_log_file (
+#ifdef _WIN32
+                   "nul"
+#else
+               "/dev/null"
+#endif
+               ) == -1 ||
+                       open_log_file () == -1
+                   ? -1
+                   : 0;
+    }
+
     int get_log_file (void) {
         return LOG_FILE_FILENO;
     }
@@ -148,7 +161,6 @@ extern "C" {
         fflush (stderr);
 
         int ret;
-
         if ((ret =
 #ifdef _WIN32
                  _dup2 (STDERR_SAVE, _fileno (stderr))

@@ -28,11 +28,16 @@ trivia_main {
                     ;
             }
 
+            if (!delete_window (w))
+                warning ("the window could not be deleted properly.");
+
             continue;
         }
 
         break;
     }
+
+    login_menu (s);
 
     return 0;
 }

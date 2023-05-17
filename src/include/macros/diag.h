@@ -757,7 +757,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                          WriteFile (__error_stderr_handle__, ": line ", sizeof (": line ") - 1, NULL, NULL), ({                 \
                              char     __error_line_digits__ [10];                                                               \
                              uint32_t __error_line__      = (uint32_t) __LINE__;                                                \
-                             uint32_t __error_decplaces__ = (uint32_t) decplaces (__LINE__);                                    \
+                             uint32_t __error_decplaces__ = (uint32_t) decplaces ((uint32_t) __LINE__);                                    \
                              for (uint32_t __error_iter__ = 1; __error_line__; __error_line__ /= 10)                            \
                                  *(__error_line_digits__ + __error_decplaces__ - __error_iter__++) =                            \
                                      (char) (__error_line__ % 10) + '0';                                                        \

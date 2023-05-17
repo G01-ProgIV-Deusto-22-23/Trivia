@@ -59,9 +59,9 @@ DXXFLAGS := \
 
 UILIBS     := -lformw -lmenuw -lpanelw -lncursesw -lm
 OSLIBS     := -lbacktrace
-BDLIBS     := -lsqlite3
+BDLIBS     := -lsqlite3 -lm
 JSONLIBS   := -lcjson -lcjson_utils
-TRIVIALIBS := -lui -los -lserver -lbd -ladt
+TRIVIALIBS := -lui -los -lserver -lbd -ladt -lconfig
 LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(BDLIBS) $(JSONLIBS)
 
 ifeq ($(OS), Windows_NT)
@@ -81,8 +81,8 @@ linux: BINDIR   := $(BINDIR)/linux
 windows: CC       := $(GCC_WINDOWS)
 windows: CXX      := $(GXX_WINDOWS)
 windows: LIBDIR   := $(LIBDIR)/windows
-windows: CFLAGS   += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR) -lws2_32
-windows: CXXFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR) -lws2_32
+windows: CFLAGS   += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: CXXFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
 windows: OBJDIR   := $(OBJDIR)/windows
 windows: BINDIR   := $(BINDIR)/windows
 
@@ -113,6 +113,11 @@ ADTL     := $(LIBDIR)/linux/libadt.a
 ADTW     := $(LIBDIR)/windows/libadt.a
 ADTOBJSL := $(patsubst $(SRCDIR)/adt/%.c, $(OBJDIR)/linux/adt_%.o, $(wildcard $(SRCDIR)/adt/*.c))
 ADTOBJSW := $(patsubst $(SRCDIR)/adt/%.c, $(OBJDIR)/windows/adt_%.o, $(wildcard $(SRCDIR)/adt/*.c))
+
+CONFIGL     := $(LIBDIR)/linux/libconfig.a
+CONFIGW     := $(LIBDIR)/windows/libconfig.a
+CONFIGOBJSL := $(patsubst $(SRCDIR)/config/%.c, $(OBJDIR)/linux/config_%.o, $(wildcard $(SRCDIR)/config/*.c))
+CONFIGOBJSW := $(patsubst $(SRCDIR)/config/%.c, $(OBJDIR)/windows/config_%.o, $(wildcard $(SRCDIR)/config/*.c))
 
 UIL     := $(LIBDIR)/linux/libui.a
 UIW     := $(LIBDIR)/windows/libui.a
@@ -159,6 +164,18 @@ $(OBJDIR)/linux/adt_%.o: $(SRCDIR)/adt/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
 $(OBJDIR)/windows/adt_%.o: $(SRCDIR)/adt/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(CONFIGL): $(CONFIGOBJSL)
+	ar rcs $@ $^
+
+$(CONFIGW): $(CONFIGOBJSW)
+	ar rcs $@ $^
+
+$(OBJDIR)/linux/config_%.o: $(SRCDIR)/config/%.c
+	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
+
+$(OBJDIR)/windows/config_%.o: $(SRCDIR)/config/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
 $(UIL): $(UIOBJSL)
@@ -215,11 +232,11 @@ $(OBJDIR)/linux/bd_%.o: $(SRCDIR)/local/bd/%.c
 $(OBJDIR)/windows/bd_%.o: $(SRCDIR)/local/bd/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(LOCALL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
+$(LOCALL): $(ADTL) $(CONFIGL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
 
-$(LOCALW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
-	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS)
+$(LOCALW): $(ADTW) $(CONFIGW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
+	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
 
 $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
@@ -227,11 +244,11 @@ $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 $(OBJDIR)/windows/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
 
-$(REMOTEL): $(ADTL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(REMOTEOBJSL)
+$(REMOTEL): $(ADTL) $(CONFIGL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(REMOTEOBJSL)
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSL) $(LIBS)
 
-$(REMOTEW): $(ADTW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(REMOTEOBJSW)
-	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS)
+$(REMOTEW): $(ADTW) $(CONFIGW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(REMOTEOBJSW)
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
 
 $(OBJDIR)/linux/remote_ui_%.o: $(SRCDIR)/remote/ui/%.cpp
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@

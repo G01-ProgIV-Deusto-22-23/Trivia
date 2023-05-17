@@ -303,6 +303,7 @@ __attribute__ ((warn_unused_result))
 
     // log_window.c
 
+    extern int stderr_to_null (void);
     extern int get_log_file (void);
     extern int impl_set_log_file (const int, const bool);
     extern int temp_log_file (void);
@@ -1144,6 +1145,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
                              LocalFree (__setup_ui_wargv__);                                                           \
                      }                                                                                                 \
                  } else {                                                                                              \
+                     stderr_to_null ();                                                                                \
                      if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain") \
                          )) {                                                                                          \
                          for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                        \
@@ -1334,6 +1336,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
                              LocalFree (__setup_ui_wargv__);                                                                                  \
                      }                                                                                                                        \
                  } else {                                                                                                                     \
+                     stderr_to_null ();                                                                                                       \
                      if (!(strcmp (__func__, "wmain") && strcmp (__func__, "WinMain") && strcmp (__func__, "wWinMain")                        \
                          )) {                                                                                                                 \
                          for (int __setup_ui_iter__ = 0; __setup_ui_iter__ < __setup_ui_argc__;                                               \
@@ -1401,7 +1404,8 @@ __attribute__ ((nonnull (8), warn_unused_result))
                     set_server_port ((int) strtol ((*(argv + 1)) + __setup_ui_cmd_len__, NULL, 10));                   \
                     impl_start_server ();                                                                              \
                     exit (0);                                                                                          \
-                } else                                                                                                 \
+                } else {                                                                                               \
+                    stderr_to_null ();                                                                                 \
                     __setup_ui_ret__ = impl_setup_ui (                                                                 \
                         !strcmp (__func__, "main") ? argc - 1 : 0,                                                     \
                         static_cast<const char *const *> (!strcmp (__func__, "main") ? (void *) (argv + 1) : NULL),    \
@@ -1409,6 +1413,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
                         ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0), ARG4 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0),     \
                         ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0)                                               \
                     );                                                                                                 \
+                }                                                                                                      \
                 __setup_ui_ret__;                                                                                      \
             })
     #else
@@ -1447,7 +1452,8 @@ __attribute__ ((nonnull (8), warn_unused_result))
                     ));                                                                                                              \
                     impl_start_server ();                                                                                            \
                     exit (0);                                                                                                        \
-                } else                                                                                                               \
+                } else {                                                                                                             \
+                    stderr_to_null ();                                                                                               \
                     __setup_ui_ret__ = impl_setup_ui (                                                                               \
                         !strcmp (__func__, "main") ? __builtin_choose_expr (isint (argc), argc, 1) - 1 : 0,                          \
                         !strcmp (__func__, "main")                                                                                   \
@@ -1474,6 +1480,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
                             ARG5 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0, 0, 0), 0                                                      \
                         )                                                                                                            \
                     );                                                                                                               \
+                }                                                                                                                    \
                 __setup_ui_ret__;                                                                                                    \
             })
     #endif

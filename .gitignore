@@ -10,3 +10,5 @@ obj
 *valgrind*
 compile_commands*.json
 clang-format-all
+.config.path
+*.sqlite

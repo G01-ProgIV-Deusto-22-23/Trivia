@@ -72,6 +72,7 @@
 #include "types.h"
 #include "macros.h"
 #include "adt.h"
+#include "config.h"
 #include "ui.h"
 #include "os.h"
 #include "server.h"

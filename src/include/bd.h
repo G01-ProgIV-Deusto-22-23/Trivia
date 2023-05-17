@@ -1,6 +1,11 @@
 #ifndef BD_H_
 #define BD_H_
 
+#define DEFAULT_DATABASE_FILE "BD.sqlite"
+
+extern void                               print_db_err (sqlite3 *const restrict);
+extern __attribute__ ((nonnull (2))) void open_db (const char *const restrict, sqlite3 **const restrict);
+
 // funciones para la tabla Usuario
 Usuario *obtenerUsuarios (sqlite3 *db);
 int      numeroUsuarios (sqlite3 *db);

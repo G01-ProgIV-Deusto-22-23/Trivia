@@ -14,6 +14,18 @@ cmd_t game_command (const game_attr_t game) {
     return (cmd_t) { .cmd = cmd_game, .info.game = game };
 }
 
+cmd_t user_creds_command (const Usuario u) {
+    return (cmd_t) { .cmd = cmd_user_creds, .info.user = u };
+}
+
+cmd_t insert_user_command (const Usuario u) {
+    return (cmd_t) { .cmd = cmd_user_insert, .info.user = u };
+}
+
+cmd_t update_user_command (const Usuario u) {
+    return (cmd_t) { .cmd = cmd_user_update, .info.user = u };
+}
+
 void packet (cmd_t *const restrict dest, const char src [static 1], size_t sz, const bool cont) {
     if (!dest)
         return;

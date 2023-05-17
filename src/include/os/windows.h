@@ -1,9 +1,6 @@
 #ifndef TRIVIA_OS_WINDOWS_H
 #define TRIVIA_OS_WINDOWS_H
 
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0500
-
 #include <winsock2.h>
 #include <windows.h>
 #include <io.h>

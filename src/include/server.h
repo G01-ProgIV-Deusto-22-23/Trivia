@@ -28,11 +28,14 @@ extern "C" {
 #define RECV_TIMEOUT    TRANS_TIMEOUT
 #define MAX_RECV        ct_next2pow (ONE_MB / ct_next2pow (sizeof (packet_t) - offsetof (packet_t, text)))
 
-    cmd_t success_command (void);
-    cmd_t error_command (const uint32_t);
-    cmd_t kill_command (void);
-    cmd_t game_command (const game_attr_t);
-    void  packet (
+    extern cmd_t success_command (void);
+    extern cmd_t error_command (const uint32_t);
+    extern cmd_t kill_command (void);
+    extern cmd_t game_command (const game_attr_t);
+    extern cmd_t user_creds_command (const Usuario);
+    extern cmd_t insert_user_command (const Usuario);
+    extern cmd_t update_user_command (const Usuario);
+    extern void  packet (
          cmd_t *const restrict,
          const char [
 #ifndef __cplusplus
