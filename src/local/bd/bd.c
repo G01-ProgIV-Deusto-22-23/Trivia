@@ -22,29 +22,15 @@ __attribute__ ((nonnull (2))) void open_db (const char *const restrict f, sqlite
         return;
 
     static const char *const sql [] = {
-        stringify (CREATE TABLE
-                   "Categorias"("ID_Categoria" INTEGER NOT NULL, "Nombre" VARCHAR (100), PRIMARY KEY ("ID_Categoria"))),
-        stringify (CREATE TABLE [Presets](
-            [ID_Presets] INTEGER NULL PRIMARY KEY, [nJugadores] INTEGER NULL, [nRondas] INTEGER NULL,
-            [RoundTime] INTEGER NULL, [Categorias] VARCHAR (20) NULL, [Mecanica1] VARCHAR (3) NULL,
-            [Mecanica2] VARCHAR (3) NULL, [Mecanica3] VARCHAR (3) NULL, [mecanica4] VARCHAR (3) NULL
-        )),
-        stringify (CREATE TABLE "UsuarioCategoria"(
-            "ID_Categoria" INTEGER NOT NULL, "ID_Usuario" INTEGER NOT NULL, "Fallos" INTEGER, "Aciertos" INTEGER,
-            PRIMARY KEY ("ID_Categoria", "ID_Usuario")
-        )),
-        stringify (CREATE TABLE [configuracion](
-            [nPartidas] INTEGER NULL, [nMaxJugadores] INTEGER NULL, [ID_configuracion] INTEGER NOT NULL PRIMARY KEY
-        )),
-        stringify (CREATE TABLE "usuario"(
-            "ID_Usuario" INTEGER NOT NULL, "NombreVisible" VARCHAR (20), "Username" VARCHAR (20),
-            "Contrasena" VARCHAR (20), "AciertosTotales" INTEGER, "FallosTotales" INTEGER, "ID_Presets" INTEGER,
-            PRIMARY KEY ("ID_Usuario")
-        ))
+        "CREATE TABLE \"Categorias\"(\"ID_Categoria\" INTEGER NOT NULL, \"Nombre\" VARCHAR (100), PRIMARY KEY (\"ID_Categoria\"))",
+        "CREATE TABLE [Presets]([ID_Presets] INTEGER NULL PRIMARY KEY, [nJugadores] INTEGER NULL, [nRondas] INTEGER NULL,[RoundTime] INTEGER NULL, [Categorias] VARCHAR (20) NULL, [Mecanica1] VARCHAR (3) NULL,[Mecanica2] VARCHAR (3) NULL, [Mecanica3] VARCHAR (3) NULL, [mecanica4] VARCHAR (3) NULL)",
+        "CREATE TABLE \"UsuarioCategoria\"(\"ID_Categoria\" INTEGER NOT NULL, \"ID_Usuario\" INTEGER NOT NULL, \"Fallos\" INTEGER, \"Aciertos\" INTEGER,PRIMARY KEY (\"ID_Categoria\", \"ID_Usuario\"))",
+        "CREATE TABLE [configuracion]([nPartidas] INTEGER NULL, [nMaxJugadores] INTEGER NULL, [ID_configuracion] INTEGER NOT NULL PRIMARY KEY)",
+        "CREATE TABLE \"usuario\"(\"ID_Usuario\" INTEGER NOT NULL, \"NombreVisible\" VARCHAR (20), \"Username\" VARCHAR (20),\"Contrasena\" VARCHAR (20), \"AciertosTotales\" INTEGER, \"FallosTotales\" INTEGER, \"ID_Presets\" INTEGER,PRIMARY KEY (\"ID_Usuario\"))"
     };
 
-    for (size_t i = 0; i < sizeof (sql) / sizeof (*sql); i++) {
-        if (sqlite3_exec (*db, *(sql + i), NULL, NULL, NULL) != SQLITE_OK) {
+    for (size_t i = 0; i < sizeof (sql) / sizeof (*sql);) {
+        if (sqlite3_exec (*db, *(sql + i++), NULL, NULL, NULL) != SQLITE_OK) {
             print_db_err (*db);
             error ("could not create the table.");
         }
