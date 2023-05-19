@@ -8,7 +8,7 @@ obj
 *.backtrace
 *.log
 *valgrind*
-compile_commands*.json
+*.json
 clang-format-all
 .config.path
 *.sqlite
