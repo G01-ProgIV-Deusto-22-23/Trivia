@@ -28,6 +28,7 @@
     #include <vector>
     #include <algorithm>
     #include <iostream>
+    #include <random>
 #else
     #include <stdio.h>
     #include <stdlib.h>

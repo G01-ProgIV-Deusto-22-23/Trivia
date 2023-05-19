@@ -18,6 +18,7 @@ extern "C" {
 #define DEFAULT_GAME_PORT_END   IANA_DYNAMIC_PORT_END
 
 #define MAX_PLAYERS        20
+#define MAX_ROUNDS         10
 #define DEFAULT_ROUND_TIME 20
 
 #define ONE_MB (1 << 20)
@@ -49,9 +50,12 @@ extern "C" {
     extern const char *get_game_arg (void);
 #endif
 
+    extern const char *game_list_raw (void);
+    extern void        game_list_parse (char [MAX_GAMES][sizeof ("XXXX")], const char *);
     extern size_t      get_games (void);
     extern size_t      set_games (const size_t);
     extern void        gen_game_ids (void);
+    extern int         get_game_port (const char *const restrict);
     extern const char *init_game (game_attr_t, const bool);
     extern bool        init_games (void);
     extern bool        end_games (void);
@@ -71,16 +75,20 @@ extern "C" {
     int
 #endif
                 impl_connect_server (const char *, int, const char *);
-    extern void disconnect_server (const
+    extern void impl_disconnect_server (
+        const
 #ifdef _WIN32
-                                   SOCKET
+        SOCKET
 #else
-                               int
+    int
 #endif
+        ,
+        const bool
     );
     extern cmd_t send_server (const char *const restrict, const int, const cmd_t, cmd_t *const restrict, const size_t);
 
-#define connect_server(a, p) impl_connect_server (a, p, __func__)
+#define disconnect_server(s, ...) impl_disconnect_server (s, ARG1 (__VA_ARGS__ __VA_OPT__ (, ) false))
+#define connect_server(a, p)      impl_connect_server (a, p, __func__)
 
     extern int get_server_port (void);
     extern int set_server_port (int);

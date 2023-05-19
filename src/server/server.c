@@ -154,7 +154,7 @@ server_status_t get_server_status (void) {
                                 : server_on)
     );
 
-    disconnect_server (sock);
+    disconnect_server (sock, true);
 
 #ifdef _WIN32
     FlushViewOfFile (SERVER_STATUS, sizeof (_Atomic server_status_t));
@@ -474,7 +474,7 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         -1
 #endif
     ) {
-        disconnect_server (sock);
+        disconnect_server (sock, true);
 
 #ifndef _WIN32
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
@@ -493,7 +493,7 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
     }
 
     if (listen (sock, 1) == -1) {
-        disconnect_server (sock);
+        disconnect_server (sock, true);
 
 #ifndef _WIN32
         msync (SERVER_STATUS, sizeof (_Atomic server_status_t), MS_SYNC);
@@ -579,27 +579,106 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
             -1
 #endif
         ) {
-            warning ("could not receive any data from the client.");
-
-            continue;
+            {
+#ifdef _WIN32
+                WSAPOLLFD pollfd = { .fd = client_sock };
+                if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
+                if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                    (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                    warning ("could not get any data from the client.");
+            }
         }
+
+        disconnect_server (client_sock);
+
+        continue;
 
         if (!recvlen) {
             message ("the client closed the connection");
 
+            disconnect_server (client_sock);
+
             continue;
         }
 
-        if (!(cmd.cmd == cmd_kill || cmd.cmd == cmd_game || cmd.cmd == cmd_user_creds || cmd.cmd == cmd_user_insert ||
+        if (!(cmd.cmd == cmd_kill || cmd.cmd == cmd_game_list || cmd.cmd == cmd_game_connect ||
+              cmd.cmd == cmd_game_create || cmd.cmd == cmd_user_creds || cmd.cmd == cmd_user_insert ||
               cmd.cmd == cmd_user_update)) {
             warning (
-                "The server only accepts five commands (killing the server, starting a game, comparing/gathering user credentials and updating or inserting those credentials), ignoring the received command."
+                "The server only accepts eight commands (killing the server, listing the games, connecting to a game, sending game results, starting a game, comparing/gathering user credentials and updating or inserting those credentials), ignoring the received command."
             );
 
             continue;
         }
 
-        if (cmd.cmd == cmd_game) {
+        if (cmd.cmd == cmd_game_list) {
+            if (send (client_sock, (packet (&cmd, game_list_raw (), 0, false), (void *) &cmd), sizeof (cmd_t), 0) ==
+#ifdef _WIN32
+                SOCKET_ERROR
+#else
+                -1
+#endif
+            ) {
+                message ("waiting for packet delivery (" stringify (SEND_TIMEOUT) " milliseconds max).");
+
+                {
+#ifdef _WIN32
+                    WSAPOLLFD pollfd = { .fd = client_sock };
+                    if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                    struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
+                    if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                        (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                        warning ("could not send the game IDs in raw form to the client.");
+                }
+            }
+
+            continue;
+        }
+
+        if (cmd.cmd == cmd_game_connect) {
+            static char sock_text [sizeof (int) + 1] = { sizeof (sizeof (int)) };
+
+            if (send (
+                    client_sock,
+                    (packet (
+                         &cmd, memcpy (sock_text, &(int) { get_game_port (cmd.info.pack.text) }, sizeof (int)),
+                         sizeof (int) + 1, false
+                     ),
+                     (void *) &cmd),
+                    sizeof (cmd_t), 0
+                ) ==
+#ifdef _WIN32
+                SOCKET_ERROR
+#else
+                -1
+#endif
+            ) {
+                message ("waiting for packet delivery (" stringify (SEND_TIMEOUT) " milliseconds max).");
+
+                {
+#ifdef _WIN32
+                    WSAPOLLFD pollfd = { .fd = client_sock };
+                    if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                    struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
+                    if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                        (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                        warning ("could not send the game details to the client.");
+                }
+            }
+
+            disconnect_server (client_sock);
+
+            continue;
+        }
+
+        if (cmd.cmd == cmd_game_create) {
             if (send (
                     client_sock, (packet (&cmd, init_game (cmd.info.game, 0), 0, false), (void *) &cmd), sizeof (cmd_t),
                     0
@@ -631,9 +710,9 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         }
 
         if (cmd.cmd == cmd_user_creds) {
-            Usuario *u = get_map (users, cmd.info.user.username);
+            Usuario *const u = get_map (users, cmd.info.user.username);
             if (send (
-                    client_sock, (cmd = u ? user_creds_command (*u) : error_command (CMD_ERROR_NO_USER), &cmd),
+                    client_sock, (cmd = u ? user_creds_command (*u) : error_command (CMD_ERROR_NO_USER), (void *) &cmd),
                     sizeof (cmd_t), 0
                 ) ==
 #ifdef _WIN32
@@ -669,7 +748,7 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
                                ? error_command (CMD_ERROR_INSERT_USER)
                                : (insertarUsuario (SERVER_DATABASE, *(user_arr + ++nusers) = cmd.info.user),
                                   user_creds_command (cmd.info.user)),
-                     &cmd),
+                     (void *) &cmd),
                     sizeof (cmd_t), 0
                 ) ==
 #ifdef _WIN32
@@ -725,7 +804,7 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         }
 
         disconnect_server (client_sock);
-        disconnect_server (sock);
+        disconnect_server (sock, true);
 
         destroy_map (users);
 
@@ -929,7 +1008,7 @@ impl_connect_server (const char *ip, int port, const char *prevf) {
                           in_addr_t
 #endif
                       ) -1) {
-            warning ("not a valid ip address.");
+            warning ("not a valid IP address.");
 
             return
 #ifdef _WIN32
@@ -1046,13 +1125,16 @@ impl_connect_server (const char *ip, int port, const char *prevf) {
     return sock;
 }
 
-void disconnect_server (const
+void impl_disconnect_server (
+    const
 #ifdef _WIN32
-                        SOCKET
+    SOCKET
 #else
-                        int
+    int
 #endif
-                            socket) {
+        socket,
+    const bool __attribute__ ((unused)) wsacleanup
+) {
 #ifdef _WIN32
     DWORD e;
 #endif
@@ -1103,6 +1185,9 @@ void disconnect_server (const
         }
 
 #ifdef _WIN32
+        if (!wsacleanup)
+            return;
+
         e = GetLastError ();
 
         if (e == WSANOTINITIALISED)

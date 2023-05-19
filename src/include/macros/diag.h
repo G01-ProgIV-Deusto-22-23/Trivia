@@ -446,7 +446,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                          WriteFile (__warning_stderr_handle__, ": line ", sizeof (": line ") - 1, NULL, NULL), ({                                           \
                              char     __warning_line_digits__ [10];                                                                                         \
                              uint32_t __warning_line__      = (uint32_t) __LINE__;                                                                          \
-                             uint32_t __warning_decplaces__ = (uint32_t) decplaces (__LINE__);                                                              \
+                             uint32_t __warning_decplaces__ = (uint32_t) decplaces ((uint32_t) __LINE__);                                                              \
                              for (uint32_t __warning_iter__ = 1; __warning_line__; __warning_line__ /= 10)                                                  \
                                  *(__warning_line_digits__ + __warning_decplaces__ - __warning_iter__++) =                                                  \
                                      (char) (__warning_line__ % 10) + '0';                                                                                  \

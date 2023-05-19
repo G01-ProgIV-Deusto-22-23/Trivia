@@ -11,7 +11,7 @@ cmd_t kill_command (void) {
 }
 
 cmd_t game_command (const game_attr_t game) {
-    return (cmd_t) { .cmd = cmd_game, .info.game = game };
+    return (cmd_t) { .cmd = cmd_game_create, .info.game = game };
 }
 
 cmd_t user_creds_command (const Usuario u) {

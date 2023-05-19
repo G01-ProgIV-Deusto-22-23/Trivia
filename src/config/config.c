@@ -48,7 +48,9 @@ const char *set_config_file (const char *const restrict f) {
         if (!(f = fopen (CONFIG_FILE_LOCATOR, "w+")))
             error ("could not open the config locator.");
 
+        setvbuf (f, NULL, _IONBF, 0);
         fwrite (CONFIG_FILE, 1, strlen (CONFIG_FILE), f);
+        fclose (f);
 
 #pragma GCC diagnostic pop
     }
@@ -56,8 +58,73 @@ const char *set_config_file (const char *const restrict f) {
     return CONFIG_FILE;
 }
 
+void write_config (const char *const restrict path) {
+    static char  buf [ONE_MB]                 = { 0 };
+    static char  fname [sizeof (CONFIG_FILE)] = { 0 };
+    static FILE *f                            = NULL;
+
+    memset (buf, 0, sizeof (buf));
+    memset (fname, 0, sizeof (fname));
+
+    if (!path) {
+        if (!(f = fopen (CONFIG_FILE_LOCATOR, "r"))) {
+            warning ("could not get the location of the config file, using the default file.");
+
+            if (!(f = fopen (CONFIG_FILE_LOCATOR, "w+")))
+                error ("could not create the config file locator.");
+
+            setvbuf (f, NULL, _IONBF, 0);
+            fwrite (CONFIG_FILE, 1, strlen (CONFIG_FILE), f);
+        }
+
+        fread (fname, 1, sizeof (CONFIG_FILE) - 1, f);
+        fclose (f);
+    }
+
+    else
+        memcpy (fname, path, strlen (path));
+
+    if (!(f = fopen (fname, "w+")))
+        error ("could not open the config file for writing.");
+
+    cJSON *const restrict o = cJSON_CreateObject ();
+    if (!o) {
+        warning ("could not create the JSON object.");
+        fclose (f);
+
+        return;
+    }
+
+    cJSON *const restrict db = cJSON_CreateString (DATABASE_FILE);
+    if (db)
+        cJSON_AddItemToObject (o, "database", db);
+
+    else
+        warning ("could not add the \"database\" field to the object.");
+
+    cJSON *const restrict port = cJSON_CreateNumber ((double) get_server_port ());
+    if (port)
+        cJSON_AddItemToObject (o, "port", port);
+
+    else
+        warning ("could not add the \"port\" field to the object.");
+
+    if (!cJSON_PrintPreallocated (o, buf, sizeof (buf), 1)) {
+        warning ("could not stringify the configuration.");
+        fclose (f);
+
+        return;
+    }
+
+    setvbuf (f, NULL, _IONBF, 0);
+    fwrite (buf, 1, strlen (buf), f);
+
+    cJSON_Delete (o);
+    fclose (f);
+}
+
 cJSON *get_config (const char *const restrict path) {
-    static char   prebuf [ONE_MB]              = { 0 };
+    static char   prebuf [1 << 13]             = { 0 };
     static char   fname [sizeof (CONFIG_FILE)] = { 0 };
     static FILE  *f                            = NULL;
     static size_t fsz                          = 0;
@@ -71,6 +138,7 @@ cJSON *get_config (const char *const restrict path) {
             if (!(f = fopen (CONFIG_FILE_LOCATOR, "w+")))
                 error ("could not create the config file locator.");
 
+            setvbuf (f, NULL, _IONBF, 0);
             fwrite (CONFIG_FILE, 1, strlen (CONFIG_FILE), f);
         }
 
@@ -78,10 +146,14 @@ cJSON *get_config (const char *const restrict path) {
         fclose (f);
     }
 
-    if (!(f = fopen (fname, "r"))) {
-        warning ("could not open the config file.");
+    else
+        memcpy (fname, path, strlen (path));
 
-        return NULL;
+    if (!(f = fopen (fname, "r"))) {
+        warning ("could not open the config file, creating a default configuration.");
+
+        write_config (fname);
+        return get_config (fname);
     }
 
     if (fseek (f, 0L, SEEK_END))
@@ -94,8 +166,6 @@ cJSON *get_config (const char *const restrict path) {
     char *buf = prebuf;
     if (fsz >= sizeof (prebuf) && !(buf = calloc (1, fsz)))
         error ("could not allocate space for the buffer.");
-
-    message ("jiji");
 
     fread (buf, 1, fsz, f);
 

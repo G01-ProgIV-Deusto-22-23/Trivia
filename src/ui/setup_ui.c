@@ -1,4 +1,3 @@
-#include "ncursesw/curses.h"
 static int INIT_CURS_VAR;
 
 #define TRIVIA_USAGE_ARG_SHORT       "-u"
@@ -30,6 +29,13 @@ static int INIT_CURS_VAR;
 #define TRIVIA_LOGFILE_ARG_LEFT  TRIVIA_LOGFILE_ARG " <file>"
 #define TRIVIA_LOGFILE_ARG_RIGHT "use the given file name for the log file (\"\" for a random name)"
 
+#define TRIVIA_CONFIGFILE_ARG      "--config-file"
+#define TRIVIA_CONFIGFILE_ARG_LEFT TRIVIA_CONFIGFILE_ARG " <file>"
+#define TRIVIA_CONFIGFILE_ARG_RIGHT                                                                                    \
+    "use the given file name for the config file (\"\" to use the file specified in the " stringify (                  \
+        CONFIG_FILE_LOCATOR                                                                                            \
+    ) " file)"
+
 static bool TRIVIA_WANTS_USAGE        = false;
 static bool TRIVIA_WANTS_HELP         = false;
 static bool TRIVIA_WANTS_NOLOG        = false;
@@ -53,6 +59,7 @@ static const char
                                                     "$LogFile", "$Volume", "$AttrDef", "$Bitmap", "$Boot",  "$BadClus",
                                                     "$Secure",  "$Upcase", "$Extend",  "$Quota",  "$ObjId", "$Reparse" };
 static const char *LOG_FILENAME                 = NULL;
+static const char *CONFIG_FILENAME              = NULL;
 
 static void atexit_end_ui (void) {
     end_ui ();
@@ -100,8 +107,17 @@ int impl_setup_ui (
             goto log_ex;
         }
 
+        if (!strcmp (*(argv + i), TRIVIA_CONFIGFILE_ARG)) {
+            CONFIG_FILENAME           = NULL;
+            TRIVIA_EXPECTING_FILENAME = true;
+        }
+
         if (TRIVIA_EXPECTING_FILENAME) {
-            LOG_FILENAME              = *(argv + i);
+            if (!strcmp (TRIVIA_LOGFILE_ARG, *(argv + i - 1)))
+                LOG_FILENAME = *(argv + i);
+            else
+                CONFIG_FILENAME = *(argv + i);
+
             TRIVIA_EXPECTING_FILENAME = false;
 
             continue;
@@ -166,13 +182,16 @@ int impl_setup_ui (
             "\n%-20s\t\t" TRIVIA_USAGE_ARG_SHORT_RIGHT "\n%-20s\t\t" TRIVIA_USAGE_ARG_LONG_RIGHT
             "\n%-20s\t\t" TRIVIA_HELP_ARG_SHORT_RIGHT "\n%-20s\t\t" TRIVIA_HELP_ARG_LONG_RIGHT
             "\n%-20s\t\t" TRIVIA_NOLOG_ARG_RIGHT "\n%-20s\t\t" TRIVIA_LOG_ARG_RIGHT
-            "\n%-20s\t\t" TRIVIA_LOGFILE_ARG_RIGHT,
+            "\n%-20s\t\t" TRIVIA_LOGFILE_ARG_RIGHT "\n%-20s\t\t" TRIVIA_CONFIGFILE_ARG_RIGHT "\n",
             TRIVIA_USAGE_ARG_SHORT_LEFT, TRIVIA_USAGE_ARG_LONG_LEFT, TRIVIA_HELP_ARG_SHORT_LEFT,
-            TRIVIA_HELP_ARG_LONG_LEFT, TRIVIA_NOLOG_ARG_LEFT, TRIVIA_LOG_ARG_LEFT, TRIVIA_LOGFILE_ARG_LEFT
+            TRIVIA_HELP_ARG_LONG_LEFT, TRIVIA_NOLOG_ARG_LEFT, TRIVIA_LOG_ARG_LEFT, TRIVIA_LOGFILE_ARG_LEFT,
+            TRIVIA_CONFIGFILE_ARG_LEFT
         );
 
         exit (0);
     }
+
+    set_server_port (get_config_port (CONFIG_FILENAME));
 
     if (!TRIVIA_WANTS_NOLOG) {
         set_log_file (LOG_FILENAME);

@@ -92,7 +92,10 @@ typedef struct __attribute__ ((packed)) {
 
 typedef enum __attribute__ ((packed)
 ) { cmd_kill = 1,
-    cmd_game,
+    cmd_game_list,
+    cmd_game_connect,
+    cmd_game_create,
+    cmd_game_results,
     cmd_packet,
     cmd_packet_cont,
     cmd_user_creds,
@@ -113,6 +116,21 @@ typedef struct __attribute__ ((packed)) {
         uint8_t players;
         uint8_t round_time;
 } game_attr_t;
+
+#define MAX_QUESTIONS     91
+#define MAX_QUESTION_TEXT (MAX_PACKET_SZ >> 1)
+#define MAX_ANSWER_TEXT   (MAX_QUESTION_TEXT >> 3)
+
+typedef struct __attribute__ ((packed)) {
+        uint8_t correct;
+        char    text [MAX_ANSWER_TEXT];
+} answer_t;
+
+typedef struct __attribute__ ((packed)) {
+        uint8_t  n;
+        char     text [MAX_QUESTION_TEXT];
+        answer_t ans [4];
+} question_t;
 
 typedef struct {
         int  ID_Usuario;

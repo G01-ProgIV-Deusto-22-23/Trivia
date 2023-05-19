@@ -21,9 +21,10 @@ extern "C" {
 #ifdef __cplusplus
     #define destroy_linkedlist(l)                                                                                                                              \
         (ct_error (                                                                                                                                            \
-             !std::is_same<                                                                                                                                    \
-                 std::remove_const<std::remove_pointer<std::decay<decltype (l)>::type>::type>::type,                                                           \
-                 linkedlist_t>::value,                                                                                                                         \
+             !(std::is_same<std::remove_const<decltype (l)>::type, linkedlist_t>::value ||                                                                     \
+               std::is_same<                                                                                                                                   \
+                   std::remove_const<std::remove_pointer<std::decay<decltype (l)>::type>::type>::type,                                                         \
+                   linkedlist_t>::value),                                                                                                                      \
              "the type of the first argument passed to the destroy_linkedlist() macro must be compatile with linkedlist_t, linkedlist_t * or linkedlist_t []." \
          ),                                                                                                                                                    \
          impl_destroy_linkedlist (                                                                                                                             \
@@ -46,19 +47,19 @@ extern "C" {
     #define find_linkedlist(l, d, ...)                                                                                      \
         (ct_error (NARGS (__VA_ARGS__) > 2, "the find_linkedlist() macro must be passed between 2 and 4 arguments."),       \
          ct_error (                                                                                                         \
-             !std::is_same<decltype ((l)), linkedlist_t>::value,                                                            \
+             !(std::is_same<decltype ((l)), linkedlist_t>::value),                                                          \
              "the type of the first argument passed to the indexof_linkedlist() macro must be compatile with linkedlist_t." \
          ),                                                                                                                 \
          ct_error (                                                                                                         \
-             !std::is_pointer<std::decay<decltype (d)>::type>::value,                                                       \
+             !(std::is_pointer<std::decay<decltype (d)>::type>::value),                                                     \
              "the second argument passed to the find_linkedlist() macro must be of pointer or array type."                  \
          ),                                                                                                                 \
          ct_error (                                                                                                         \
-             !std::is_same<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))), cmpfunc_t *>::value,         \
+             !(std::is_same<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))), cmpfunc_t *>::value),       \
              "the type of the third argument passed to the find_linkedlist() macro must be compatible with cmpfunc_t *."    \
          ),                                                                                                                 \
          ct_error (                                                                                                         \
-             !std::is_pointer<std::decay<decltype (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL))>::type>::value,           \
+             !(std::is_pointer<std::decay<decltype (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) NULL, NULL))>::type>::value),         \
              "the type of the fourth argument passed to the find_linkedlist() macro must be of pointer or array type."      \
          ),                                                                                                                 \
          impl_find_linkedlist (                                                                                             \
@@ -96,15 +97,15 @@ extern "C" {
              NARGS (__VA_ARGS__) > 1, "the indexof_linkedlist() macro must be passed between 2 and 4 arguments."            \
          ),                                                                                                                 \
          ct_error (                                                                                                         \
-             !std::is_same<decltype ((l)), linkedlist_t>::value,                                                            \
+             !(std::is_same<decltype ((l)), linkedlist_t>::value),                                                          \
              "the type of the first argument passed to the indexof_linkedlist() macro must be compatile with linkedlist_t." \
          ),                                                                                                                 \
          ct_error (                                                                                                         \
-             !std::is_pointer<std::decay<decltype (d)>::type>::value,                                                       \
+             !(std::is_pointer<std::decay<decltype (d)>::type>::value),                                                     \
              "the second argument passed to the indexof_linkedlist() macro must be of pointer or array type."               \
          ),                                                                                                                 \
          ct_error (                                                                                                         \
-             !std::is_same<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))), cmpfunc_t *>::value,         \
+             !(std::is_same<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))), cmpfunc_t *>::value),       \
              "the type of the third argument passed to the indexof_linkedlist() macro must be compatible with cmpfunc_t *." \
          ),                                                                                                                 \
          impl_indexof_linkedlist ((l), (d), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))))
@@ -129,20 +130,15 @@ extern "C" {
 #endif
 
 #ifdef __cplusplus
-    #define pop_linkedlist(l, i, ...)                                                                                   \
-        (ct_error (NARGS (__VA_ARGS__) > 1, "the pop_linkedlist() macro must be passed between 2 and 4 arguments."),    \
-         ct_error (                                                                                                     \
-             !std::is_same<decltype ((l)), linkedlist_t>::value,                                                        \
-             "the type of the first argument passed to the pop_linkedlist() macro must be compatile with linkedlist_t." \
-         ),                                                                                                             \
-         ct_error (                                                                                                     \
-             !isint ((i)), "the second argument passed to the pop_linkedlist() macro must be of integral type."         \
-         ),                                                                                                             \
-         ct_error (                                                                                                     \
-             !std::is_same<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))), cmpfunc_t *>::value,     \
-             "the type of the third argument passed to the pop_linkedlist() macro must be compatible with cmpfunc_t *." \
-         ),                                                                                                             \
-         impl_pop_linkedlist ((l), (i), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))))
+    #define pop_linkedlist(l, i)                                                                                                \
+        (ct_error (                                                                                                             \
+             !(std::is_same<std::remove_const<decltype (l)>::type, linkedlist_t>::value),                                       \
+             "the type of the first argument passed to the pop_linkedlist() macro must be compatile with (const) linkedlist_t." \
+         ),                                                                                                                     \
+         ct_error (                                                                                                             \
+             !isint ((i)), "the second argument passed to the pop_linkedlist() macro must be of integral type."                 \
+         ),                                                                                                                     \
+         impl_pop_linkedlist (&(l), (i)))
 #else
     #define pop_linkedlist(l, i)                                                                                                                           \
         (ct_error (                                                                                                                                        \
@@ -165,14 +161,14 @@ extern "C" {
              NARGS (__VA_ARGS__) > 1, "the remove_linkedlist() macro must be passed between 2 and 4 arguments."            \
          ),                                                                                                                \
          ct_error (                                                                                                        \
-             !std::is_same<decltype ((l)), linkedlist_t>::value,                                                           \
+             !(std::is_same<decltype ((l)), linkedlist_t>::value),                                                         \
              "the type of the first argument passed to the remove_linkedlist() macro must be compatile with linkedlist_t." \
          ),                                                                                                                \
          ct_error (                                                                                                        \
              !isint ((i)), "the second argument passed to the remove_linkedlist() macro must be of integral type."         \
          ),                                                                                                                \
          ct_error (                                                                                                        \
-             !std::is_same<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))), cmpfunc_t *>::value,        \
+             !(std::is_same<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))), cmpfunc_t *>::value),      \
              "the type of the third argument passed to the remove_linkedlist() macro must be compatible with cmpfunc_t *." \
          ),                                                                                                                \
          impl_remove_linkedlist ((l), (i), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ((cmpfunc_t *) NULL))))

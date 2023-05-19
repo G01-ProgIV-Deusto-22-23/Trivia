@@ -2,6 +2,7 @@
 #define TRIVIA_OS_WINDOWS_H
 
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #include <io.h>
 #include <fcntl.h>

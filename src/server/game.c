@@ -16,11 +16,12 @@ static size_t
 #ifndef _WIN32
     *
 #endif
-                            CURGAME                         = 0;
-static map_t                GAMES                           = NULL;
-static struct __game_struct GAME_STRUCTS [MAX_GAMES]        = { 0 };
-static char                 GAME_IDS [MAX_GAMES][5]         = { 0 };
-static size_t __attribute__ ((unused)) NPLAYERS [MAX_GAMES] = { 0 };
+                            CURGAME                                            = 0;
+static map_t                GAMES                                              = NULL;
+static struct __game_struct GAME_STRUCTS [MAX_GAMES]                           = { 0 };
+static char                 GAME_IDS [MAX_GAMES][sizeof ("XXXX")]              = { 0 };
+static char                 GAME_LIST_RAW [MAX_GAMES * (sizeof ("XXXX;") - 1)] = { 0 };
+static size_t __attribute__ ((unused)) NPLAYERS [MAX_GAMES]                    = { 0 };
 static int PLAYER_RESULTS [MAX_GAMES][MAX_PLAYERS];
 static
 #ifdef _WIN32
@@ -39,6 +40,23 @@ const char *get_game_arg (void) {
 }
 #endif
 
+const char *game_list_raw (void) {
+    ct_error (
+        MAX_GAMES * (sizeof ("XXXX;") - 1) > (sizeof (packet_t) - offsetof (packet_t, text)),
+        "the size of the games raw list cannot be larger than that of the contents of a packet."
+    );
+
+    return GAME_LIST_RAW;
+}
+
+void game_list_parse (char dest [MAX_GAMES][sizeof ("XXXX")], const char *src) {
+    if (!(dest || src))
+        return;
+
+    for (size_t i = 0; *src; src += sizeof ("XXXX") - 1)
+        *(char *) mempcpy (*(dest + i++), ++src, sizeof ("XXXX")) = '\0';
+}
+
 size_t get_games (void) {
     return NGAMES;
 }
@@ -53,6 +71,11 @@ size_t get_pub_games_perc (void) {
 
 size_t set_pub_games_perc (const size_t perc) {
     return PUB_GAMES = max ((size_t) 100, perc);
+}
+
+int get_game_port (const char *const restrict id) {
+    const game_t g = get_map (GAMES, id);
+    return g ? g->port : -1;
 }
 
 void gen_game_ids (void) {
@@ -70,19 +93,22 @@ void gen_game_ids (void) {
 #endif
         ;
 
-    for (size_t i = 0; i < sizeof (GAME_IDS) / sizeof (*GAME_IDS); i++) {
+    char *off = GAME_LIST_RAW;
+    for (size_t i = 0; i < sizeof (GAME_IDS) / sizeof (*GAME_IDS);
+         *off++   = i == sizeof (GAME_IDS) / sizeof (*GAME_IDS) - 1 ? '\0' : ';') {
         srand ((unsigned) v);
         v += (unsigned) rand ();
 
-        **(GAME_IDS + i)        = *(l + v % (sizeof (l) - 1));
+        **(GAME_IDS + i)       = *(l + v % (sizeof (l) - 1));
         v                      /= sizeof (l) - 1;
-        *(*(GAME_IDS + i) + 1)  = *(l + v % (sizeof (l) - 1));
+        *(*(GAME_IDS + i) + 1) = *(l + v % (sizeof (l) - 1));
         v                      /= sizeof (l) - 1;
-        *(*(GAME_IDS + i) + 2)  = *(l + v % (sizeof (l) - 1));
+        *(*(GAME_IDS + i) + 2) = *(l + v % (sizeof (l) - 1));
         v                      /= sizeof (l) - 1;
-        *(*(GAME_IDS + i) + 3)  = *(l + v % (sizeof (l) - 1));
+        *(*(GAME_IDS + i) + 3) = *(l + v % (sizeof (l) - 1));
 
-        v += 7777;
+        v   += 7777;
+        off = mempcpy (off, *(GAME_IDS + i++), sizeof ("XXXX"));
     }
 }
 
@@ -280,7 +306,7 @@ static bool kill_games (void) {
 #ifndef _WIN32
              *
 #endif
-             CURGAME  = 0;
+             CURGAME = 0;
          i < n; e    |= kill_game (*(g + i++)) ? (warning ("could not kill game."), true) : false)
         ;
 

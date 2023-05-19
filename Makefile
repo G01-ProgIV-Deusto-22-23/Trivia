@@ -149,7 +149,9 @@ LOCALOBJSW := $(patsubst $(SRCDIR)/local/ui/%.c, $(OBJDIR)/windows/local_ui_%.o,
 REMOTEL     := $(BINDIR)/linux/remote
 REMOTEW     := $(BINDIR)/windows/remote.exe
 REMOTEOBJSL := $(patsubst $(SRCDIR)/remote/ui/%.cpp, $(OBJDIR)/linux/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.cpp))
+REMOTEOBJSL += $(patsubst $(SRCDIR)/remote/questionhandler/%.cpp, $(OBJDIR)/linux/remote_questionhandler_%.o, $(wildcard $(SRCDIR)/remote/questionhandler/*.cpp))
 REMOTEOBJSW := $(patsubst $(SRCDIR)/remote/ui/%.cpp, $(OBJDIR)/windows/remote_ui_%.o, $(wildcard $(SRCDIR)/remote/ui/*.cpp))
+REMOTEOBJSW += $(patsubst $(SRCDIR)/remote/questionhandler/%.cpp, $(OBJDIR)/windows/remote_questionhandler_%.o, $(wildcard $(SRCDIR)/remote/questionhandler/*.cpp))
 
 linux:   init $(LOCALL) $(REMOTEL)
 windows: init $(LOCALW) $(REMOTEW)
@@ -254,6 +256,12 @@ $(OBJDIR)/linux/remote_ui_%.o: $(SRCDIR)/remote/ui/%.cpp
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
 
 $(OBJDIR)/windows/remote_ui_%.o: $(SRCDIR)/remote/ui/%.cpp
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
+
+$(OBJDIR)/linux/remote_questionhandler_%.o: $(SRCDIR)/remote/questionhandler/%.cpp
+	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
+
+$(OBJDIR)/windows/remote_questionhandler_%.o: $(SRCDIR)/remote/questionhandler/%.cpp
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -c $< -o $@
 
 clean:
