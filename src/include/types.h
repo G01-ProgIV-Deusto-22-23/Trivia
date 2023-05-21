@@ -158,6 +158,15 @@ typedef struct {
         char Mecanica3 [4];
         char Mecanica4 [4];
 } Presets;
+typedef struct{
+	char * respuesta;
+	bool correcta;
+} Respuesta;
+typedef struct {
+	char * tipo;
+	char * enunciado;
+	Respuesta opciones[4];
+} Pregunta;
 
 typedef struct __attribute__ ((packed)) {
         cmdname_t cmd;

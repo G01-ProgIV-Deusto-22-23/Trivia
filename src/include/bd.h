@@ -55,5 +55,10 @@ void     modifyMecanica4 (sqlite3 *db, char mecanica [], int id);
 void imprimirUsuario (Usuario usuario);
 void imprimirCategoria (Categoria categoria);
 void imprimirPresets (Presets presets);
+void imprimirRespuesta (Respuesta respuesta);
+void imprimirPregunta (Pregunta pregunta);
+
+// funcion para parsea JSON
+Pregunta* Parsear_JSON();
 
 #endif
