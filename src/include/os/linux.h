@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/random.h>
 #include <linux/limits.h>
 #include <sys/syscall.h>
 

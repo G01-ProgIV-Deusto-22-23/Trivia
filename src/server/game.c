@@ -23,14 +23,12 @@ static char                 GAME_IDS [MAX_GAMES][sizeof ("XXXX")]              =
 static char                 GAME_LIST_RAW [MAX_GAMES * (sizeof ("XXXX;") - 1)] = { 0 };
 static size_t __attribute__ ((unused)) NPLAYERS [MAX_GAMES]                    = { 0 };
 static int PLAYER_RESULTS [MAX_GAMES][MAX_PLAYERS];
+
 static
-#ifdef _WIN32
-    HANDLE
-#else
-    pthread_t
-#endif
-        GAME_THREADS [MAX_GAMES][MAX_PLAYERS + 1];
+#ifndef _WIN32
+    pthread_t GAME_THREADS [MAX_GAMES][MAX_PLAYERS + 1];
 static atomic_bool __attribute__ ((unused)) PLAYER_THREAD_STILL_RUNNING [MAX_GAMES][MAX_PLAYERS];
+#endif
 
 #ifdef _WIN32
 static const char GAME_ARG [] = "juan";
@@ -112,7 +110,7 @@ void gen_game_ids (void) {
     }
 }
 
-const char *init_game (game_attr_t attr, const bool pub) {
+const char *init_game (game_attr_t attr, int port, const bool pub) {
     if (
 #ifndef _WIN32
         !CURGAME || *
@@ -136,15 +134,16 @@ const char *init_game (game_attr_t attr, const bool pub) {
     pid_t p;
 #endif
 
-    int port = get_game_port_start ();
-
     if (!attr.players)
         attr.players = MAX_PLAYERS;
 
     if (!attr.round_time)
         attr.round_time = DEFAULT_ROUND_TIME;
 
-    bool r = (port = get_next_free_port (port++, get_game_port_end ())) == -1 ||
+    if (!attr.rounds)
+        attr.rounds = MAX_ROUNDS;
+
+    bool r = (port = get_next_free_port (port, get_game_port_end ())) == -1 ||
 #ifdef _WIN32
              !CreateProcessA (
                  path, ({
@@ -241,6 +240,33 @@ bool init_games (void) {
     if (!prev)
         gen_game_ids ();
 
+    int p = get_game_port_start ();
+
+#ifdef _WIN32
+    BYTE
+#else
+    unsigned char
+#endif
+        randbytes [MAX_GAMES] = { 0 };
+
+#ifdef _WIN32
+    char       crypto_name [512] = { 0 };
+    DWORD      crypto_name_sz    = sizeof (crypto_name);
+    HCRYPTPROV crypto            = NULL;
+
+    if (!(CryptGetDefaultProviderA (PROV_RSA_FULL, NULL, CRYPT_MACHINE_DEFAULT, crypto_name, &crypto_name_sz) &&
+          CryptAcquireContextA (&crypto, NULL, crypto_name, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT) &&
+          CryptGetRandom (crypto, MAX_GAMES, randbytes)) ||
+        crypto_name_sz < sizeof (randbytes))
+        warning ("could not get enough random bytes to fill the buffer with " stringify (MAX_GAMES) " bytes.");
+
+    CryptReleaseContext (crypto, 0);
+#else
+    if (getrandom (randbytes, MAX_GAMES, 0) < MAX_GAMES)
+        warning ("could not get enough random bytes from /dev/urandom to fill the buffer with " stringify (MAX_GAMES
+        ) " bytes.");
+#endif
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
 
@@ -264,8 +290,16 @@ bool init_games (void) {
 #endif
                                         CURGAME < 2 * n / 3
                                     ? MAX_PLAYERS >> 1
-                                    : MAX_PLAYERS },
-            true
+                                    : MAX_PLAYERS,
+                            .round_time = DEFAULT_ROUND_TIME,
+                            .rounds =
+                                *(((uint8_t []) { MAX_ROUNDS, MAX_ROUNDS / 2, MAX_ROUNDS / 4 }) + *(randbytes +
+#ifndef _WIN32
+                                                                                                    *
+#endif
+                                                                                                    CURGAME) %
+                                                                                                      3) },
+            p++, true
         );
 
 #pragma GCC diagnostic pop
@@ -339,7 +373,19 @@ static void *watch_for_parent (void __attribute__ ((unused)) * unused) {
 }
 #endif
 
-void game_server (const size_t ngame, const int port, game_attr_t attr) {
+__attribute__ ((noreturn)) void game_server (const size_t ngame, const int port, game_attr_t attr) {
+    ct_error (
+        sizeof (question_t) > sizeof (packet_t), "the size of a question cannot be bigger than that of a packet."
+    );
+
+    ct_error (40 > MAX_QUESTIONS, "the maximum number of questions is smaller than the maximum of rounds.");
+
+    ct_error (
+        MAX_QUESTIONS > UINT8_MAX,
+        "the maximum amount of questions cannot be bigger than the possible number that fits in " stringify (uint8_t
+        ) " " stringify (UINT8_MAX) "."
+    );
+
     static char LOG_FILE
         [sizeof ("game_port_pid.log") + sizeof (stringify (IANA_DYNAMIC_PORT_END)) + sizeof (" ") +
          sizeof (stringify (
@@ -389,6 +435,51 @@ void game_server (const size_t ngame, const int port, game_attr_t attr) {
 
 #pragma GCC diagnostic pop
 
+    static uint8_t info [sizeof (game_attr_t) + MAX_ROUNDS];
+    memcpy (info, &attr, sizeof (game_attr_t));
+
+#ifdef _WIN32
+    static char       crypto_name [512] = { 0 };
+    static DWORD      crypto_name_sz    = sizeof (crypto_name);
+    static HCRYPTPROV crypto            = NULL;
+
+    if (!(CryptGetDefaultProviderA (PROV_RSA_FULL, NULL, CRYPT_MACHINE_DEFAULT, crypto_name, &crypto_name_sz) &&
+          CryptAcquireContextA (&crypto, NULL, crypto_name, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT) &&
+          CryptGetRandom (crypto, attr.rounds, info + sizeof (game_attr_t))) ||
+        crypto_name_sz < attr.rounds)
+        warning ("could not get enough random bytes to fill the buffer");
+
+    CryptReleaseContext (crypto, 0);
+#else
+    if (getrandom (info + sizeof (game_attr_t), attr.rounds, 0) < attr.rounds)
+        warning ("could not get enough random bytes from /dev/urandom to fill the buffer");
+#endif
+
+#ifdef _WIN32
+    WSADATA
+    wsa;
+    if (WSAStartup (MAKEWORD (2, 2), &wsa)) {
+        int r = WSAGetLastError ();
+
+        if (r == WSASYSNOTREADY)
+            error ("the underlying network subsystem is not ready for network communication.");
+
+        else if (r == WSAVERNOTSUPPORTED)
+            error (
+                "the version of Windows Sockets support requested is not provided by this particular Windows Sockets implementation."
+            );
+
+        else if (r == WSAEINPROGRESS)
+            error ("a blocking Windows Sockets 1.1 operation is in progress.");
+
+        else if (r == WSAEPROCLIM)
+            error ("a limit on the number of tasks supported by the Windows Sockets implementation has been reached.");
+
+        else if (r == WSAEFAULT)
+            error ("The lpWSAData parameter is not a valid pointer.");
+    }
+#endif
+
     if (port < 0 || port > IANA_DYNAMIC_PORT_END)
         error ("not a valid port.");
 
@@ -399,6 +490,124 @@ void game_server (const size_t ngame, const int port, game_attr_t attr) {
 
     if (get_next_free_port (port, port) == -1)
         error ("the port is not available.");
+
+    struct sockaddr_in addr;
+    addr.sin_family      = AF_INET;
+    addr.sin_port        = htons ((uint16_t) port);
+    addr.sin_addr.s_addr = inet_addr ("127.0.0.1");
+
+    const
+#ifdef _WIN32
+        SOCKET
+#else
+        int
+#endif
+            sock = socket (AF_INET, SOCK_STREAM, 0);
+    if (sock ==
+#ifdef _WIN32
+        INVALID_SOCKET
+#else
+        -1
+#endif
+    ) {
+
+        error ("could not create the server socket.");
+    }
+
+    if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, (void *) &(int) { 1 }, sizeof (int)) ==
+#ifdef _WIN32
+        SOCKET_ERROR
+#else
+        -1
+#endif
+    )
+        warning ("could make the socket reuse local addresses.");
+
+    if (bind (sock, (struct sockaddr *) &addr, sizeof (addr)) ==
+#ifdef _WIN32
+        SOCKET_ERROR
+#else
+        -1
+#endif
+    ) {
+        disconnect_server (sock, true);
+
+        error ("could not bind.");
+    }
+
+    if (listen (sock, 1) == -1) {
+        disconnect_server (sock, true);
+
+        error ("could not listen.");
+    }
+
+    for (;;) {
+        static
+#ifdef _WIN32
+            int
+#else
+            socklen_t
+#endif
+                sl = sizeof (addr);
+        static
+#ifdef _WIN32
+            SOCKET
+#else
+            int
+#endif
+                client_sock;
+
+        if ((client_sock = accept (sock, (struct sockaddr *) &addr, &sl)) ==
+#ifdef _WIN32
+            INVALID_SOCKET
+#else
+            -1
+#endif
+        )
+            continue;
+
+        message ("client established a connection.");
+
+#ifdef _WIN32
+        if (ioctlsocket (client_sock, (long) FIONBIO, &(u_long) { 1 }))
+            warning ("could not make the socket non-blocking.");
+#else
+        {
+            const int opts = fcntl (client_sock, F_GETFL, NULL);
+            if (opts == -1)
+                warning ("could not get the file status flags of the socket.");
+
+            if (fcntl (client_sock, F_SETFL, max (opts, 0) | O_NONBLOCK) == -1)
+                warning ("could not make the socket non-blocking.");
+        }
+#endif
+
+        if (send (client_sock, info, sizeof (game_attr_t) + attr.rounds, 0) ==
+#ifdef _WIN32
+            SOCKET_ERROR
+#else
+            -1
+#endif
+        ) {
+            message ("waiting for packet delivery (" stringify (SEND_TIMEOUT) " milliseconds max).");
+
+            {
+#ifdef _WIN32
+                WSAPOLLFD pollfd = { .fd = client_sock };
+                if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
+                if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
+                    (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                    warning ("could not the game information (game attributes and questions indices).");
+            }
+        }
+
+        disconnect_server (client_sock);
+    }
+
+    disconnect_server (sock, true);
 
     exit (0);
 }

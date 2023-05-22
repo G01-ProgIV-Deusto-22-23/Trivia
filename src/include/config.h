@@ -5,11 +5,15 @@
 extern "C" {
 #endif
 
-#define DEFAULT_CONFIG_FILE "config.json"
-#define CONFIG_FILE_LOCATOR ".config.path"
+#define DEFAULT_DATABASE_FILE  "resources/db.sqlite"
+#define DEFAULT_QUESTIONS_FILE "resources/questions.json"
+#define DEFAULT_CONFIG_FILE    "config.json"
+#define CONFIG_FILE_LOCATOR    ".config.path"
 
     extern const char *get_database_file (void);
     extern const char *set_database_file (const char *const restrict);
+    extern const char *get_questions_file (void);
+    extern const char *set_questions_file (const char *const restrict);
     extern const char *get_config_file (void);
     extern const char *set_config_file (const char *const restrict);
     extern cJSON      *get_config (const char *const restrict);

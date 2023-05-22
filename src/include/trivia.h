@@ -29,6 +29,8 @@
     #include <algorithm>
     #include <iostream>
     #include <random>
+    #include <unordered_set>
+    #include <tuple>
 #else
     #include <stdio.h>
     #include <stdlib.h>
@@ -77,7 +79,7 @@
 #include "ui.h"
 #include "os.h"
 #include "server.h"
-#include "bd.h"
+#include "db.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"

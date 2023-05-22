@@ -784,24 +784,49 @@ __attribute__ ((nonnull (8), warn_unused_result))
 
     extern size_t impl_display_menu (const size_t, const char *const restrict, const char *const restrict);
 
-#define display_menu(m, ...)                                                                                           \
-    (ct_error (NARGS (__VA_ARGS__) > 2, "the display_menu() macro must be passed between one and three arguments."),   \
-     ct_error (!isint (m), "the first argument passed to the display_menu() macro must be of integral_type."),         \
-     ct_error (                                                                                                        \
-         __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                        \
-         "the second argument passed to the display_menu() macro must be of pointer or array type."                    \
-     ),                                                                                                                \
-     ct_error (                                                                                                        \
-         __builtin_classify_type (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK)) !=            \
-             pointer_type_class,                                                                                       \
-         "the third argument passed to the display_menu() macro must be of pointer or array type."                     \
-     ),                                                                                                                \
-     impl_display_menu (                                                                                               \
-         m, (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) ? (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) : "",                    \
-         (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK))                                       \
-             ? (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK))                                 \
-             : DEFAULT_MENUMARK                                                                                        \
-     ))
+#ifdef __cplusplus
+    #define display_menu(m, ...)                                                                                       \
+        (ct_error (                                                                                                    \
+             NARGS (__VA_ARGS__) > 2, "the display_menu() macro must be passed between one and three arguments."       \
+         ),                                                                                                            \
+         ct_error (!isint (m), "the first argument passed to the display_menu() macro must be of integral_type."),     \
+         ct_error (                                                                                                    \
+             !std::is_pointer<std::decay<decltype (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) ""))>::type>::value,              \
+             "the second argument passed to the display_menu() macro must be of pointer or array type."                \
+         ),                                                                                                            \
+         ct_error (                                                                                                    \
+             !std::is_pointer<std::decay<                                                                              \
+                 decltype (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK))>::type>::value,      \
+             "the third argument passed to the display_menu() macro must be of pointer or array type."                 \
+         ),                                                                                                            \
+         impl_display_menu (                                                                                           \
+             m, (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) ? (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) : "",                \
+             (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK))                                   \
+                 ? (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK))                             \
+                 : DEFAULT_MENUMARK                                                                                    \
+         ))
+#else
+    #define display_menu(m, ...)                                                                                       \
+        (ct_error (                                                                                                    \
+             NARGS (__VA_ARGS__) > 2, "the display_menu() macro must be passed between one and three arguments."       \
+         ),                                                                                                            \
+         ct_error (!isint (m), "the first argument passed to the display_menu() macro must be of integral_type."),     \
+         ct_error (                                                                                                    \
+             __builtin_classify_type (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) != pointer_type_class,                    \
+             "the second argument passed to the display_menu() macro must be of pointer or array type."                \
+         ),                                                                                                            \
+         ct_error (                                                                                                    \
+             __builtin_classify_type (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK)) !=        \
+                 pointer_type_class,                                                                                   \
+             "the third argument passed to the display_menu() macro must be of pointer or array type."                 \
+         ),                                                                                                            \
+         impl_display_menu (                                                                                           \
+             m, (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) ? (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) : "",                \
+             (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK))                                   \
+                 ? (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) DEFAULT_MENUMARK, DEFAULT_MENUMARK))                             \
+                 : DEFAULT_MENUMARK                                                                                    \
+         ))
+#endif
 
 #ifdef __cplusplus
     #define impl_create_display_menu(macro, t, w, h, x, y, c, ...)                                                                                                                                                  \

@@ -1,5 +1,4 @@
 #include "port.h"
-#include "sqlite3.h"
 
 #ifdef _WIN32
     #define _SHARED_MEMORY_NAME "Global\\TRIVIA_SHRMEM"
@@ -381,6 +380,11 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         for (size_t i = 0; i < nusers; i++)
             put_map (users, (user_arr + i)->username, user_arr + i);
     }
+
+    static linkedlist_t questions = NULL;
+    if (!(questions = get_questions ()))
+        error ("could not get the questions.");
+
 #ifdef _WIN32
     WSADATA
     wsa;
@@ -567,7 +571,7 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
             if (opts == -1)
                 warning ("could not get the file status flags of the socket.");
 
-            if (fcntl (sock, F_SETFL, max (opts, 0) | O_NONBLOCK) == -1)
+            if (fcntl (client_sock, F_SETFL, max (opts, 0) | O_NONBLOCK) == -1)
                 warning ("could not make the socket non-blocking.");
         }
 #endif
@@ -582,10 +586,10 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
             {
 #ifdef _WIN32
                 WSAPOLLFD pollfd = { .fd = client_sock };
-                if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+                if (WSAPoll (&pollfd, 1, RECV_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
 #else
                 struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
-                if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                if (errno != EINPROGRESS || poll (&pollfd, 1, RECV_TIMEOUT) < 0 ||
                     (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
 #endif
                     warning ("could not get any data from the client.");
@@ -611,6 +615,8 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
                 "The server only accepts eight commands (killing the server, listing the games, connecting to a game, sending game results, starting a game, comparing/gathering user credentials and updating or inserting those credentials), ignoring the received command."
             );
 
+            disconnect_server (client_sock);
+
             continue;
         }
 
@@ -627,29 +633,145 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
                 {
 #ifdef _WIN32
                     WSAPOLLFD pollfd = { .fd = client_sock };
-                    if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+                    if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
 #else
                     struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
-                    if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                    if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
                         (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
 #endif
                         warning ("could not send the game IDs in raw form to the client.");
                 }
             }
 
+            disconnect_server (client_sock);
+
             continue;
         }
 
         if (cmd.cmd == cmd_game_connect) {
-            static char sock_text [sizeof (int) + 1] = { sizeof (sizeof (int)) };
+            const int port = get_game_port (cmd.info.pack.text);
+            if (port == -1) {
+                message ("the game ID issued by the client could not be found on the games list.");
+                disconnect_server (client_sock);
 
+                continue;
+            }
+
+            const
+#ifdef _WIN32
+                SOCKET
+#else
+                int
+#endif
+                    game_sock = connect_server (NULL, port);
+#ifdef _WIN32
+            if (ioctlsocket (game_sock, (long) FIONBIO, &(u_long) { 1 }))
+                warning ("could not make the socket non-blocking.");
+#else
+            {
+                const int opts = fcntl (game_sock, F_GETFL, NULL);
+                if (opts == -1)
+                    warning ("could not get the file status flags of the socket.");
+
+                if (fcntl (game_sock, F_SETFL, max (opts, 0) | O_NONBLOCK) == -1)
+                    warning ("could not make the socket non-blocking.");
+            }
+#endif
+
+            static uint8_t qs [sizeof (game_attr_t) + MAX_ROUNDS];
+            ct_error (
+                MAX_ROUNDS > MAX_RECV,
+                "the maximum number of rounds (" stringify (MAX_ROUNDS
+                ) ") cannot exceed the maximum number of receivable packets (" stringify (MAX_RECV) ")."
+            );
+            if (recv (client_sock, (void *) qs, sizeof (qs), 0) ==
+#ifdef _WIN32
+                SOCKET_ERROR
+#else
+                -1
+#endif
+            ) {
+#ifdef _WIN32
+                WSAPOLLFD pollfd = { .fd = game_sock };
+                if (WSAPoll (&pollfd, 1, RECV_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                struct pollfd pollfd = { .fd = game_sock, .events = POLLRDHUP };
+                if (errno != EINPROGRESS || poll (&pollfd, 1, RECV_TIMEOUT) < 0 ||
+                    (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                {
+                    warning ("could not get any data fromt the game.");
+
+                    memset (
+                        mempcpy (
+                            qs,
+                            &(game_attr_t
+                            ) { .players = MAX_PLAYERS, .round_time = DEFAULT_ROUND_TIME, .rounds = MAX_ROUNDS },
+                            1
+                        ),
+                        0, MAX_ROUNDS
+                    );
+                }
+            }
+
+            disconnect_server (game_sock);
+
+            static question_t *q_ptrs [MAX_QUESTIONS] = { 0 };
+
+            for (uint8_t i = 0, j = ((game_attr_t *) qs)->rounds; i < j; i++) {
+                if (!length_linkedlist (questions)) {
+                    warning ("no questions remaining.");
+
+                    break;
+                }
+
+                if (send (
+                        client_sock,
+                        (packet (
+                             &cmd,
+                             (char
+                                  *) (*(q_ptrs + i) = pop_linkedlist (questions, *((uint8_t *) ((char *) qs + sizeof (game_attr_t)) + i) % length_linkedlist (questions))),
+                             sizeof (question_t), i < j - 1
+                         ),
+                         (void *) &cmd),
+                        sizeof (cmd_t), 0
+                    ) ==
+#ifdef _WIN32
+                    SOCKET_ERROR
+#else
+                    -1
+#endif
+                ) {
+                    message ("waiting for packet delivery (" stringify (SEND_TIMEOUT) " milliseconds max).");
+
+                    {
+#ifdef _WIN32
+                        WSAPOLLFD pollfd = { .fd = client_sock };
+                        if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                        struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
+                        if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
+                            (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                            warning ("could not send the question to the client.");
+
+                        break;
+                    }
+                }
+            }
+
+            disconnect_server (client_sock);
+
+            for (size_t i = 0; i < MAX_QUESTIONS && *(q_ptrs + i); insert_linkedlist (questions, *(q_ptrs + i++)))
+                ;
+            memset (q_ptrs, 0, sizeof (q_ptrs));
+
+            continue;
+        }
+
+        if (cmd.cmd == cmd_game_create) {
             if (send (
-                    client_sock,
-                    (packet (
-                         &cmd, memcpy (sock_text, &(int) { get_game_port (cmd.info.pack.text) }, sizeof (int)),
-                         sizeof (int) + 1, false
-                     ),
-                     (void *) &cmd),
+                    client_sock, (packet (&cmd, init_game (cmd.info.game, 0, false), 0, false), (void *) &cmd),
                     sizeof (cmd_t), 0
                 ) ==
 #ifdef _WIN32
@@ -663,41 +785,10 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
                 {
 #ifdef _WIN32
                     WSAPOLLFD pollfd = { .fd = client_sock };
-                    if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+                    if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
 #else
                     struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
-                    if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
-                        (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
-#endif
-                        warning ("could not send the game details to the client.");
-                }
-            }
-
-            disconnect_server (client_sock);
-
-            continue;
-        }
-
-        if (cmd.cmd == cmd_game_create) {
-            if (send (
-                    client_sock, (packet (&cmd, init_game (cmd.info.game, 0), 0, false), (void *) &cmd), sizeof (cmd_t),
-                    0
-                ) ==
-#ifdef _WIN32
-                SOCKET_ERROR
-#else
-                -1
-#endif
-            ) {
-                message ("waiting for packet delivery (" stringify (SEND_TIMEOUT) " milliseconds max).");
-
-                {
-#ifdef _WIN32
-                    WSAPOLLFD pollfd = { .fd = client_sock };
-                    if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
-#else
-                    struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
-                    if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                    if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
                         (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
 #endif
                         warning ("could not send the game details to the client.");
@@ -712,7 +803,10 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         if (cmd.cmd == cmd_user_creds) {
             Usuario *const u = get_map (users, cmd.info.user.username);
             if (send (
-                    client_sock, (cmd = u ? user_creds_command (*u) : error_command (CMD_ERROR_NO_USER), (void *) &cmd),
+                    client_sock,
+                    (cmd = u && !strcmp (u->contrasena, cmd.info.user.contrasena) ? user_creds_command (*u)
+                                                                                  : error_command (CMD_ERROR_NO_USER),
+                     (void *) &cmd),
                     sizeof (cmd_t), 0
                 ) ==
 #ifdef _WIN32
@@ -726,10 +820,83 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
                 {
 #ifdef _WIN32
                     WSAPOLLFD pollfd = { .fd = client_sock };
-                    if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+                    if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
 #else
                     struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
-                    if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                    if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
+                        (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                        warning ("could not send the results of the operation to the client.");
+                }
+            }
+
+            disconnect_server (client_sock);
+
+            continue;
+        }
+
+        if (cmd.cmd == cmd_user_update) {
+            Usuario *const u = get_map (users, cmd.info.user.username);
+            if (!u) {
+                if (send (client_sock, (cmd = error_command (CMD_ERROR_NO_USER), (void *) &cmd), sizeof (cmd_t), 0) ==
+#ifdef _WIN32
+                    SOCKET_ERROR
+#else
+                    -1
+#endif
+                ) {
+                    message ("waiting for packet delivery (" stringify (SEND_TIMEOUT) " milliseconds max).");
+
+                    {
+#ifdef _WIN32
+                        WSAPOLLFD pollfd = { .fd = client_sock };
+                        if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                        struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
+                        if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
+                            (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
+#endif
+                            warning ("could not send the results of the operation to the client.");
+                    }
+                }
+
+                continue;
+            }
+
+            Usuario prev = *u;
+            *u           = cmd.info.user;
+
+            if (strcmp (u->nombreVisible, prev.nombreVisible))
+                modifyNombreVisible (SERVER_DATABASE, u->nombreVisible, u->ID_Usuario);
+
+            if (strcmp (u->contrasena, prev.contrasena))
+                modifyContrasena (SERVER_DATABASE, u->nombreVisible, u->ID_Usuario);
+
+            if (u->aciertosTotales != prev.aciertosTotales)
+                modifyAciertosTotales (SERVER_DATABASE, u->aciertosTotales, u->ID_Usuario);
+
+            if (u->fallosTotales != prev.fallosTotales)
+                modifyFallosTotales (SERVER_DATABASE, u->fallosTotales, u->ID_Usuario);
+
+            if (u->ID_Presets != prev.ID_Presets)
+                modifyIDPresets (SERVER_DATABASE, u->ID_Presets, u->ID_Usuario);
+
+            if (send (client_sock, (cmd = success_command (), (void *) &cmd), sizeof (cmd_t), 0) ==
+#ifdef _WIN32
+                SOCKET_ERROR
+#else
+                -1
+#endif
+            ) {
+                message ("waiting for packet delivery (" stringify (SEND_TIMEOUT) " milliseconds max).");
+
+                {
+#ifdef _WIN32
+                    WSAPOLLFD pollfd = { .fd = client_sock };
+                    if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+#else
+                    struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
+                    if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
                         (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
 #endif
                         warning ("could not send the results of the operation to the client.");
@@ -762,10 +929,10 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
                 {
 #ifdef _WIN32
                     WSAPOLLFD pollfd = { .fd = client_sock };
-                    if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+                    if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
 #else
                     struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
-                    if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                    if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
                         (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
 #endif
                         warning ("could not send the results of the operation to the client.");
@@ -793,10 +960,10 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
             {
 #ifdef _WIN32
                 WSAPOLLFD pollfd = { .fd = client_sock };
-                if (WSAPoll (&pollfd, 1, CONNECT_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+                if (WSAPoll (&pollfd, 1, SEND_TIMEOUT) || (pollfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
 #else
                 struct pollfd pollfd = { .fd = client_sock, .events = POLLRDHUP };
-                if (errno != EINPROGRESS || poll (&pollfd, 1, CONNECT_TIMEOUT) < 0 ||
+                if (errno != EINPROGRESS || poll (&pollfd, 1, SEND_TIMEOUT) < 0 ||
                     (pollfd.revents & (POLLERR | POLLHUP | POLLRDHUP | POLLNVAL)))
 #endif
                     warning ("could not send the command feedback to the client.");
@@ -1312,8 +1479,8 @@ cmd_t send_server (
     }
 
     if (resp.cmd == cmd_packet_cont && recv_buf) {
-        for (size_t i = 0; i < recv_sz;) {
-            if (recv (socket, (void *) (recv_buf + i++), sizeof (cmd_t), 0) ==
+        for (size_t i = 0; i < recv_sz; i++) {
+            if (recv (socket, (void *) (recv_buf + i), sizeof (cmd_t), 0) ==
 #ifdef _WIN32
                 SOCKET_ERROR
 #else
@@ -1340,6 +1507,9 @@ cmd_t send_server (
                 }
 #endif
             }
+
+            if ((recv_buf + i)->cmd != cmd_packet_cont)
+                break;
         }
     }
 

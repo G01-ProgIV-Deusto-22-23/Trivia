@@ -919,5 +919,95 @@
       { "respuesta": "5", "correcta": false },
       { "respuesta": "7", "correcta": false }
     ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿En qué ciudad comenzaron los Juegos Olímpicos?",
+    "opciones": [
+      { "respuesta": "Atenas", "correcta": true },
+      { "respuesta": "Roma", "correcta": false },
+      { "respuesta": "Olimpia", "correcta": false },
+      { "respuesta": "Tebas", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuál de estos es un lenguaje de programación orientado a arrays?",
+    "opciones": [
+      { "respuesta": "APL", "correcta": true },
+      { "respuesta": "Haskell", "correcta": false },
+      { "respuesta": "K", "correcta": true },
+      { "respuesta": "Lisp", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿En cuál de éstas películas ha actuado Christian Bale?",
+    "opciones": [
+      { "respuesta": "American Psycho", "correcta": true },
+      { "respuesta": "American History X", "correcta": false },
+      { "repuesta": "El Club de la Lucha", "correcta": false },
+      { "respuesta": "Torrente", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿Qué país abarca más zonas horarias?",
+    "opciones": [
+      { "respuesta": "Rusia", "correcta": false },
+      { "respuesta": "Estados Unidos", "correcta": false },
+      { "respuesta": "Reino Unido", "correcta": false },
+      { "respuesta": "Francia", "correcta": true }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cómo se denomina al lenguaje informático que usa nemónicos para nombrar a instrucciones del procesador?",
+    "opciones": [
+      { "respuesta": "Lenguaje ensamblador", "correcta": true },
+      { "respuesta": "Código máquina", "correcta": false },
+      { "respuesta:": "Pseudocódigo", "correcta": false },
+      { "respuesta": "Código intermedio", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Entretenimiento",
+    "pregunta": "¿Cómo se llama el protagonista de la serie Breaking Bad?",
+    "opciones": [
+      { "respuesta": "Walter White", "correcta": true },
+      { "respuesta": "Jesse Pinkman", "correcta": false },
+      { "respuesta": "Saul Goodman", "correcta": false },
+      { "respuesta": "Jimmy McGill", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Historia",
+    "pregunta": "¿Cuántos países lucharon contra China en el Levantamiento de los Bóxers (Portugal no cuenta)?",
+    "opciones": [
+      { "respuesta": "8", "correcta": false },
+      { "respuesta": "11", "correcta": true },
+      { "respuesta": "13", "correcta": false },
+      { "respuesta": "10", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Geografía",
+    "pregunta": "¿A qué país perteneció anteriormente el enclave ruso de Kaliningrado?",
+    "opciones": [
+      { "respuesta": "Polonia", "correcta": false },
+      { "respuesta": "Alemania", "correcta": true },
+      { "respuesta": "Letonia", "correcta": false },
+      { "respuesta": "Finlandia", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "¿Cuántos bits mide un double según el estándar IEEE 754?",
+    "opciones": [
+      { "respuesta": "16", "correcta": false },
+      { "respuesta": "32", "correcta": false },
+      { "respuesta": "64", "correcta": true },
+      { "respuesta": "128", "correcta": false }
+    ]
   }
 ]

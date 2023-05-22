@@ -57,12 +57,12 @@ DXXFLAGS := \
 	-Wshadow=local -Wwrite-strings -Wconversion -Wnonnull \
 	-Wcast-align -Wnull-dereference -Wformat=2 -Wno-format-y2k
 
-UILIBS     := -lformw -lmenuw -lpanelw -lncursesw -lm
+UILIBS     := -lformw -lmenuw -lpanelw -lncursesw
 OSLIBS     := -lbacktrace
-BDLIBS     := -lsqlite3 -lm
+DBLIBS     := -lsqlite3 -lm
 JSONLIBS   := -lcjson -lcjson_utils
-TRIVIALIBS := -lui -los -lserver -lbd -ladt -lconfig
-LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(BDLIBS) $(JSONLIBS)
+TRIVIALIBS := -lui -los -lserver -ldb -ladt -lconfig
+LIBS       =  $(TRIVIALIBS) $(UILIBS) $(OSLIBS) $(DBLIBS) $(JSONLIBS)
 
 ifeq ($(OS), Windows_NT)
 all: windows
@@ -70,29 +70,33 @@ else
 all: linux windows
 endif
 
-linux: CC       := $(GCC_LINUX)
-linux: CXX      := $(GXX_LINUX)
-linux: LIBDIR   := $(LIBDIR)/linux
-linux: CFLAGS   += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
-linux: CXXFLAGS += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
-linux: OBJDIR   := $(OBJDIR)/linux
-linux: BINDIR   := $(BINDIR)/linux
+linux: CC          := $(GCC_LINUX)
+linux: CXX         := $(GXX_LINUX)
+linux: LIBDIR      := $(LIBDIR)/linux
+linux: CFLAGS      += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
+linux: CXXFLAGS    += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
+linux: OBJDIR      := $(OBJDIR)/linux
+linux: BINDIR      := $(BINDIR)/linux
+linux: BINRESDIR   := $(BINDIR)/resouces
 
-windows: CC       := $(GCC_WINDOWS)
-windows: CXX      := $(GXX_WINDOWS)
-windows: LIBDIR   := $(LIBDIR)/windows
-windows: CFLAGS   += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
-windows: CXXFLAGS += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
-windows: OBJDIR   := $(OBJDIR)/windows
-windows: BINDIR   := $(BINDIR)/windows
+windows: CC          := $(GCC_WINDOWS)
+windows: CXX         := $(GXX_WINDOWS)
+windows: LIBDIR      := $(LIBDIR)/windows
+windows: CFLAGS      += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: CXXFLAGS    += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: OBJDIR      := $(OBJDIR)/windows
+windows: BINDIR      := $(BINDIR)/windows
+windows: BINRESDIR   := $(BINDIR)/resources
 
 init: init_bin init_lib init_obj
 
 init_bin:
 ifeq ($(OS), Windows_NT)
-	@echo $(shell test -d $(BINDIR) || mkdir -p $(BINDIR))
+	@echo $(shell test -d $(BINDIR) || mkdir -p $(BINRESDIR))
+	@echo $(shell Copy-Item $(RESDIR)/questions.json,$(RESDIR)/db.sqlite -Destination $(BINDIR)/resources/ -Passthru)
 else
-	@echo $(shell mkdir -p $(BINDIR))
+	@echo $(shell mkdir -p $(BINRESDIR))
+	@echo $(shell cp $(RESDIR)/questions.json $(RESDIR)/db.sqlite $(BINRESDIR))
 endif
 
 init_lib:
@@ -136,10 +140,10 @@ SERVERW     := $(LIBDIR)/windows/libserver.a
 SERVEROBJSL := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/linux/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
 SERVEROBJSW := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/windows/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
 
-BDL := $(LIBDIR)/linux/libbd.a
-BDW := $(LIBDIR)/windows/libbd.a
-BDOBJSL := $(patsubst $(SRCDIR)/local/bd/%.c, $(OBJDIR)/linux/bd_%.o, $(wildcard $(SRCDIR)/local/bd/*.c))
-BDOBJSW := $(patsubst $(SRCDIR)/local/bd/%.c, $(OBJDIR)/windows/bd_%.o, $(wildcard $(SRCDIR)/local/bd/*.c))
+DBL := $(LIBDIR)/linux/libdb.a
+DBW := $(LIBDIR)/windows/libdb.a
+DBOBJSL := $(patsubst $(SRCDIR)/local/db/%.c, $(OBJDIR)/linux/db_%.o, $(wildcard $(SRCDIR)/local/db/*.c))
+DBOBJSW := $(patsubst $(SRCDIR)/local/db/%.c, $(OBJDIR)/windows/db_%.o, $(wildcard $(SRCDIR)/local/db/*.c))
 
 LOCALL     := $(BINDIR)/linux/local
 LOCALW     := $(BINDIR)/windows/local.exe
@@ -222,22 +226,22 @@ $(OBJDIR)/linux/server_%.o: $(SRCDIR)/server/%.c
 $(OBJDIR)/windows/server_%.o: $(SRCDIR)/server/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(BDL): $(BDOBJSL)
+$(DBL): $(DBOBJSL)
 	ar rcs $@ $^
 
-$(BDW): $(BDOBJSW)
+$(DBW): $(DBOBJSL)
 	ar rcs $@ $^
 
-$(OBJDIR)/linux/bd_%.o: $(SRCDIR)/local/bd/%.c
+$(OBJDIR)/linux/db_%.o: $(SRCDIR)/local/db/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(OBJDIR)/windows/bd_%.o: $(SRCDIR)/local/bd/%.c
+$(OBJDIR)/windows/db_%.o: $(SRCDIR)/local/db/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@
 
-$(LOCALL): $(ADTL) $(CONFIGL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(LOCALOBJSL)
+$(LOCALL): $(ADTL) $(CONFIGL) $(UIL) $(OSL) $(SERVERL) $(DBL) $(LOCALOBJSL)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSL) $(LIBS)
 
-$(LOCALW): $(ADTW) $(CONFIGW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(LOCALOBJSW)
+$(LOCALW): $(ADTW) $(CONFIGW) $(UIW) $(OSW) $(SERVERW) $(DBW) $(LOCALOBJSW)
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -o $@ $(SRCDIR)/local/main.c $(LOCALOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
 
 $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
@@ -246,10 +250,10 @@ $(OBJDIR)/linux/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 $(OBJDIR)/windows/local_ui_%.o: $(SRCDIR)/local/ui/%.c
 	$(CC) $(CFLAGS) $(DFLAGS) -include $(SRCINCLUDE)/local.h -c $< -o $@
 
-$(REMOTEL): $(ADTL) $(CONFIGL) $(UIL) $(OSL) $(SERVERL) $(BDL) $(REMOTEOBJSL)
+$(REMOTEL): $(ADTL) $(CONFIGL) $(UIL) $(OSL) $(SERVERL) $(DBL) $(REMOTEOBJSL)
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSL) $(LIBS)
 
-$(REMOTEW): $(ADTW) $(CONFIGW) $(UIW) $(OSW) $(SERVERW) $(BDW) $(REMOTEOBJSW)
+$(REMOTEW): $(ADTW) $(CONFIGW) $(UIW) $(OSW) $(SERVERW) $(DBW) $(REMOTEOBJSW)
 	$(CXX) $(CXXFLAGS) $(DXXFLAGS) -include $(SRCINCLUDE)/remote.h -o $@ $(SRCDIR)/remote/main.cpp $(REMOTEOBJSW) $(RESDIR)/icon.o $(LIBS) -lws2_32
 
 $(OBJDIR)/linux/remote_ui_%.o: $(SRCDIR)/remote/ui/%.cpp

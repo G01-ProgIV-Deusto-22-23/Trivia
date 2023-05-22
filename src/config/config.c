@@ -4,8 +4,9 @@
     #define MAX_FILE_CHARS PATH_MAX
 #endif
 
-static char DATABASE_FILE [MAX_FILE_CHARS + 1] = DEFAULT_DATABASE_FILE;
-static char CONFIG_FILE [MAX_FILE_CHARS + 1]   = DEFAULT_CONFIG_FILE;
+static char DATABASE_FILE [MAX_FILE_CHARS + 1]  = DEFAULT_DATABASE_FILE;
+static char QUESTIONS_FILE [MAX_FILE_CHARS + 1] = DEFAULT_QUESTIONS_FILE;
+static char CONFIG_FILE [MAX_FILE_CHARS + 1]    = DEFAULT_CONFIG_FILE;
 
 const char *get_database_file (void) {
     return DATABASE_FILE;
@@ -24,6 +25,25 @@ const char *set_database_file (const char *const restrict f) {
     }
 
     return DATABASE_FILE;
+}
+
+const char *get_questions_file (void) {
+    return QUESTIONS_FILE;
+}
+
+const char *set_questions_file (const char *const restrict f) {
+    if (!f)
+        return memcpy (QUESTIONS_FILE, DEFAULT_QUESTIONS_FILE, sizeof (DEFAULT_QUESTIONS_FILE));
+
+    memset (CONFIG_FILE, 0, sizeof (CONFIG_FILE));
+    if (!memccpy (QUESTIONS_FILE, f, '\0', sizeof (QUESTIONS_FILE))) {
+        warning ("the filename was larger than the maximum permitted filename (" stringify (MAX_FILE_CHARS
+        ) " chars not including the null terminator).");
+
+        *(QUESTIONS_FILE + sizeof (QUESTIONS_FILE) - 1) = '\0';
+    }
+
+    return QUESTIONS_FILE;
 }
 
 const char *get_config_file (void) {
@@ -101,6 +121,13 @@ void write_config (const char *const restrict path) {
 
     else
         warning ("could not add the \"database\" field to the object.");
+
+    cJSON *const restrict qs = cJSON_CreateString (QUESTIONS_FILE);
+    if (db)
+        cJSON_AddItemToObject (o, "questions", qs);
+
+    else
+        warning ("could not add the \"questions\" field to the object.");
 
     cJSON *const restrict port = cJSON_CreateNumber ((double) get_server_port ());
     if (port)
@@ -194,13 +221,44 @@ char *get_config_database (const char *const restrict path) {
     }
 
     if (!cJSON_IsString (field)) {
-        warning ("the \"port\" field is not a string field.");
+        warning ("the \"database\" field is not a string field.");
         cJSON_Delete (config);
 
         return NULL;
     }
 
     if (!cJSON_PrintPreallocated (cJSON_GetObjectItemCaseSensitive (config, "database"), db, sizeof (db), 0))
+        warning ("could not print the JSON object properly.");
+
+    cJSON_Delete (config);
+
+    return db;
+}
+
+char *get_config_questions (const char *const restrict path) {
+    static char db [sizeof (QUESTIONS_FILE) + 5] = { 0 };
+
+    memset (db, 0, sizeof (db));
+    cJSON *const config = get_config (path);
+    if (!config)
+        return NULL;
+
+    cJSON *field = NULL;
+    if (!(field = cJSON_GetObjectItemCaseSensitive (config, "questions"))) {
+        warning ("there is no \"questions\" field.");
+        cJSON_Delete (config);
+
+        return NULL;
+    }
+
+    if (!cJSON_IsString (field)) {
+        warning ("the \"questions\" field is not a string field.");
+        cJSON_Delete (config);
+
+        return NULL;
+    }
+
+    if (!cJSON_PrintPreallocated (cJSON_GetObjectItemCaseSensitive (config, "questions"), db, sizeof (db), 0))
         warning ("could not print the JSON object properly.");
 
     cJSON_Delete (config);

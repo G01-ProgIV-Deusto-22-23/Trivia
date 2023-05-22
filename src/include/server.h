@@ -18,7 +18,7 @@ extern "C" {
 #define DEFAULT_GAME_PORT_END   IANA_DYNAMIC_PORT_END
 
 #define MAX_PLAYERS        20
-#define MAX_ROUNDS         10
+#define MAX_ROUNDS         40
 #define DEFAULT_ROUND_TIME 20
 
 #define ONE_MB (1 << 20)
@@ -32,7 +32,8 @@ extern "C" {
     extern cmd_t success_command (void);
     extern cmd_t error_command (const uint32_t);
     extern cmd_t kill_command (void);
-    extern cmd_t game_command (const game_attr_t);
+    extern cmd_t connect_game_command (const char [sizeof ("XXXX")]);
+    extern cmd_t create_game_command (const game_attr_t);
     extern cmd_t user_creds_command (const Usuario);
     extern cmd_t insert_user_command (const Usuario);
     extern cmd_t update_user_command (const Usuario);
@@ -56,7 +57,7 @@ extern "C" {
     extern size_t      set_games (const size_t);
     extern void        gen_game_ids (void);
     extern int         get_game_port (const char *const restrict);
-    extern const char *init_game (game_attr_t, const bool);
+    extern const char *init_game (game_attr_t, int, const bool);
     extern bool        init_games (void);
     extern bool        end_games (void);
     extern void        game_server (const size_t, const int, game_attr_t);

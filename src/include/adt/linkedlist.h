@@ -138,7 +138,7 @@ extern "C" {
          ct_error (                                                                                                             \
              !isint ((i)), "the second argument passed to the pop_linkedlist() macro must be of integral type."                 \
          ),                                                                                                                     \
-         impl_pop_linkedlist (&(l), (i)))
+         impl_pop_linkedlist (const_cast<linkedlist_t *> (reinterpret_cast<const linkedlist_t *> (&l)), (i)))
 #else
     #define pop_linkedlist(l, i)                                                                                                                           \
         (ct_error (                                                                                                                                        \

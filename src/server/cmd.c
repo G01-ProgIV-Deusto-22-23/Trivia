@@ -10,7 +10,18 @@ cmd_t kill_command (void) {
     return (cmd_t) { .cmd = cmd_kill };
 }
 
-cmd_t game_command (const game_attr_t game) {
+cmd_t game_list_command (void) {
+    return (cmd_t) { .cmd = cmd_game_list };
+}
+
+__attribute__ ((nonnull (1))) cmd_t connect_game_command (const char id [sizeof ("XXXX")]) {
+    cmd_t c = { .cmd = cmd_game_connect };
+    memcpy (c.info.pack.text, id, sizeof ("XXXX"));
+
+    return c;
+}
+
+cmd_t create_game_command (const game_attr_t game) {
     return (cmd_t) { .cmd = cmd_game_create, .info.game = game };
 }
 

@@ -1,5 +1,8 @@
+#include "sample_db.h"
+#include "sqlite3.h"
+
 void print_db_err (sqlite3 *const restrict db) {
-    fprintf (stderr, "Error code %d: %s\n", sqlite3_errcode (db), sqlite3_errmsg (db));
+    fprintf (stderr, "SQLite error code %d: %s\n", sqlite3_errcode (db), sqlite3_errmsg (db));
 }
 
 __attribute__ ((nonnull (2))) void open_db (const char *const restrict f, sqlite3 **const restrict db) {
@@ -21,25 +24,59 @@ __attribute__ ((nonnull (2))) void open_db (const char *const restrict f, sqlite
     if (!new)
         return;
 
-    static const char *const sql [] = {
-        "CREATE TABLE \"Categorias\"(\"ID_Categoria\" INTEGER NOT NULL, \"Nombre\" VARCHAR (100), PRIMARY KEY (\"ID_Categoria\"))",
-        "CREATE TABLE [Presets]([ID_Presets] INTEGER NULL PRIMARY KEY, [nJugadores] INTEGER NULL, [nRondas] INTEGER NULL,[RoundTime] INTEGER NULL, [Categorias] VARCHAR (20) NULL, [Mecanica1] VARCHAR (3) NULL,[Mecanica2] VARCHAR (3) NULL, [Mecanica3] VARCHAR (3) NULL, [mecanica4] VARCHAR (3) NULL)",
-        "CREATE TABLE \"UsuarioCategoria\"(\"ID_Categoria\" INTEGER NOT NULL, \"ID_Usuario\" INTEGER NOT NULL, \"Fallos\" INTEGER, \"Aciertos\" INTEGER,PRIMARY KEY (\"ID_Categoria\", \"ID_Usuario\"))",
-        "CREATE TABLE [configuracion]([nPartidas] INTEGER NULL, [nMaxJugadores] INTEGER NULL, [ID_configuracion] INTEGER NOT NULL PRIMARY KEY)",
-        "CREATE TABLE \"usuario\"(\"ID_Usuario\" INTEGER NOT NULL, \"NombreVisible\" VARCHAR (20), \"Username\" VARCHAR (20),\"Contrasena\" VARCHAR (20), \"AciertosTotales\" INTEGER, \"FallosTotales\" INTEGER, \"ID_Presets\" INTEGER,PRIMARY KEY (\"ID_Usuario\"))"
-    };
+    if (sqlite3_close (*db) != SQLITE_OK)
+        warning ("could not close the database properly.");
 
-    for (size_t i = 0; i < sizeof (sql) / sizeof (*sql);) {
-        if (sqlite3_exec (*db, *(sql + i++), NULL, NULL, NULL) != SQLITE_OK) {
+    FILE *_f;
+    if ((_f = fopen (get_database_file (), "w"))) {
+        if (fwrite (SAMPLE_DB_DATA, 1, sizeof (SAMPLE_DB_DATA), _f) < sizeof (SAMPLE_DB_DATA)) {
+            if (!(_f = freopen (get_database_file (), "w", _f)))
+                warning ("could not clear the contents of the database file properly.");
+
+            if (fclose (_f) == EOF)
+                warning ("could not close the database file properly.");
+
+            goto fallback_create_tables;
+        }
+
+        else if (fclose (_f) == EOF)
+            warning ("could not close the database file properly.");
+
+        if (sqlite3_open (get_database_file (), db) != SQLITE_OK) {
             print_db_err (*db);
-            error ("could not create the table.");
+            error ("could not open the database.");
+        }
+    }
+
+    else {
+    fallback_create_tables:
+        warning ("could not write the default data to the database file, clean tables will be created instead.");
+
+        if (sqlite3_open (get_database_file (), db) != SQLITE_OK) {
+            print_db_err (*db);
+            error ("could not open the database.");
+        }
+
+        static const char *const sql [] = {
+            "CREATE TABLE \"Categorias\"(\"ID_Categoria\" INTEGER NOT NULL, \"Nombre\" VARCHAR (100), PRIMARY KEY (\"ID_Categoria\"))",
+            "CREATE TABLE [Presets]([ID_Presets] INTEGER NULL PRIMARY KEY, [nJugadores] INTEGER NULL, [nRondas] INTEGER NULL,[RoundTime] INTEGER NULL, [Categorias] VARCHAR (20) NULL, [Mecanica1] VARCHAR (3) NULL,[Mecanica2] VARCHAR (3) NULL, [Mecanica3] VARCHAR (3) NULL, [mecanica4] VARCHAR (3) NULL)",
+            "CREATE TABLE \"UsuarioCategoria\"(\"ID_Categoria\" INTEGER NOT NULL, \"ID_Usuario\" INTEGER NOT NULL, \"Fallos\" INTEGER, \"Aciertos\" INTEGER,PRIMARY KEY (\"ID_Categoria\", \"ID_Usuario\"))",
+            "CREATE TABLE [configuracion]([nPartidas] INTEGER NULL, [nMaxJugadores] INTEGER NULL, [ID_configuracion] INTEGER NOT NULL PRIMARY KEY)",
+            "CREATE TABLE \"usuario\"(\"ID_Usuario\" INTEGER NOT NULL, \"NombreVisible\" VARCHAR (20), \"Username\" VARCHAR (20),\"Contrasena\" VARCHAR (20), \"AciertosTotales\" INTEGER, \"FallosTotales\" INTEGER, \"ID_Presets\" INTEGER,PRIMARY KEY (\"ID_Usuario\"))"
+        };
+
+        for (size_t i = 0; i < sizeof (sql) / sizeof (*sql);) {
+            if (sqlite3_exec (*db, *(sql + i++), NULL, NULL, NULL) != SQLITE_OK) {
+                print_db_err (*db);
+                error ("could not create the table.");
+            }
         }
     }
 }
 
 Usuario *obtenerUsuarios (sqlite3 *db) {
     sqlite3_stmt *stmt;
-    int           tamanyo  = numeroUsuarios (db);
+    size_t        tamanyo  = numeroUsuarios (db);
     Usuario      *usuarios = malloc (sizeof (Usuario) * (size_t) (size_t) tamanyo);
 
     char sql [] = "Select * from usuario";
@@ -55,13 +92,13 @@ Usuario *obtenerUsuarios (sqlite3 *db) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW) {
-            usuario.ID_Usuario = sqlite3_column_int (stmt, 0);
+            usuario.ID_Usuario = (uint32_t) sqlite3_column_int64 (stmt, 0);
             strcpy (usuario.nombreVisible, (char *) sqlite3_column_text (stmt, 1));
             strcpy (usuario.username, (char *) sqlite3_column_text (stmt, 2));
             strcpy (usuario.contrasena, (char *) sqlite3_column_text (stmt, 3));
-            usuario.aciertosTotales = sqlite3_column_int (stmt, 4);
-            usuario.fallosTotales   = sqlite3_column_int (stmt, 5);
-            usuario.ID_Presets      = sqlite3_column_int (stmt, 6);
+            usuario.aciertosTotales = (uint32_t) sqlite3_column_int64 (stmt, 4);
+            usuario.fallosTotales   = (uint32_t) sqlite3_column_int64 (stmt, 5);
+            usuario.ID_Presets      = (uint32_t) sqlite3_column_int64 (stmt, 6);
             usuarios [i]            = usuario;
             i++;
         }
@@ -78,8 +115,8 @@ Usuario *obtenerUsuarios (sqlite3 *db) {
     return usuarios;
 }
 
-int numeroUsuarios (sqlite3 *db) {
-    int           resultado = 0;
+size_t numeroUsuarios (sqlite3 *db) {
+    size_t        resultado = 0;
     sqlite3_stmt *stmt;
     char          sql [] = "Select * from usuario";
     int           result = sqlite3_prepare_v2 (db, sql, -1, &stmt, NULL);
@@ -108,9 +145,9 @@ int numeroUsuarios (sqlite3 *db) {
     return resultado;
 }
 
-int obtenerIDUsuario (sqlite3 *db) {
-    int           resultado = 1;
-    int           idActual  = 0;
+uint32_t obtenerIDUsuario (sqlite3 *db) {
+    uint32_t      resultado = 1;
+    uint32_t      idActual  = 0;
     sqlite3_stmt *stmt;
     char          sql [] = "Select ID_Usuario from usuario";
     int           result = sqlite3_prepare_v2 (db, sql, -1, &stmt, NULL);
@@ -124,7 +161,7 @@ int obtenerIDUsuario (sqlite3 *db) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW) {
-            idActual = sqlite3_column_int (stmt, 0);
+            idActual = (uint32_t) sqlite3_column_int64 (stmt, 0);
             if (idActual != resultado)
                 break;
             resultado++;
@@ -145,7 +182,7 @@ int obtenerIDUsuario (sqlite3 *db) {
 
 void insertarUsuario (sqlite3 *db, Usuario usuario) {
     sqlite3_stmt *stmt;
-    int           id = obtenerIDUsuario (db);
+    uint32_t      id = obtenerIDUsuario (db);
     char          sql [] =
         "Insert into usuario (ID_Usuario, NombreVisible, Username, Contrasena, AciertosTotales, FallosTotales, ID_Presets) values(?, ?, ?, ?, ?, ?, ?)";
     int result = sqlite3_prepare_v2 (db, sql, (int) strlen (sql) + 7, &stmt, NULL);
@@ -156,7 +193,7 @@ void insertarUsuario (sqlite3 *db, Usuario usuario) {
 
     message ("insert statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -176,17 +213,17 @@ void insertarUsuario (sqlite3 *db, Usuario usuario) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 5, usuario.aciertosTotales);
+    result = sqlite3_bind_zeroblob64 (stmt, 5, (sqlite3_uint64) usuario.aciertosTotales);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 6, usuario.aciertosTotales);
+    result = sqlite3_bind_zeroblob64 (stmt, 6, (sqlite3_uint64) usuario.aciertosTotales);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 7, usuario.ID_Presets);
+    result = sqlite3_bind_zeroblob64 (stmt, 7, (sqlite3_uint64) usuario.ID_Presets);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -207,7 +244,7 @@ void insertarUsuario (sqlite3 *db, Usuario usuario) {
         message ("Prepared statement finalized (INSERT)");
 }
 
-void eliminarUsuario (sqlite3 *db, int id) {
+void eliminarUsuario (sqlite3 *db, uint32_t id) {
     sqlite3_stmt *stmt;
     char          sql [] = "Delete from usuario where ID_Usuario = ?";
     int           result = sqlite3_prepare_v2 (db, sql, (int) strlen (sql), &stmt, NULL);
@@ -218,7 +255,7 @@ void eliminarUsuario (sqlite3 *db, int id) {
 
     message ("delete statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -239,7 +276,7 @@ void eliminarUsuario (sqlite3 *db, int id) {
         message ("delete statement finalized.");
 }
 
-void modifyNombreVisible (sqlite3 *db, char nombreVisible [], int id) {
+void modifyNombreVisible (sqlite3 *db, char nombreVisible [], uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update usuario set NombreVisible = ? where ID_Usuario = ?";
@@ -256,7 +293,7 @@ void modifyNombreVisible (sqlite3 *db, char nombreVisible [], int id) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -277,7 +314,7 @@ void modifyNombreVisible (sqlite3 *db, char nombreVisible [], int id) {
         message ("update statement finalized.");
 }
 
-void modifyUsername (sqlite3 *db, char Username [], int id) {
+void modifyUsername (sqlite3 *db, char Username [], uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update usuario set Username = ? where ID_Usuario = ?";
@@ -294,7 +331,7 @@ void modifyUsername (sqlite3 *db, char Username [], int id) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -315,7 +352,7 @@ void modifyUsername (sqlite3 *db, char Username [], int id) {
         message ("update statement finalized.");
 }
 
-void modifyContrasena (sqlite3 *db, char Contrasena [], int id) {
+void modifyContrasena (sqlite3 *db, char Contrasena [], uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update usuario set Contrasena = ? where ID_Usuario = ?";
@@ -332,7 +369,7 @@ void modifyContrasena (sqlite3 *db, char Contrasena [], int id) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -353,7 +390,7 @@ void modifyContrasena (sqlite3 *db, char Contrasena [], int id) {
         message ("update statement finalized.");
 }
 
-void modifyAciertosTotales (sqlite3 *db, int aciertosTotales, int id) {
+void modifyAciertosTotales (sqlite3 *db, uint32_t aciertosTotales, uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update usuario set AciertosTotales = ? where ID_Usuario = ?";
@@ -365,12 +402,12 @@ void modifyAciertosTotales (sqlite3 *db, int aciertosTotales, int id) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, aciertosTotales);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) aciertosTotales);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -391,7 +428,7 @@ void modifyAciertosTotales (sqlite3 *db, int aciertosTotales, int id) {
         message ("update statement finalized.");
 }
 
-void modifyFallosTotales (sqlite3 *db, int fallosTotales, int id) {
+void modifyFallosTotales (sqlite3 *db, uint32_t fallosTotales, uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update usuario set FallosTotales = ? where ID_Usuario = ?";
@@ -403,12 +440,12 @@ void modifyFallosTotales (sqlite3 *db, int fallosTotales, int id) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, fallosTotales);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) fallosTotales);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -429,7 +466,7 @@ void modifyFallosTotales (sqlite3 *db, int fallosTotales, int id) {
         message ("update statement finalized.");
 }
 
-void modifyIDPresets (sqlite3 *db, int IDPresets, int id) {
+void modifyIDPresets (sqlite3 *db, uint32_t IDPresets, uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update usuario set ID_Presets = ? where ID_Usuario = ?";
@@ -441,12 +478,12 @@ void modifyIDPresets (sqlite3 *db, int IDPresets, int id) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, IDPresets);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) IDPresets);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -467,8 +504,8 @@ void modifyIDPresets (sqlite3 *db, int IDPresets, int id) {
         message ("update statement finalized.");
 }
 
-int obtenerNPartidas (sqlite3 *db) {
-    int           resultado = 0;
+size_t obtenerNPartidas (sqlite3 *db) {
+    size_t        resultado = 0;
     sqlite3_stmt *stmt;
 
     char sql [] = "Select * from configuracion";
@@ -481,7 +518,7 @@ int obtenerNPartidas (sqlite3 *db) {
     message ("select query prepared.");
     result = sqlite3_step (stmt);
     if (result == SQLITE_ROW)
-        resultado = sqlite3_column_int (stmt, 0);
+        resultado = (uint32_t) sqlite3_column_int64 (stmt, 0);
 
     result = sqlite3_finalize (stmt);
     if (result != SQLITE_OK) {
@@ -494,8 +531,8 @@ int obtenerNPartidas (sqlite3 *db) {
     return resultado;
 }
 
-int obtenerNMaxJugadores (sqlite3 *db) {
-    int           resultado = 0;
+size_t obtenerNMaxJugadores (sqlite3 *db) {
+    size_t        resultado = 0;
     sqlite3_stmt *stmt;
 
     char sql [] = "Select * from configuracion";
@@ -509,7 +546,7 @@ int obtenerNMaxJugadores (sqlite3 *db) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW)
-            resultado = sqlite3_column_int (stmt, 1);
+            resultado = (uint32_t) sqlite3_column_int64 (stmt, 1);
     } while (result == SQLITE_ROW);
 
     result = sqlite3_finalize (stmt);
@@ -523,7 +560,7 @@ int obtenerNMaxJugadores (sqlite3 *db) {
     return resultado;
 }
 
-void modifyConfig (sqlite3 *db, int NPartidas, int NMaxJugadores) {
+void modifyConfig (sqlite3 *db, size_t NPartidas, size_t NMaxJugadores) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update configuracion set NPartidas = ?, NMaxJugadores = ?";
@@ -535,12 +572,12 @@ void modifyConfig (sqlite3 *db, int NPartidas, int NMaxJugadores) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, NPartidas);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) NPartidas);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, NMaxJugadores);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) NMaxJugadores);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -561,8 +598,8 @@ void modifyConfig (sqlite3 *db, int NPartidas, int NMaxJugadores) {
         message ("update statement finalized.");
 }
 
-int obtenerFallos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
-    int           resultado = 0;
+uint32_t obtenerFallos (sqlite3 *db, uint32_t ID_Categoria, uint32_t ID_Usuario) {
+    uint32_t      resultado = 0;
     sqlite3_stmt *stmt;
 
     char sql [] = "Select Fallos from UsuarioCategoria where ID_Categoria = ? and ID_Usuario = ?";
@@ -573,12 +610,12 @@ int obtenerFallos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
     }
 
     message ("select query prepared.");
-    result = sqlite3_bind_int (stmt, 1, ID_Categoria);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) ID_Categoria);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, ID_Usuario);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) ID_Usuario);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -587,7 +624,7 @@ int obtenerFallos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW)
-            resultado = sqlite3_column_int (stmt, 0);
+            resultado = (uint32_t) sqlite3_column_int64 (stmt, 0);
     } while (result == SQLITE_ROW);
 
     result = sqlite3_finalize (stmt);
@@ -601,8 +638,8 @@ int obtenerFallos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
     return resultado;
 }
 
-int obtenerAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
-    int           resultado = 0;
+uint32_t obtenerAciertos (sqlite3 *db, uint32_t ID_Categoria, uint32_t ID_Usuario) {
+    uint32_t      resultado = 0;
     sqlite3_stmt *stmt;
 
     char sql [] = "Select Aciertos from UsuarioCategoria where ID_Categoria = ? and ID_Usuario = ?";
@@ -613,12 +650,12 @@ int obtenerAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
     }
 
     message ("select query prepared.");
-    result = sqlite3_bind_int (stmt, 1, ID_Categoria);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) ID_Categoria);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, ID_Usuario);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) ID_Usuario);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -627,7 +664,7 @@ int obtenerAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW)
-            resultado = sqlite3_column_int (stmt, 0);
+            resultado = (uint32_t) sqlite3_column_int64 (stmt, 0);
     } while (result == SQLITE_ROW);
 
     result = sqlite3_finalize (stmt);
@@ -641,7 +678,9 @@ int obtenerAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario) {
     return resultado;
 }
 
-void insertarFallosAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int fallos, int aciertos) {
+void insertarFallosAciertos (
+    sqlite3 *db, uint32_t ID_Categoria, uint32_t ID_Usuario, uint32_t fallos, uint32_t aciertos
+) {
     sqlite3_stmt *stmt;
     char sql [] = "Insert into UsuarioCategoria (ID_Categoria, ID_Usuario, Fallos, Aciertos) values(?, ?, ?, ?)";
     int  result = sqlite3_prepare_v2 (db, sql, (int) strlen (sql) + 4, &stmt, NULL);
@@ -652,22 +691,22 @@ void insertarFallosAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int 
 
     message ("insert statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, ID_Categoria);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) ID_Categoria);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, ID_Usuario);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) ID_Usuario);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 3, fallos);
+    result = sqlite3_bind_zeroblob64 (stmt, 3, (sqlite3_uint64) fallos);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 4, aciertos);
+    result = sqlite3_bind_zeroblob64 (stmt, 4, (sqlite3_uint64) aciertos);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -688,7 +727,7 @@ void insertarFallosAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int 
         message ("Prepared statement finalized (INSERT)");
 }
 
-void modifyFallos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int fallos) {
+void modifyFallos (sqlite3 *db, uint32_t ID_Categoria, uint32_t ID_Usuario, uint32_t fallos) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update UsuarioCategoria set Fallos = ? where ID_Categoria = ? and ID_Usuario = ?";
@@ -700,17 +739,17 @@ void modifyFallos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int fallos) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, fallos);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) fallos);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, ID_Categoria);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) ID_Categoria);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 3, ID_Usuario);
+    result = sqlite3_bind_zeroblob64 (stmt, 3, (sqlite3_uint64) ID_Usuario);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -731,7 +770,7 @@ void modifyFallos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int fallos) {
         message ("update statement finalized.");
 }
 
-void modifyAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int aciertos) {
+void modifyAciertos (sqlite3 *db, uint32_t ID_Categoria, uint32_t ID_Usuario, uint32_t aciertos) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update UsuarioCategoria set Aciertos = ? where ID_Categoria = ? and ID_Usuario = ?";
@@ -743,17 +782,17 @@ void modifyAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int aciertos
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, aciertos);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) aciertos);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, ID_Categoria);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) ID_Categoria);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 3, ID_Usuario);
+    result = sqlite3_bind_zeroblob64 (stmt, 3, (sqlite3_uint64) ID_Usuario);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -775,7 +814,7 @@ void modifyAciertos (sqlite3 *db, int ID_Categoria, int ID_Usuario, int aciertos
 }
 
 Categoria *obtenerCategorias (sqlite3 *db) {
-    int           tamanyo    = numeroCategorias (db);
+    size_t        tamanyo    = numeroCategorias (db);
     Categoria    *categorias = malloc (sizeof (Categoria) * (size_t) tamanyo);
     sqlite3_stmt *stmt;
 
@@ -792,7 +831,7 @@ Categoria *obtenerCategorias (sqlite3 *db) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW) {
-            categoria.ID_Categoria = sqlite3_column_int (stmt, 0);
+            categoria.ID_Categoria = (uint32_t) sqlite3_column_int64 (stmt, 0);
             strcpy (categoria.nombre, (char *) sqlite3_column_text (stmt, 1));
             categorias [i] = categoria;
             i++;
@@ -810,8 +849,8 @@ Categoria *obtenerCategorias (sqlite3 *db) {
     return categorias;
 }
 
-int numeroCategorias (sqlite3 *db) {
-    int           resultado = 0;
+size_t numeroCategorias (sqlite3 *db) {
+    size_t        resultado = 0;
     sqlite3_stmt *stmt;
     char          sql [] = "Select * from Categorias";
     int           result = sqlite3_prepare_v2 (db, sql, -1, &stmt, NULL);
@@ -839,9 +878,9 @@ int numeroCategorias (sqlite3 *db) {
     return resultado;
 }
 
-int obtenerIDCategoria (sqlite3 *db) {
-    int           resultado = 1;
-    int           idActual  = 0;
+uint32_t obtenerIDCategoria (sqlite3 *db) {
+    uint32_t      resultado = 1;
+    uint32_t      idActual  = 0;
     sqlite3_stmt *stmt;
     char          sql [] = "Select ID_Categoria from Categorias";
     int           result = sqlite3_prepare_v2 (db, sql, -1, &stmt, NULL);
@@ -855,7 +894,7 @@ int obtenerIDCategoria (sqlite3 *db) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW) {
-            idActual = sqlite3_column_int (stmt, 0);
+            idActual = (uint32_t) sqlite3_column_int64 (stmt, 0);
             if (idActual != resultado)
                 break;
             resultado++;
@@ -876,7 +915,7 @@ int obtenerIDCategoria (sqlite3 *db) {
 
 void insertarCategoria (sqlite3 *db, char nombre []) {
     sqlite3_stmt *stmt;
-    int           id     = obtenerIDCategoria (db);
+    uint32_t      id     = obtenerIDCategoria (db);
     char          sql [] = "Insert into Categorias (ID_Categoria, nombre) values(?, ?)";
     int           result = sqlite3_prepare_v2 (db, sql, (int) strlen (sql) + 20, &stmt, NULL);
     if (result != SQLITE_OK) {
@@ -886,7 +925,7 @@ void insertarCategoria (sqlite3 *db, char nombre []) {
 
     message ("insert statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -912,7 +951,7 @@ void insertarCategoria (sqlite3 *db, char nombre []) {
         message ("Prepared statement finalized (INSERT)");
 }
 
-void eliminarCategoria (sqlite3 *db, int id) {
+void eliminarCategoria (sqlite3 *db, uint32_t id) {
     sqlite3_stmt *stmt;
     char          sql [] = "Delete from categorias where ID_Categoria = ?";
     int           result = sqlite3_prepare_v2 (db, sql, (int) strlen (sql) + 1, &stmt, NULL);
@@ -923,7 +962,7 @@ void eliminarCategoria (sqlite3 *db, int id) {
 
     message ("delete statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -946,7 +985,7 @@ void eliminarCategoria (sqlite3 *db, int id) {
 
 Presets *obtenerListaPresets (sqlite3 *db) {
     sqlite3_stmt *stmt;
-    int           tamanyo      = numeroPresets (db);
+    size_t        tamanyo      = numeroPresets (db);
     Presets      *listaPresets = malloc (sizeof (Presets) * (size_t) tamanyo);
 
     char sql [] = "Select * from Presets";
@@ -962,10 +1001,10 @@ Presets *obtenerListaPresets (sqlite3 *db) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW) {
-            presets.ID_Presets = sqlite3_column_int (stmt, 0);
-            presets.nJugadores = sqlite3_column_int (stmt, 1);
-            presets.nRondas    = sqlite3_column_int (stmt, 2);
-            presets.RoundTime  = sqlite3_column_int (stmt, 3);
+            presets.ID_Presets = (uint32_t) sqlite3_column_int64 (stmt, 0);
+            presets.nJugadores = (uint32_t) sqlite3_column_int64 (stmt, 1);
+            presets.nRondas    = (uint32_t) sqlite3_column_int64 (stmt, 2);
+            presets.RoundTime  = (uint32_t) sqlite3_column_int64 (stmt, 3);
             strcpy (presets.Categorias, (char *) sqlite3_column_text (stmt, 4));
             strcpy (presets.Mecanica1, (char *) sqlite3_column_text (stmt, 5));
             strcpy (presets.Mecanica2, (char *) sqlite3_column_text (stmt, 6));
@@ -987,8 +1026,8 @@ Presets *obtenerListaPresets (sqlite3 *db) {
     return listaPresets;
 }
 
-int numeroPresets (sqlite3 *db) {
-    int           resultado = 0;
+size_t numeroPresets (sqlite3 *db) {
+    size_t        resultado = 0;
     sqlite3_stmt *stmt;
     char          sql [] = "Select * from Presets";
     int           result = sqlite3_prepare_v2 (db, sql, -1, &stmt, NULL);
@@ -1017,9 +1056,9 @@ int numeroPresets (sqlite3 *db) {
     return resultado;
 }
 
-int obtenerIDPresets (sqlite3 *db) {
-    int           resultado = 1;
-    int           idActual  = 0;
+uint32_t obtenerIDPresets (sqlite3 *db) {
+    uint32_t      resultado = 1;
+    uint32_t      idActual  = 0;
     sqlite3_stmt *stmt;
     char          sql [] = "Select ID_Presets from Presets";
     int           result = sqlite3_prepare_v2 (db, sql, -1, &stmt, NULL);
@@ -1033,7 +1072,7 @@ int obtenerIDPresets (sqlite3 *db) {
     do {
         result = sqlite3_step (stmt);
         if (result == SQLITE_ROW) {
-            idActual = sqlite3_column_int (stmt, 0);
+            idActual = (uint32_t) sqlite3_column_int64 (stmt, 0);
             if (idActual != resultado)
                 break;
             resultado++;
@@ -1054,7 +1093,7 @@ int obtenerIDPresets (sqlite3 *db) {
 
 void insertarPresets (sqlite3 *db, Presets presets) {
     sqlite3_stmt *stmt;
-    int           id = obtenerIDPresets (db);
+    uint32_t      id = obtenerIDPresets (db);
     char          sql [] =
         "Insert into Presets (ID_Presets, nJugadores, nRondas, RoundTime, Categorias, Mecanica1, Mecanica2, Mecanica3, Mecanica4) values(?, ?, ?, ?, ?, ?, ?, ?, ?)";
     int result = sqlite3_prepare_v2 (db, sql, (int) strlen (sql) + 10, &stmt, NULL);
@@ -1062,22 +1101,22 @@ void insertarPresets (sqlite3 *db, Presets presets) {
         print_db_err (db);
         error ("could not prepare the insert statement.");
     }
-    result = sqlite3_bind_int (stmt, 1, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, presets.nJugadores);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) presets.nJugadores);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 3, presets.nRondas);
+    result = sqlite3_bind_zeroblob64 (stmt, 3, (sqlite3_uint64) presets.nRondas);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 4, presets.RoundTime);
+    result = sqlite3_bind_zeroblob64 (stmt, 4, (sqlite3_uint64) presets.RoundTime);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1120,7 +1159,7 @@ void insertarPresets (sqlite3 *db, Presets presets) {
     }
 }
 
-void eliminarPresets (sqlite3 *db, int id) {
+void eliminarPresets (sqlite3 *db, uint32_t id) {
     sqlite3_stmt *stmt;
     char          sql [] = "Delete from Presets where ID_Presets = ?";
     int           result = sqlite3_prepare_v2 (db, sql, (int) strlen (sql) + 1, &stmt, NULL);
@@ -1131,7 +1170,7 @@ void eliminarPresets (sqlite3 *db, int id) {
 
     message ("delete statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1152,7 +1191,7 @@ void eliminarPresets (sqlite3 *db, int id) {
         message ("delete statement finalized.");
 }
 
-void modifyNJugadores (sqlite3 *db, int nJugadores, int id) {
+void modifyNJugadores (sqlite3 *db, uint32_t nJugadores, uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update Presets set nJugadores = ? where ID_Presets = ?";
@@ -1164,12 +1203,12 @@ void modifyNJugadores (sqlite3 *db, int nJugadores, int id) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, nJugadores);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) nJugadores);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1190,7 +1229,7 @@ void modifyNJugadores (sqlite3 *db, int nJugadores, int id) {
         message ("update statement finalized.");
 }
 
-void modifyNRondas (sqlite3 *db, int nRondas, int id) {
+void modifyNRondas (sqlite3 *db, uint32_t nRondas, uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update Presets set nRondas = ? where ID_Presets = ?";
@@ -1202,12 +1241,12 @@ void modifyNRondas (sqlite3 *db, int nRondas, int id) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, nRondas);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) nRondas);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1228,7 +1267,7 @@ void modifyNRondas (sqlite3 *db, int nRondas, int id) {
         message ("update statement finalized.");
 }
 
-void modifyRoundTime (sqlite3 *db, int roundTime, int id) {
+void modifyRoundTime (sqlite3 *db, uint32_t roundTime, uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update Presets set nRondas = ? where ID_Presets = ?";
@@ -1240,12 +1279,12 @@ void modifyRoundTime (sqlite3 *db, int roundTime, int id) {
 
     message ("update statement prepared.");
 
-    result = sqlite3_bind_int (stmt, 1, roundTime);
+    result = sqlite3_bind_zeroblob64 (stmt, 1, (sqlite3_uint64) roundTime);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1266,7 +1305,7 @@ void modifyRoundTime (sqlite3 *db, int roundTime, int id) {
         message ("update statement finalized.");
 }
 
-void modifyMecanica1 (sqlite3 *db, char mecanica [], int id) {
+void modifyMecanica1 (sqlite3 *db, char mecanica [], uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update Presets set Mecanica1 = ? where ID_Presets = ?";
@@ -1283,7 +1322,7 @@ void modifyMecanica1 (sqlite3 *db, char mecanica [], int id) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1304,7 +1343,7 @@ void modifyMecanica1 (sqlite3 *db, char mecanica [], int id) {
         message ("update statement finalized.");
 }
 
-void modifyMecanica2 (sqlite3 *db, char mecanica [], int id) {
+void modifyMecanica2 (sqlite3 *db, char mecanica [], uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update Presets set Mecanica2 = ? where ID_Presets = ?";
@@ -1321,7 +1360,7 @@ void modifyMecanica2 (sqlite3 *db, char mecanica [], int id) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1342,7 +1381,7 @@ void modifyMecanica2 (sqlite3 *db, char mecanica [], int id) {
         message ("update statement finalized.");
 }
 
-void modifyMecanica3 (sqlite3 *db, char mecanica [], int id) {
+void modifyMecanica3 (sqlite3 *db, char mecanica [], uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update Presets set Mecanica3 = ? where ID_Presets = ?";
@@ -1359,7 +1398,7 @@ void modifyMecanica3 (sqlite3 *db, char mecanica [], int id) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");
@@ -1380,7 +1419,7 @@ void modifyMecanica3 (sqlite3 *db, char mecanica [], int id) {
         message ("update statement finalized.");
 }
 
-void modifyMecanica4 (sqlite3 *db, char mecanica [], int id) {
+void modifyMecanica4 (sqlite3 *db, char mecanica [], uint32_t id) {
     sqlite3_stmt *stmt;
 
     char sql [] = "Update Presets set Mecanica4 = ? where ID_Presets = ?";
@@ -1397,7 +1436,7 @@ void modifyMecanica4 (sqlite3 *db, char mecanica [], int id) {
         print_db_err (db);
         error ("error binding parameters");
     }
-    result = sqlite3_bind_int (stmt, 2, id);
+    result = sqlite3_bind_zeroblob64 (stmt, 2, (sqlite3_uint64) id);
     if (result != SQLITE_OK) {
         print_db_err (db);
         error ("error binding parameters");

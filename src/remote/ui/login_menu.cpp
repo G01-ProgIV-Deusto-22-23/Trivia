@@ -38,6 +38,7 @@ cmd_t login_menu (const
     Usuario u;
     memccpy (&u.username, *get_form_data (f), '\0', sizeof (u.username));
     memccpy (&u.contrasena, *(get_form_data (f) + 1), '\0', sizeof (u.contrasena));
+    delete_form (f);
 
     const int port = ntohs (addr.sin_port);
 

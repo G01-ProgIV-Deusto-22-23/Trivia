@@ -26,10 +26,10 @@ trivia_main {
 
                 for (int c; (c = wgetch (w)) != '\r' && c != '\n' && c != KEY_ENTER;)
                     ;
-            }
 
-            if (!delete_window (w))
-                warning ("the window could not be deleted properly.");
+                if (!delete_window (w))
+                    warning ("the window could not be deleted properly.");
+            }
 
             continue;
         }
@@ -37,7 +37,26 @@ trivia_main {
         break;
     }
 
+    static cmd_t loginfo;
+
+login:
     login_menu (s);
+    if (loginfo.cmd == cmd_error) {
+        if (*loginfo.info.arg == CMD_ERROR_NO_USER) {
+            message ("Las credenciales de usuario elegidas no son correctas.");
+
+            const char *const opts [] = { "Sí", "No" };
+            const size_t      m       = choicemenu (0, 0, 0, 0, opts, "Volver a intentarlo?");
+            const size_t      ret     = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+            delete_menu (m);
+
+            if (!ret)
+                goto login;
+        }
+
+        else
+            warning ("Hubo un error al intentar iniciar sesión.");
+    }
 
     return 0;
 }

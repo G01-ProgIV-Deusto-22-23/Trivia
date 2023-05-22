@@ -115,11 +115,13 @@ typedef enum __attribute__ ((packed)
 typedef struct __attribute__ ((packed)) {
         uint8_t players;
         uint8_t round_time;
+        uint8_t rounds;
 } game_attr_t;
 
-#define MAX_QUESTIONS     91
-#define MAX_QUESTION_TEXT (MAX_PACKET_SZ >> 1)
-#define MAX_ANSWER_TEXT   (MAX_QUESTION_TEXT >> 3)
+#define MAX_QUESTIONS          UINT8_MAX
+#define MAX_QUESTION_TEXT      (MAX_PACKET_SZ >> 1)
+#define MAX_ANSWER_TEXT        (MAX_QUESTION_TEXT >> 3)
+#define MAX_QUESTION_TYPE_TEXT (MAX_ANSWER_TEXT >> 2)
 
 typedef struct __attribute__ ((packed)) {
         uint8_t correct;
@@ -128,44 +130,47 @@ typedef struct __attribute__ ((packed)) {
 
 typedef struct __attribute__ ((packed)) {
         uint8_t  n;
+        char     type [MAX_QUESTION_TYPE_TEXT];
         char     text [MAX_QUESTION_TEXT];
         answer_t ans [4];
 } question_t;
 
-typedef struct {
-        int  ID_Usuario;
-        char nombreVisible [21];
-        char username [21];
-        char contrasena [21];
-        int  aciertosTotales;
-        int  fallosTotales;
-        int  ID_Presets;
+typedef struct __attribute__ ((packed)) {
+        uint32_t ID_Usuario;
+        char     nombreVisible [21];
+        char     username [21];
+        char     contrasena [21];
+        uint32_t aciertosTotales;
+        uint32_t fallosTotales;
+        uint32_t ID_Presets;
 } Usuario;
 
-typedef struct {
-        char nombre [21];
-        int  ID_Categoria;
+typedef struct __attribute__ ((packed)) {
+        char     nombre [21];
+        uint32_t ID_Categoria;
 } Categoria;
 
-typedef struct {
-        int  ID_Presets;
-        int  nJugadores;
-        int  nRondas;
-        int  RoundTime;
-        char Categorias [101];
-        char Mecanica1 [4];
-        char Mecanica2 [4];
-        char Mecanica3 [4];
-        char Mecanica4 [4];
+typedef struct __attribute__ ((packed)) {
+        uint32_t ID_Presets;
+        uint32_t nJugadores;
+        uint32_t nRondas;
+        uint32_t RoundTime;
+        char     Categorias [101];
+        char     Mecanica1 [4];
+        char     Mecanica2 [4];
+        char     Mecanica3 [4];
+        char     Mecanica4 [4];
 } Presets;
-typedef struct{
-	char * respuesta;
-	bool correcta;
+
+typedef struct __attribute__ ((packed)) {
+        char *respuesta;
+        bool  correcta;
 } Respuesta;
-typedef struct {
-	char * tipo;
-	char * enunciado;
-	Respuesta opciones[4];
+
+typedef struct __attribute__ ((packed)) {
+        char     *tipo;
+        char     *enunciado;
+        Respuesta opciones [4];
 } Pregunta;
 
 typedef struct __attribute__ ((packed)) {
