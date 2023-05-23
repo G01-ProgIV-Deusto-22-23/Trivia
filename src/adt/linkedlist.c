@@ -118,7 +118,7 @@ size_t impl_indexof_linkedlist (linkedlist_t l, void *const data, cmpfunc_t *con
 }
 
 void *impl_pop_linkedlist (linkedlist_t *const l, const size_t i) {
-    if (!(l && i >= length_linkedlist (*l)))
+    if (!(l && i < length_linkedlist (*l)))
         return NULL;
 
     linkedlist_t temp = (*l)->next;

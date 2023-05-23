@@ -1,7 +1,5 @@
 #include "menu.h"
-#include "linux/ncursesw/curses.h"
 #include "window.h"
-#include <signal.h>
 
 #ifdef __cplusplus
 extern "C" {

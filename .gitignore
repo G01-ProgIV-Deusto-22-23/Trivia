@@ -12,3 +12,4 @@ obj
 clang-format-all
 .config.path
 *.sqlite
+*.results

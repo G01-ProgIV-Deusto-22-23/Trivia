@@ -65,6 +65,7 @@ QuestionHandler::QuestionHandler (size_t rounds, size_t roundtime) {
 QuestionHandler::~QuestionHandler () {
     memset (QuestionHandler::buf, 0, sizeof (QuestionHandler::buf));
     destroy_linkedlist (this->queue);
+    this->queue           = NULL;
     QuestionHandler::init = false;
 }
 
@@ -72,8 +73,8 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
     if (!rounds)
         rounds = MAX_ROUNDS;
 
-    /*     else if (rounds > MAX_ROUNDS)
-            error ("the number of rounds cannot be larger than " stringify (MAX_ROUNDS) "."); */
+    else if (rounds > MAX_ROUNDS)
+        error ("the number of rounds cannot be larger than " stringify (MAX_ROUNDS) ".");
 
     if (roundtime > UINT32_MAX)
         warning ("rounds can last a maximum of " stringify (UINT32_MAX) " seconds.");
@@ -93,7 +94,7 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
         }
 
         size_t i = 0;
-        for (question_t *q;;) {
+        for (question_t *q; i < rounds;) {
             if (!(q = static_cast<question_t *> (pop_linkedlist (qs, 0))))
                 break;
 
@@ -137,7 +138,10 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
             ;
 
         picks.insert (r);
-        insert_linkedlist (this->queue, reinterpret_cast<question_t *> (buf) + r);
+        r = i;
+        if (!(i ? insert_linkedlist (this->queue, reinterpret_cast<question_t *> (buf) + r)
+                : (bool) (this->queue = create_linkedlist (reinterpret_cast<question_t *> (buf) + r))))
+            warning ("could not insert the question into the linked list.");
     }
 }
 
@@ -166,20 +170,23 @@ uint32_t QuestionHandler::getRoundTime (void) {
 }
 
 game_status_t QuestionHandler::next (void) {
-    question_t *q;
-    if (!(q = (question_t *) pop_linkedlist (this->queue, 0)))
+    question_t *const q = (question_t *) pop_linkedlist (this->queue, 0);
+    if (!q)
         return game_finished;
 
-    static char buf [MAX_QUESTION_TYPE_TEXT + sizeof (": ") + MAX_QUESTION_TEXT - 2];
+    static char buf
+        [sizeof ("(Ronda ) " stringify (MAX_ROUNDS)) + MAX_QUESTION_TYPE_TEXT + sizeof (": ") + MAX_QUESTION_TEXT - 3];
+    static uint8_t i = 1;
 
-    *(char *) memcpy (
-        mempcpy (mempcpy (buf, q->type, strlen (q->type)), ": ", sizeof (": ") - 1), q->text, strlen (q->text)
+    *(char *) mempcpy (
+        mempcpy (mempcpy (buf + sprintf (buf, "(Ronda %u) ", i++), q->type, strlen (q->type)), ": ", sizeof (": ") - 1),
+        q->text, strlen (q->text)
     ) = '\0';
 
-    static const char *a1 [1] = {};
-    static const char *a2 [2] = {};
-    static const char *a3 [3] = {};
-    static const char *a4 [4] = {};
+    static const char *a1 [1];
+    static const char *a2 [2];
+    static const char *a3 [3];
+    static const char *a4 [4];
 
     size_t m = (size_t) -1;
 
@@ -191,14 +198,14 @@ game_status_t QuestionHandler::next (void) {
     else if (q->n == 2) {
         *a2       = q->ans->text;
         *(a2 + 1) = (q->ans + 1)->text;
-        create_menu (choicemenu, 0, 0, 0, 0, a2);
+        m         = create_menu (choicemenu, 0, 0, 0, 0, a2);
     }
 
     else if (q->n == 3) {
         *a3       = q->ans->text;
         *(a3 + 1) = (q->ans + 1)->text;
         *(a3 + 2) = (q->ans + 2)->text;
-        create_menu (choicemenu, 0, 0, 0, 0, a3);
+        m         = create_menu (choicemenu, 0, 0, 0, 0, a3);
     }
 
     else {
@@ -206,24 +213,28 @@ game_status_t QuestionHandler::next (void) {
         *(a4 + 1) = (q->ans + 1)->text;
         *(a4 + 2) = (q->ans + 2)->text;
         *(a4 + 3) = (q->ans + 3)->text;
-        create_menu (choicemenu, 0, 0, 0, 0, a4);
+        m         = create_menu (choicemenu, 0, 0, 0, 0, a4);
     }
 
     timeout_menu (m, this->roundtime);
     display_menu (m, buf);
 
-    size_t ret = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+    const size_t ret = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+    bool         to  = timeout_menu_passed (m);
 
     delete_menu (m);
 
     if (ret == (size_t) -1)
-        return game_afk;
+        return static_cast<game_status_t> (
+            static_cast<std::underlying_type<decltype (game_exit)>::type> (game_exit) + to
+        );
 
     return (q->ans + ret)->correct ? game_ok : game_fail;
 }
 
 typeof (QuestionHandler::results) QuestionHandler::game (void) {
-    std::vector<game_status_t> res = std::vector<game_status_t> (MAX_ROUNDS);
+    std::vector<game_status_t> res = std::vector<game_status_t> ();
+    res.reserve (MAX_ROUNDS);
 
     for (game_status_t s;;) {
         if ((s = this->next ()) == game_finished)
@@ -272,7 +283,7 @@ const char *QuestionHandler::resultsToStr (void) {
                  ? std::get<0> (this->results) [0] == game_exit
                        ? sprintf (pos, "Partida abandonada.")
                        : sprintf (
-                             pos, "Total: %" PRIu8 "de %" PRIu8 "\n\n", std::get<1> (this->results),
+                             pos, "Total: %" PRIu8 " de %" PRIu8 "\n\n", std::get<1> (this->results),
                              (uint8_t) std::get<0> (this->results).size ()
                          )
                  : sprintf (pos, "Partida terminada por inactividad.")) == -1)
@@ -282,7 +293,8 @@ const char *QuestionHandler::resultsToStr (void) {
     if (std::get<0> (this->results).size () && std::get<0> (this->results) [0] != game_exit)
         for (; i < std::get<0> (this->results).size (); i++, pos += j) {
             if ((j = sprintf (
-                     pos, "%" PRIu8 ". %s%s", (uint8_t) (i + 1),
+                     pos, "%" PRIu8 ". %*s%s%s", (uint8_t) (i + 1),
+                     (int) (decplaces (std::get<0> (this->results).size () + 1) - decplaces ((uint8_t) (i + 1))), "",
                      std::get<0> (this->results) [i] == game_ok     ? "Acierto"
                      : std::get<0> (this->results) [i] == game_fail ? "Fallo"
                                                                     : "No respondido",

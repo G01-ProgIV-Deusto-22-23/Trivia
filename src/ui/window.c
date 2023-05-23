@@ -153,7 +153,7 @@ static int delmenufunc (void *const restrict menu) {
     trivia_free_menu ((size_t) (uintptr_t) menu);
 
     if (!IS_DELETE_WINDOWS) {
-        nanosleep (&(struct timespec) { 0, 5000000L }, &(struct timespec) {});
+        nanosleep (&(struct timespec) { 0, 50000000L }, &(struct timespec) {});
 
         if (
 #ifdef _WIN32
@@ -172,6 +172,8 @@ static int delformfunc (void *const restrict form) {
     trivia_free_form ((size_t) (uintptr_t) form);
 
     if (!IS_DELETE_WINDOWS) {
+        nanosleep (&(struct timespec) { 0, 5000000L }, &(struct timespec) {});
+
         if (
 #ifdef _WIN32
             WaitForSingleObject (*(FREE_FORM_SEMS + (size_t) (uintptr_t) form), INFINITE) == WAIT_FAILED

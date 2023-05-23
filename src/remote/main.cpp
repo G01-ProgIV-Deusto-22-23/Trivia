@@ -2,12 +2,10 @@ trivia_main {
     setup_ui ();
 
     static const char *const opts [] = { "Jugar una partida como invitado", "Continuar como usuario" };
-    static size_t            m;
-    static size_t            r;
 
-main_menu:
-    m = choicemenu (0, 0, 0, 0, opts, "Bienvenido");
-    r = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+main_menu : {
+    const size_t m = choicemenu (0, 0, 0, 0, opts, "Bienvenido");
+    const size_t r = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
 
     if (!get_menu_ret (m))
         error ("could not get the user's response.");
@@ -23,6 +21,7 @@ main_menu:
 
         goto main_menu;
     }
+}
 
     static
 #ifdef _WIN32
