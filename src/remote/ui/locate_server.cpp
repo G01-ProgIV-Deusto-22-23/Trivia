@@ -22,9 +22,7 @@ locate_server (void) {
     char ip [sizeof ("255.255.255.255")] = { 0 };
     int  port                            = 0;
     if (r) {
-        field_attr_t fields [] = {
-            ipv4_field (), int_field (sizeof (stringify (IANA_DYNAMIC_PORT_END)) - 1, 0, IANA_DYNAMIC_PORT_END)
-        };
+        field_attr_t      fields [] = { ipv4_field (), int_field (0, IANA_DYNAMIC_PORT_END) };
         const char *const titles [] = { "IP (vacío para este mismo equipo):",
                                         "Puerto (0 o vacío para puerto predeterminado):" };
         size_t            f         = form (0, 0, 0, 0, fields, titles);

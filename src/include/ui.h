@@ -78,45 +78,96 @@ extern "C" {
      }))
 
 #ifdef __cplusplus
-    #define int_field(len, ...)                                                                                        \
-        (ct_error (NARGS (__VA_ARGS__) > 2, "the int_field() macro accepts between one and three arguments."),         \
+    #define int_field(...)                                                                                             \
+        (ct_error (                                                                                                    \
+             !NARGS (__VA_ARGS__) || NARGS (__VA_ARGS__) > 3,                                                          \
+             "the int_field() macro accepts between one and three arguments."                                          \
+         ),                                                                                                            \
          ct_error (                                                                                                    \
-             !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                          \
-               isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0))),                                                       \
+             !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) && isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&      \
+               isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0))),                                                    \
              "all arguments passed to the int_field() macro must be integers."                                         \
          ),                                                                                                            \
          ({                                                                                                            \
              _Pragma ("GCC diagnostic push");                                                                          \
              _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                    \
-             field_attr_t __int_field_fa__ = impl_field_attrs (len ? len : decplaces (LONG_MAX), TYPE_INTEGER);        \
+             _Pragma ("GCC diagnostic ignored \"-Wint-in-bool-context\"");                                             \
+             field_attr_t __int_field_fa__ = impl_field_attrs (                                                        \
+                 (NARGS (__VA_ARGS__) == 1 || NARGS (__VA_ARGS__) == 3) ? ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)         \
+                                                                              ? ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)   \
+                                                                              : decplaces (LONG_MAX)                   \
+                 : ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX)                                               \
+                     ? decplaces (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX))                               \
+                     : decplaces (LONG_MAX),                                                                           \
+                 TYPE_INTEGER                                                                                          \
+             );                                                                                                        \
              _Pragma ("GCC diagnostic pop");                                                                           \
              if (NARGS (__VA_ARGS__ >= 2)) {                                                                           \
-                 __int_field_fa__.type_args.integer.min = ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0);                        \
-                 __int_field_fa__.type_args.integer.max = ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX);       \
+                 __int_field_fa__.type_args.integer.min = NARGS (__VA_ARGS__) == 2                                     \
+                                                              ? ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)                   \
+                                                              : ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0);               \
+                 __int_field_fa__.type_args.integer.max =                                                              \
+                     NARGS (__VA_ARGS__) == 2 ? ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX)                  \
+                                              : ARG3 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX, LONG_MAX);       \
              }                                                                                                         \
              __int_field_fa__;                                                                                         \
          }))
 #else
-    #define int_field(len, ...)                                                                                        \
-        (ct_error (NARGS (__VA_ARGS__) > 2, "the int_field() macro accepts between one and three arguments."),         \
+    #define int_field(...)                                                                                             \
+        (ct_error (                                                                                                    \
+             !NARGS (__VA_ARGS__) || NARGS (__VA_ARGS__) > 3,                                                          \
+             "the int_field() macro accepts between one and three arguments."                                          \
+         ),                                                                                                            \
          ct_error (                                                                                                    \
-             !(isint (len) && isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) &&                                          \
-               isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0))),                                                       \
+             !(isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)) && isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)) &&      \
+               isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0, 0))),                                                    \
              "all arguments passed to the int_field() macro must be integers."                                         \
          ),                                                                                                            \
          ({                                                                                                            \
              _Pragma ("GCC diagnostic push");                                                                          \
              _Pragma ("GCC diagnostic ignored \"-Wshadow=local\"");                                                    \
-             field_attr_t __int_field_fa__ = impl_field_attrs (len, TYPE_INTEGER);                                     \
+             _Pragma ("GCC diagnostic ignored \"-Wint-in-bool-context\"");                                             \
+             field_attr_t __int_field_fa__ = impl_field_attrs (                                                        \
+                 __builtin_choose_expr (                                                                               \
+                     NARGS (__VA_ARGS__) == 1 || NARGS (__VA_ARGS__) == 3,                                             \
+                     __builtin_choose_expr (                                                                           \
+                         isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0         \
+                     )                                                                                                 \
+                         ? __builtin_choose_expr (                                                                     \
+                               isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0   \
+                           )                                                                                           \
+                         : decplaces (LONG_MAX),                                                                       \
+                     __builtin_choose_expr (                                                                           \
+                         isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX)),                                \
+                         ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX), 0                                      \
+                     )                                                                                                 \
+                         ? decplaces (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX))                           \
+                         : decplaces (LONG_MAX)                                                                        \
+                 ),                                                                                                    \
+                 TYPE_INTEGER                                                                                          \
+             );                                                                                                        \
              _Pragma ("GCC diagnostic pop");                                                                           \
              __builtin_choose_expr (                                                                                   \
                  NARGS (__VA_ARGS__) >= 2,                                                                             \
                  (__int_field_fa__.type_args.integer.min = __builtin_choose_expr (                                     \
-                      isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0            \
+                      NARGS (__VA_ARGS__) == 2,                                                                        \
+                      __builtin_choose_expr (                                                                          \
+                          isint (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0)), ARG1 (__VA_ARGS__ __VA_OPT__ (, ) 0), 0        \
+                      ),                                                                                               \
+                      __builtin_choose_expr (                                                                          \
+                          isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0)), ARG2 (__VA_ARGS__ __VA_OPT__ (, ) 0, 0), 0  \
+                      )                                                                                                \
                   ),                                                                                                   \
                   __int_field_fa__.type_args.integer.max = __builtin_choose_expr (                                     \
-                      isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX)),                                   \
-                      ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX), LONG_MAX                                  \
+                      NARGS (__VA_ARGS__) == 2,                                                                        \
+                      __builtin_choose_expr (                                                                          \
+                          isint (ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX)),                               \
+                          ARG2 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX), LONG_MAX                              \
+                      ),                                                                                               \
+                      __builtin_choose_expr (                                                                          \
+                          isint (ARG3 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX, LONG_MAX)),                     \
+                          ARG3 (__VA_ARGS__ __VA_OPT__ (, ) LONG_MAX, LONG_MAX, LONG_MAX), LONG_MAX                    \
+                      )                                                                                                \
                   )),                                                                                                  \
                  (void) 0                                                                                              \
              );                                                                                                        \
@@ -970,8 +1021,9 @@ __attribute__ ((nonnull (8), warn_unused_result))
 #define multimenu(w, h, x, y, c, ...)                                                                                  \
     impl_create_display_menu ("multimenu", multimenu, w, h, x, y, c __VA_OPT__ (, ) __VA_ARGS__)
 
-    extern bool loop_menu (const size_t, const bool);
-    extern int  timeout_menu (const size_t, const int);
+    extern bool     loop_menu (const size_t, const bool);
+    extern uint32_t timeout_menu (const size_t, const uint32_t);
+    extern bool     timeout_menu_passed (const size_t);
 
     extern title_color_t get_menu_title_color (const size_t);
     extern title_color_t set_menu_title_color (const size_t, const title_color_t);
@@ -1152,6 +1204,24 @@ __attribute__ ((nonnull (8), warn_unused_result))
                                      L"Trivia: servidor local"                                                         \
                                  ))                                                                                    \
                                  warning ("could not change the window's name");                                       \
+                             else if (!strcmp (                                                                        \
+                                          basename (({                                                                 \
+                                              if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))         \
+                                                  error ("could not get the executable filename.");                    \
+                                              __setup_ui_path__;                                                       \
+                                          })),                                                                         \
+                                          "remote.exe"                                                                 \
+                                      ))                                                                               \
+                                 if (!SetWindowTextW (                                                                 \
+                                         ({                                                                            \
+                                             HWND __setup_ui_window_handle__ = GetConsoleWindow ();                    \
+                                             if (!__setup_ui_window_handle__)                                          \
+                                                 error ("could not retrieve a handle to the console window.");         \
+                                             __setup_ui_window_handle__;                                               \
+                                         }),                                                                           \
+                                         L"Trivia: cliente remoto"                                                     \
+                                     ))                                                                                \
+                                     warning ("could not change the window's name");                                   \
                      }                                                                                                 \
                      __setup_ui_ret__ = impl_setup_ui (                                                                \
                          __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                   \
@@ -1191,7 +1261,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
                              (game_attr_t                                                                              \
                              ) { .players    = (uint8_t                                                                \
                                  ) strtol (__setup_ui_argc__ > 1 ? *(__setup_ui_argv__ + 1) : "", NULL, 10),        \
-                                 .round_time = (uint8_t                                                                \
+                                 .round_time = (uint32_t                                                               \
                                  ) strtol (__setup_ui_argc__ > 3 ? *(__setup_ui_argv__ + 3) : "", NULL, 10) }          \
                          );                                                                                            \
                      _freea (__setup_ui_argv__);                                                                       \
@@ -1327,6 +1397,24 @@ __attribute__ ((nonnull (8), warn_unused_result))
                                      L"Trivia: servidor local"                                                                                \
                                  ))                                                                                                           \
                                  warning ("could not change the window's name");                                                              \
+                             else if (!strcmp (                                                                                               \
+                                          basename (({                                                                                        \
+                                              if (!GetModuleFileNameA (NULL, __setup_ui_path__, MAX_PATH + 1))                                \
+                                                  error ("could not get the executable filename.");                                           \
+                                              __setup_ui_path__;                                                                              \
+                                          })),                                                                                                \
+                                          "remote.exe"                                                                                        \
+                                      ))                                                                                                      \
+                                 if (!SetWindowTextW (                                                                                        \
+                                         ({                                                                                                   \
+                                             HWND __setup_ui_window_handle__ = GetConsoleWindow ();                                           \
+                                             if (!__setup_ui_window_handle__)                                                                 \
+                                                 error ("could not retrieve a handle to the console window.");                                \
+                                             __setup_ui_window_handle__;                                                                      \
+                                         }),                                                                                                  \
+                                         L"Trivia: cliente remoto"                                                                            \
+                                     ))                                                                                                       \
+                                     warning ("could not change the window's name");                                                          \
                      }                                                                                                                        \
                      __setup_ui_ret__ = impl_setup_ui (                                                                                       \
                          __setup_ui_argc__, (const char *const *) __setup_ui_argv__,                                                          \
@@ -1390,7 +1478,7 @@ __attribute__ ((nonnull (8), warn_unused_result))
                              (game_attr_t                                                                                                     \
                              ) { .players    = (uint8_t                                                                                       \
                                  ) strtol (__setup_ui_argc__ > 1 ? *(__setup_ui_argv__ + 1) : "", NULL, 10),                               \
-                                 .round_time = (uint8_t                                                                                       \
+                                 .round_time = (uint32_t                                                                                      \
                                  ) strtol (__setup_ui_argc__ > 3 ? *(__setup_ui_argv__ + 3) : "", NULL, 10) }                                 \
                          );                                                                                                                   \
                      _freea (__setup_ui_argv__);                                                                                              \

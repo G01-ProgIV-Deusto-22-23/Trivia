@@ -7,16 +7,16 @@ extern "C" {
 
     extern linkedlist_t create_linkedlist (void *const);
     extern size_t       length_linkedlist (const linkedlist_t);
-    extern bool         impl_destroy_linkedlist (linkedlist_t *const restrict);
+    extern bool         impl_destroy_linkedlist (linkedlist_t *const);
     extern void         freedata_linkedlist (const restrict linkedlist_t, freefunc_t *const);
     extern bool         insert_linkedlist (const linkedlist_t, void *const);
-    extern void        *impl_find_linkedlist (linkedlist_t, void *const, cmpfunc_t *const, size_t *const restrict);
+    extern void        *impl_find_linkedlist (linkedlist_t, void *const, cmpfunc_t *const, size_t *const);
     extern size_t       impl_indexof_linkedlist (linkedlist_t, void *const, cmpfunc_t *const cmp);
-    extern void        *impl_pop_linkedlist (linkedlist_t *const restrict, const size_t);
-    extern bool         impl_remove_linkedlist (linkedlist_t *const restrict, const size_t);
+    extern void        *impl_pop_linkedlist (linkedlist_t *const, const size_t);
+    extern bool         impl_remove_linkedlist (linkedlist_t *const, const size_t);
     extern void        *get_linkedlist (linkedlist_t, const size_t);
     extern void        *set_linkedlist (linkedlist_t, const size_t, void *const);
-    extern void        *toarray_linkedlist (linkedlist_t, size_t *const restrict);
+    extern void        *toarray_linkedlist (linkedlist_t, size_t *const);
 
 #ifdef __cplusplus
     #define destroy_linkedlist(l)                                                                                                                              \

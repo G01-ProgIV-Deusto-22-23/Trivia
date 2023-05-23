@@ -48,8 +48,22 @@ const char *game_list_raw (void) {
 }
 
 void game_list_parse (char dest [MAX_GAMES][sizeof ("XXXX")], const char *src) {
-    if (!(dest || src))
+    if (!(dest || src)) {
+        warning ("neither the destination nor the source can be null.");
+
         return;
+    }
+
+    if ((void *) dest == (void *) src) {
+        warning ("the destination and the source cannot be the same.");
+
+        return;
+    }
+
+    if (imaxabs ((ptrdiff_t) ((char *) dest - (char *) src)) < (ptrdiff_t) (MAX_GAMES * sizeof ("XXXX"))) {
+        warning ("the destination and the source overlap.");
+        return;
+    }
 
     for (size_t i = 0; *src; src += sizeof ("XXXX") - 1)
         *(char *) mempcpy (*(dest + i++), ++src, sizeof ("XXXX")) = '\0';

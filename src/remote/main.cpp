@@ -1,10 +1,34 @@
 trivia_main {
     setup_ui ();
 
+    static const char *const opts [] = { "Jugar una partida como invitado", "Continuar como usuario" };
+    static size_t            m;
+    static size_t            r;
+
+main_menu:
+    m = choicemenu (0, 0, 0, 0, opts, "Bienvenido");
+    r = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+
+    if (!get_menu_ret (m))
+        error ("could not get the user's response.");
+
+    if (!delete_menu (m))
+        warning ("the menu could not be properly deleted.");
+
+    if (r == (size_t) -1)
+        return 0;
+
+    if (!r) {
+        local_game ();
+
+        goto main_menu;
+    }
+
+    static
 #ifdef _WIN32
-    SOCKET s = INVALID_SOCKET
+        SOCKET s = INVALID_SOCKET
 #else
-    int s = -1
+        int s = -1
 #endif
         ;
     for (;;) {
@@ -45,18 +69,35 @@ login:
         if (*loginfo.info.arg == CMD_ERROR_NO_USER) {
             message ("Las credenciales de usuario elegidas no son correctas.");
 
-            const char *const opts [] = { "Sí", "No" };
-            const size_t      m       = choicemenu (0, 0, 0, 0, opts, "Volver a intentarlo?");
-            const size_t      ret     = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow=local"
+#pragma GCC diagnostic ignored "-Wshadow=compatible-local"
+
+            static const char *const opts [] = { "Sí", "No" };
+            static const size_t      m       = choicemenu (0, 0, 0, 0, opts, "Volver a intentarlo?");
+            static const size_t      r       = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+
+#pragma GCC diagnostic pop
+
+            if (!get_menu_ret (m))
+                error ("could not get the user's response.");
+
             delete_menu (m);
 
-            if (!ret)
-                goto login;
+            if (r)
+                goto main_menu;
+
+            goto login;
         }
 
-        else
+        else {
             warning ("Hubo un error al intentar iniciar sesión.");
+
+            goto main_menu;
+        }
     }
+
+    user_menu (s, loginfo.info.user);
 
     return 0;
 }

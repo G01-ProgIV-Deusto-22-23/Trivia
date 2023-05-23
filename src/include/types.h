@@ -113,9 +113,9 @@ typedef enum __attribute__ ((packed)
 #define CMD_ERROR_NO_USER     4
 
 typedef struct __attribute__ ((packed)) {
-        uint8_t players;
-        uint8_t round_time;
-        uint8_t rounds;
+        uint8_t  players;
+        uint32_t round_time;
+        uint8_t  rounds;
 } game_attr_t;
 
 #define MAX_QUESTIONS          UINT8_MAX

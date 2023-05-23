@@ -34,6 +34,8 @@ QuestionHandler::QuestionHandler (
 
     this->user = user;
 
+    this->roundtime = resp.info.game.round_time;
+
     for (size_t i = 0;
          !((QuestionHandler::buf + i)->cmd == cmd_packet || (QuestionHandler::buf + i)->cmd == cmd_packet_cont);
          insert_linkedlist (this->queue, (QuestionHandler::buf + i++)->info.pack.text))
@@ -67,20 +69,20 @@ QuestionHandler::~QuestionHandler () {
 }
 
 void QuestionHandler::local (size_t rounds, size_t roundtime) {
-    if (rounds == 0)
+    if (!rounds)
         rounds = MAX_ROUNDS;
 
-    if (rounds > MAX_ROUNDS)
-        error ("the number of rounds cannot be larger than " stringify (MAX_ROUNDS) ".");
+    /*     else if (rounds > MAX_ROUNDS)
+            error ("the number of rounds cannot be larger than " stringify (MAX_ROUNDS) "."); */
 
-    if (roundtime > INT_MAX)
-        warning ("rounds can last a maximum of " stringify (INT_MAX) " seconds.");
+    if (roundtime > UINT32_MAX)
+        warning ("rounds can last a maximum of " stringify (UINT32_MAX) " seconds.");
 
-    this->roundtime = (int) min ((size_t) INT_MAX, roundtime);
+    this->roundtime = (uint32_t) min ((size_t) UINT32_MAX, roundtime);
 
     size_t l;
     {
-        const linkedlist_t qs = get_questions ();
+        linkedlist_t qs = get_questions ();
         if (!qs)
             error ("could not fetch any questions.");
 
@@ -95,7 +97,7 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
             if (!(q = static_cast<question_t *> (pop_linkedlist (qs, 0))))
                 break;
 
-            *(reinterpret_cast<question_t *> (buf) + i++) = *q;
+            memcpy (reinterpret_cast<question_t *> (buf) + i++, q, sizeof (question_t));
         }
 
         destroy_linkedlist (qs);
@@ -131,7 +133,7 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
     std::unordered_set<size_t>                               picks;
 
     for (size_t i = 0, r; i < rounds; i++) {
-        for (; picks.find (r = dist (rng)) == picks.end ();)
+        for (; picks.find (r = dist (rng)) != picks.end ();)
             ;
 
         picks.insert (r);
@@ -155,7 +157,11 @@ std::vector<question_t> QuestionHandler::getQuestions (void) {
     return vec;
 }
 
-int QuestionHandler::getRoundTime (void) {
+size_t QuestionHandler::getRemainingRounds (void) {
+    return length_linkedlist (this->queue);
+}
+
+uint32_t QuestionHandler::getRoundTime (void) {
     return this->roundtime;
 }
 
@@ -163,6 +169,12 @@ game_status_t QuestionHandler::next (void) {
     question_t *q;
     if (!(q = (question_t *) pop_linkedlist (this->queue, 0)))
         return game_finished;
+
+    static char buf [MAX_QUESTION_TYPE_TEXT + sizeof (": ") + MAX_QUESTION_TEXT - 2];
+
+    *(char *) memcpy (
+        mempcpy (mempcpy (buf, q->type, strlen (q->type)), ": ", sizeof (": ") - 1), q->text, strlen (q->text)
+    ) = '\0';
 
     static const char *a1 [1] = {};
     static const char *a2 [2] = {};
@@ -198,7 +210,7 @@ game_status_t QuestionHandler::next (void) {
     }
 
     timeout_menu (m, this->roundtime);
-    display_menu (m, q->text);
+    display_menu (m, buf);
 
     size_t ret = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
 
@@ -216,6 +228,9 @@ typeof (QuestionHandler::results) QuestionHandler::game (void) {
     for (game_status_t s;;) {
         if ((s = this->next ()) == game_finished)
             break;
+
+        if (s == game_exit)
+            return this->results = std::make_tuple (std::vector<game_status_t> { game_exit }, UINT8_C (0));
 
         res.push_back (s);
 
@@ -254,31 +269,34 @@ const char *QuestionHandler::resultsToStr (void) {
     size_t  i   = 0;
     ssize_t j;
     if ((j = std::get<0> (this->results).size ()
-                 ? sprintf (
-                       pos, "Total: %" PRIu8 "de %" PRIu8 "\n\n", std::get<1> (this->results),
-                       (uint8_t) std::get<0> (this->results).size ()
-                   )
+                 ? std::get<0> (this->results) [0] == game_exit
+                       ? sprintf (pos, "Partida abandonada.")
+                       : sprintf (
+                             pos, "Total: %" PRIu8 "de %" PRIu8 "\n\n", std::get<1> (this->results),
+                             (uint8_t) std::get<0> (this->results).size ()
+                         )
                  : sprintf (pos, "Partida terminada por inactividad.")) == -1)
         goto err;
     pos += j;
 
-    for (; i < std::get<0> (this->results).size (); i++, pos += j) {
-        if ((j = sprintf (
-                 pos, "%" PRIu8 ". %s%s", (uint8_t) (i + 1),
-                 std::get<0> (this->results) [i] == game_ok     ? "Acierto"
-                 : std::get<0> (this->results) [i] == game_fail ? "Fallo"
-                                                                : "No respondido",
-                 i == std::get<0> (this->results).size () - 1 ? "" : "\n"
-             )) == -1) {
-        err:
-            warning ("could not print the results.");
+    if (std::get<0> (this->results).size () && std::get<0> (this->results) [0] != game_exit)
+        for (; i < std::get<0> (this->results).size (); i++, pos += j) {
+            if ((j = sprintf (
+                     pos, "%" PRIu8 ". %s%s", (uint8_t) (i + 1),
+                     std::get<0> (this->results) [i] == game_ok     ? "Acierto"
+                     : std::get<0> (this->results) [i] == game_fail ? "Fallo"
+                                                                    : "No respondido",
+                     i == std::get<0> (this->results).size () - 1 ? "" : "\n"
+                 )) == -1) {
+            err:
+                warning ("could not print the results.");
 
-            memset (this->res_str, 0, (ptrdiff_t) (pos - this->res_str));
-            memcpy (this->res_str, "Could not print the results.", sizeof ("Could not print the results.") - 1);
+                memset (this->res_str, 0, (size_t) (ptrdiff_t) (pos - this->res_str));
+                memcpy (this->res_str, "Could not print the results.", sizeof ("Could not print the results.") - 1);
 
-            break;
+                break;
+            }
         }
-    }
 
     return const_cast<char *> (this->res_str);
 }
@@ -324,7 +342,6 @@ void QuestionHandler::sendResults (void) {
             box (w, 0, 0);
             mvwprintw (w, 5, 2, "Puedes consultar los resultados de partida desde el archivo %s.", fname);
             mvwprintw (w, 6, 2, "Pulsa Intro para continuar.");
-
             for (int c; (c = wgetch (w)) != '\r' && c != '\n' && c != KEY_ENTER;)
                 ;
 

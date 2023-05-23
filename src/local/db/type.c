@@ -25,12 +25,13 @@ void imprimirPresets (Presets presets) {
 }
 
 void imprimirRespuesta (answer_t respuesta) {
-    fprintf (stderr, "respuesta; %s, correcta = %s\n", respuesta.text, respuesta.correct ? "true" : "false");
+    fprintf (stderr, "%s (%sorrecta)\n", respuesta.text, respuesta.correct ? "C" : "Inc");
 }
 
 void imprimirPregunta (question_t pregunta) {
-    fprintf (stderr, "tipo = %s, enunciado = %s\n", pregunta.type, pregunta.text);
-    for (size_t i = 0; i < sizeof (pregunta.ans) / sizeof (*pregunta.ans); imprimirRespuesta (*(pregunta.ans + i++)))
+    fprintf (stderr, "Pregunta\n\tTipo: %s\nEnunciado: %s\n", pregunta.type, pregunta.text);
+    for (size_t i = 0; i < sizeof (pregunta.ans) / sizeof (*pregunta.ans);
+         fprintf (stderr, "\t"), imprimirRespuesta (*(pregunta.ans + i++)))
         ;
 }
 
@@ -114,8 +115,10 @@ linkedlist_t get_questions (void) {
         warning ("only the first " stringify (MAX_QUESTIONS) " valid questions will be fetched from the array.");
 
     cJSON_ArrayForEach (o, json) {
-        if (count == MAX_QUESTIONS)
+        if (count >= MAX_QUESTIONS)
             break;
+
+        memset (&q, 0, sizeof (question_t));
 
         if (!cJSON_IsObject (o)) {
             warning ("the current item is not a JSON object.");
@@ -131,13 +134,19 @@ linkedlist_t get_questions (void) {
         }
 
         len = strlen (buf = cJSON_GetStringValue (field));
+        if (!len) {
+            warning ("the question type cannot be an empty string.");
+
+            continue;
+        }
+
         if (len >= sizeof (q.type)) {
             warning ("only the first " stringify (MAX_QUESTION_TYPE_TEXT
             ) "(including the null terminator) characters will be copied.");
             len = sizeof (q.type) - 1;
         }
 
-        memcpy (q.type, buf, len);
+        *(char *) mempcpy (q.type, buf, len) = '\0';
 
         if (!(cJSON_HasObjectItem (o, "pregunta") && (field = cJSON_GetObjectItemCaseSensitive (o, "pregunta")) &&
               cJSON_IsString (field))) {
@@ -147,13 +156,19 @@ linkedlist_t get_questions (void) {
         }
 
         len = strlen (buf = cJSON_GetStringValue (field));
+        if (!len) {
+            warning ("the question text cannot be an empty string.");
+
+            continue;
+        }
+
         if (len >= sizeof (q.text)) {
             warning ("only the first " stringify (MAX_QUESTION_TEXT
             ) "(including the null terminator) characters will be copied.");
             len = sizeof (q.text) - 1;
         }
 
-        memcpy (q.text, buf, len);
+        *(char *) mempcpy (q.text, buf, len) = '\0';
 
         if (!(cJSON_HasObjectItem (o, "opciones") && (field = cJSON_GetObjectItemCaseSensitive (o, "opciones")) &&
               cJSON_IsArray (field))) {
@@ -163,7 +178,7 @@ linkedlist_t get_questions (void) {
         }
 
         if (!(rem = (size_t) cJSON_GetArraySize (field))) {
-            warning ("the choices array must be have at one item");
+            warning ("the choices array must be have at least one item");
 
             continue;
         }
@@ -176,7 +191,7 @@ linkedlist_t get_questions (void) {
         q.n = (uint8_t) rem;
 
         cJSON_ArrayForEach (o2, field) {
-            if (!--rem)
+            if (!rem)
                 break;
 
             if (!cJSON_IsObject (o2)) {
@@ -187,36 +202,37 @@ linkedlist_t get_questions (void) {
             }
 
             if (!(cJSON_HasObjectItem (o2, "respuesta") &&
-                  (field2 = cJSON_GetObjectItemCaseSensitive (o, "respuesta")) && cJSON_IsString (field2))) {
+                  (field2 = cJSON_GetObjectItemCaseSensitive (o2, "respuesta")) && cJSON_IsString (field2))) {
                 warning ("the object must have a string field named \"respuesta\".");
                 rem = (size_t) -1;
 
                 break;
             }
 
-            if (!(cJSON_HasObjectItem (o2, "correcta") && (field3 = cJSON_GetObjectItemCaseSensitive (o, "correcta")) &&
-                  cJSON_IsBool (field3))) {
-                warning ("the object must have a boolean field named \"correcta\".");
+            len = strlen (buf = cJSON_GetStringValue (field2));
+            if (!len) {
+                warning ("the answer cannot be an empty string.");
                 rem = (size_t) -1;
 
                 break;
             }
 
-            len = strlen (buf = cJSON_GetStringValue (field2));
             if (len >= sizeof (q.ans->text)) {
                 warning ("only the first " stringify (MAX_ANSWER_TEXT
                 ) "(including the null terminator) characters will be copied.");
                 len = sizeof (q.ans->text) - 1;
             }
 
-            memcpy ((q.ans + q.n - rem)->text, buf, len);
+            if (!(cJSON_HasObjectItem (o2, "correcta") &&
+                  (field3 = cJSON_GetObjectItemCaseSensitive (o2, "correcta")) && cJSON_IsBool (field3))) {
+                warning ("the object must have a boolean field named \"correcta\".");
+                rem = (size_t) -1;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
+                break;
+            }
 
-            (q.ans + q.n - rem)->correct = (uint8_t) (bool) cJSON_GetNumberValue (field3);
-
-#pragma GCC diagnostic pop
+            *(char *) mempcpy ((q.ans + (q.n - (uint8_t) rem))->text, buf, len) = '\0';
+            (q.ans + (q.n - (uint8_t) rem--))->correct                          = (uint8_t) cJSON_IsTrue (field3);
         }
 
         if (rem == (size_t) -1)
@@ -225,9 +241,10 @@ linkedlist_t get_questions (void) {
         { // Bubble sort de forma totalmente no irónica
             answer_t aux;
             int      cmp;
+            uint8_t  i, j;
         order:
-            for (uint8_t i = 0, j; i < q.n - 1; i++)
-                for (j = 0; q.n - i - 1; j++) {
+            for (i = 0; i < q.n - 1; i++)
+                for (j = 0; j < q.n - i - 1; j++) {
                     if ((cmp = strcmp ((q.ans + j)->text, (q.ans + j + 1)->text)) < 0)
                         continue;
 
@@ -250,7 +267,7 @@ linkedlist_t get_questions (void) {
                 }
         }
 
-        imprimirPregunta (*(qs + count++) = q); // Veo que te hace ilusión lo de imprimir las preguntas así que lo dejo
+        *(qs + count++) = q;
     }
 
     linkedlist_t l = NULL;
@@ -259,8 +276,8 @@ linkedlist_t get_questions (void) {
             warning ("could not create the question list.");
 
         else
-            for (size_t i = 1; i < count;)
-                if (!insert_linkedlist (l, qs + i++))
+            for (size_t i = 1; i < count; i++)
+                if (!insert_linkedlist (l, qs + i))
                     warning ("could not insert the question in the list.");
     }
 

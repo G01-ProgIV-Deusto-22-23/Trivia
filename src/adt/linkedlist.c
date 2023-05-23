@@ -16,7 +16,7 @@ linkedlist_t create_linkedlist (void *const data) {
     return l;
 }
 
-bool impl_destroy_linkedlist (linkedlist_t *const restrict l) {
+bool impl_destroy_linkedlist (linkedlist_t *const l) {
     if (!l)
         return false;
 
@@ -40,20 +40,21 @@ void freedata_linkedlist (const restrict linkedlist_t l, freefunc_t *const free)
         l->free = free;
 }
 
-bool insert_linkedlist (linkedlist_t l, void *const data) {
+bool insert_linkedlist (const linkedlist_t l, void *const data) {
     if (!l || l->len == SIZE_MAX - 1)
         return false;
 
-    for (; l->next; l = l->next)
+    linkedlist_t _l = l;
+    for (; _l->next; _l = _l->next)
         ;
 
-    if (!(l->next = create_linkedlist (data)))
+    if (!(_l->next = create_linkedlist (data)))
         return false;
 
     return ++l->len;
 }
 
-bool impl_remove_linkedlist (linkedlist_t *const restrict l, const size_t i) {
+bool impl_remove_linkedlist (linkedlist_t *const l, const size_t i) {
     if (!l || i >= length_linkedlist (*l))
         return false;
 
@@ -94,7 +95,7 @@ bool impl_remove_linkedlist (linkedlist_t *const restrict l, const size_t i) {
     return false;
 }
 
-void *impl_find_linkedlist (linkedlist_t l, void *const data, cmpfunc_t *const cmp, size_t *const restrict i) {
+void *impl_find_linkedlist (linkedlist_t l, void *const data, cmpfunc_t *const cmp, size_t *const i) {
     for (size_t j = 0; l; l = l->next, j++)
         if (l->data == data || (cmp && !cmp (l->data, data))) {
             if (i)
@@ -116,8 +117,8 @@ size_t impl_indexof_linkedlist (linkedlist_t l, void *const data, cmpfunc_t *con
     return i;
 }
 
-void *impl_pop_linkedlist (linkedlist_t *const restrict l, const size_t i) {
-    if (!(l && i >= length_linkedlist (*l) && !(*l)->free))
+void *impl_pop_linkedlist (linkedlist_t *const l, const size_t i) {
+    if (!(l && i >= length_linkedlist (*l)))
         return NULL;
 
     linkedlist_t temp = (*l)->next;
@@ -175,7 +176,7 @@ void *set_linkedlist (linkedlist_t l, const size_t i, void *const data) {
     return NULL;
 }
 
-void *toarray_linkedlist (linkedlist_t l, size_t *const restrict len) {
+void *toarray_linkedlist (linkedlist_t l, size_t *const len) {
     if (!l)
         return len ? (void *) (*len = 0) : NULL;
 

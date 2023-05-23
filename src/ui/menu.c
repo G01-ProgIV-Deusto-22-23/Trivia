@@ -18,14 +18,17 @@ extern "C" {
 sem_t            FREE_MENU_SEMS [sizeof (MENUS) / sizeof (*MENUS)];
 #endif
 
-    static char      **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
-    static menutype_t  MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)] = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
-                                                                             actionmenu };
-    static bool        MENU_LOOP [sizeof (MENUS) / sizeof (*MENUS)]  = { false };
-    static int         MENU_TIMEOUT [sizeof (MENUS) / sizeof (*MENUS)]         = { 0 };
-    static atomic_bool MENU_TIMEOUT_RUNNING [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
-    static size_t     *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]            = { 0 };
-    static title_color_t MENU_TITLE_COLORS [sizeof (MENUS) / sizeof (*MENUS)]  = { title_no_color };
+    static char     **MENU_CHOICE_DATA [sizeof (MENUS) / sizeof (*MENUS)][2];
+    static menutype_t MENU_TYPES [sizeof (MENUS) / sizeof (*MENUS)] = { [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] =
+                                                                            actionmenu };
+    static bool       MENU_LOOP [sizeof (MENUS) / sizeof (*MENUS)]  = { false };
+    static uint32_t   MENU_TIMEOUT [sizeof (MENUS) / sizeof (*MENUS)]        = { 0 };
+    static bool       MENU_TIMEOUT_PASSED [sizeof (MENUS) / sizeof (*MENUS)] = {
+        [0 ...(sizeof (MENUS) / sizeof (*MENUS) - 1)] = false
+    };
+    static atomic_bool   MENU_TIMEOUT_RUNNING [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
+    static size_t       *MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)]            = { 0 };
+    static title_color_t MENU_TITLE_COLORS [sizeof (MENUS) / sizeof (*MENUS)]    = { title_no_color };
 
     static bool FREE_MENU_RETS [sizeof (MENUS) / sizeof (*MENUS)] = { 0 };
 #ifdef _WIN32
@@ -103,7 +106,7 @@ static pthread_t FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
         atomic_fetch_and (&MENU_CONTROL, ~(((size_t) 1) << menu));
         *(MENUS + menu) =
             (void
-                 *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = (*(MENU_TIMEOUT_RUNNING + menu) = (*(MENU_TITLE_COLORS + menu) = 0))));
+                 *) (*(MENU_RETS + menu) = (void *) (uintptr_t) (*(FREE_MENU_RETS + menu) = (*(MENU_TIMEOUT_PASSED + menu) = (*(MENU_TIMEOUT_RUNNING + menu) = (*(MENU_TITLE_COLORS + menu) = 0)))));
 
         if (
 #ifdef _WIN32
@@ -353,11 +356,18 @@ __attribute__ ((nonnull (8), warn_unused_result))
         return *(MENU_LOOP + menu) = loop;
     }
 
-    int timeout_menu (const size_t menu, const int time) {
+    uint32_t timeout_menu (const size_t menu, const uint32_t time) {
         if (menu >= sizeof (MENUS) / sizeof (*MENUS))
             error ("not a valid menu index.");
 
-        return *(MENU_TIMEOUT + menu) = max (0, time);
+        return *(MENU_TIMEOUT + menu) = time;
+    }
+
+    bool timeout_menu_passed (const size_t menu) {
+        if (menu >= sizeof (MENUS) / sizeof (*MENUS))
+            error ("not a valid menu index.");
+
+        return *(MENU_TIMEOUT_PASSED + menu);
     }
 
     __attribute__ ((nonnull (1))) static
@@ -495,7 +505,7 @@ __attribute__ ((nonnull (2)))
         }
 
         atomic_store (MENU_TIMEOUT_RUNNING + menu, 1);
-        atomic_int t = -1;
+        _Atomic int64_t t = -1;
         if (*(MENU_TIMEOUT + menu)) {
             t = *(MENU_TIMEOUT + menu);
 
@@ -525,13 +535,16 @@ __attribute__ ((nonnull (2)))
                 for (int i = 0, n = l + (int) decplaces (atomic_load (&t)); i < n;
                      mvwdelch (menu_win (*(MENUS + menu)), y, x + i++))
                     ;
-                mvwprintw (menu_win (*(MENUS + menu)), y, x, "%s%d", MENU_TIMEOUT_MESSAGE, atomic_load (&t));
+                mvwprintw (menu_win (*(MENUS + menu)), y, x, "%s%" PRId64, MENU_TIMEOUT_MESSAGE, atomic_load (&t));
                 wrefresh (menu_sub (*(MENUS + menu)));
                 wrefresh (menu_win (*(MENUS + menu)));
                 refresh ();
 
-                if (!atomic_load (&t))
+                if (!atomic_load (&t)) {
+                    *(MENU_TIMEOUT_PASSED + menu) = true;
+
                     break;
+                }
             }
 
             if (c == KEY_DOWN) {

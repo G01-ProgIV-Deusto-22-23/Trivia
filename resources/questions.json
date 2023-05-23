@@ -946,7 +946,7 @@
     "opciones": [
       { "respuesta": "American Psycho", "correcta": true },
       { "respuesta": "American History X", "correcta": false },
-      { "repuesta": "El Club de la Lucha", "correcta": false },
+      { "respuesta": "El Club de la Lucha", "correcta": false },
       { "respuesta": "Torrente", "correcta": false }
     ]
   },
@@ -966,7 +966,7 @@
     "opciones": [
       { "respuesta": "Lenguaje ensamblador", "correcta": true },
       { "respuesta": "Código máquina", "correcta": false },
-      { "respuesta:": "Pseudocódigo", "correcta": false },
+      { "respuesta": "Pseudocódigo", "correcta": false },
       { "respuesta": "Código intermedio", "correcta": false }
     ]
   },
@@ -1008,6 +1008,28 @@
       { "respuesta": "32", "correcta": false },
       { "respuesta": "64", "correcta": true },
       { "respuesta": "128", "correcta": false }
+    ]
+  },
+  {
+    "tipo": "Ciencia",
+    "pregunta": "Una matriz triangular superior tiene:",
+    "opciones": [
+      {
+        "respuesta": "Todos los elementos debajo de la diagonal principal nulos",
+        "correcta": true
+      },
+      {
+        "respuesta": "La diagonal principal con todos los elementos no nulos",
+        "correcta": false
+      },
+      {
+        "respuesta": "Todos los elementos encima de la diagonal principal nulos",
+        "correcta": false
+      },
+      {
+        "respuesta": "Números triangulares positivos en sus entradas",
+        "correcta": false
+      }
     ]
   }
 ]

@@ -1,14 +1,14 @@
 #ifndef TRIVIA_QUESTIONHANDLER_H
 #define TRIVIA_QUESTIONHANDLER_H
 
-typedef enum __attribute__ ((packed)) { game_finished, game_afk, game_fail, game_ok } game_status_t;
+typedef enum __attribute__ ((packed)) { game_finished, game_exit, game_afk, game_fail, game_ok } game_status_t;
 
 class QuestionHandler {
     private:
         static cmd_t                                    buf [MAX_ROUNDS];
         static bool                                     init;
         linkedlist_t                                    queue;
-        int                                             roundtime;
+        uint32_t                                        roundtime;
         char                                            game_id [sizeof ("XXXX")];
         std::tuple<std::vector<game_status_t>, uint8_t> results;
         char                                            res_str
@@ -28,7 +28,8 @@ class QuestionHandler {
         ~QuestionHandler ();
 
         std::vector<question_t> getQuestions (void);
-        int                     getRoundTime (void);
+        size_t                  getRemainingRounds (void);
+        uint32_t                getRoundTime (void);
         game_status_t           next (void);
         typeof (results)        game (void);
         typeof (results)        getResults (void);

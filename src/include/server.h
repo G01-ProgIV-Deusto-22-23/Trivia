@@ -32,6 +32,7 @@ extern "C" {
     extern cmd_t success_command (void);
     extern cmd_t error_command (const uint32_t);
     extern cmd_t kill_command (void);
+    extern cmd_t game_list_command (void);
     extern cmd_t connect_game_command (const char [sizeof ("XXXX")]);
     extern cmd_t create_game_command (const game_attr_t);
     extern cmd_t user_creds_command (const Usuario);
@@ -54,6 +55,8 @@ extern "C" {
     extern const char *game_list_raw (void);
     extern void        game_list_parse (char [MAX_GAMES][sizeof ("XXXX")], const char *);
     extern size_t      get_games (void);
+    extern size_t      get_pub_games_perc (void);
+    extern size_t      set_pub_games_perc (const size_t);
     extern size_t      set_games (const size_t);
     extern void        gen_game_ids (void);
     extern int         get_game_port (const char *const restrict);
