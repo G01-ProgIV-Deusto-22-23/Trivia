@@ -29,9 +29,9 @@ void imprimirRespuesta (answer_t respuesta) {
 }
 
 void imprimirPregunta (question_t pregunta) {
-    fprintf (stderr, "Pregunta\n\tTipo: %s\nEnunciado: %s\n", pregunta.type, pregunta.text);
+    fprintf (stderr, "Pregunta\n\tTipo: %s\n\tEnunciado: %s\n\tRespuestas:\n", pregunta.type, pregunta.text);
     for (size_t i = 0; i < sizeof (pregunta.ans) / sizeof (*pregunta.ans);
-         fprintf (stderr, "\t"), imprimirRespuesta (*(pregunta.ans + i++)))
+         fprintf (stderr, "\t\t"), imprimirRespuesta (*(pregunta.ans + i++)))
         ;
 }
 

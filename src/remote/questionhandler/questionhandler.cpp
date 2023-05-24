@@ -94,7 +94,7 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
         }
 
         size_t i = 0;
-        for (question_t *q; i < rounds;) {
+        for (question_t *q;;) {
             if (!(q = static_cast<question_t *> (pop_linkedlist (qs, 0))))
                 break;
 
@@ -132,13 +132,15 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
     std::mt19937                                             rng (dev ());
     std::uniform_int_distribution<std::mt19937::result_type> dist (0, l - 1);
     std::unordered_set<size_t>                               picks;
+    picks.reserve (rounds);
 
     for (size_t i = 0, r; i < rounds; i++) {
         for (; picks.find (r = dist (rng)) != picks.end ();)
             ;
 
         picks.insert (r);
-        r = i;
+        fprintf (stderr, "(r: %" PRISZ ") ", r);
+        imprimirPregunta (*(reinterpret_cast<question_t *> (buf) + r));
         if (!(i ? insert_linkedlist (this->queue, reinterpret_cast<question_t *> (buf) + r)
                 : (bool) (this->queue = create_linkedlist (reinterpret_cast<question_t *> (buf) + r))))
             warning ("could not insert the question into the linked list.");
