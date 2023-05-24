@@ -609,10 +609,10 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
         }
 
         if (!(cmd.cmd == cmd_kill || cmd.cmd == cmd_game_list || cmd.cmd == cmd_game_connect ||
-              cmd.cmd == cmd_game_create || cmd.cmd == cmd_user_creds || cmd.cmd == cmd_user_insert ||
-              cmd.cmd == cmd_user_update)) {
+              cmd.cmd == cmd_game_create || cmd.cmd == cmd_user_fetch || cmd.cmd == cmd_user_creds ||
+              cmd.cmd == cmd_user_insert || cmd.cmd == cmd_user_update)) {
             warning (
-                "The server only accepts eight commands (killing the server, listing the games, connecting to a game, sending game results, starting a game, comparing/gathering user credentials and updating or inserting those credentials), ignoring the received command."
+                "The server only accepts nine commands (killing the server, listing the games, connecting to a game, sending game results, starting a game, comparing/gathering user credentials and updating or inserting those credentials), ignoring the received command."
             );
 
             disconnect_server (client_sock);
@@ -800,12 +800,13 @@ __attribute__ ((noreturn)) void impl_start_server (void) {
             continue;
         }
 
-        if (cmd.cmd == cmd_user_creds) {
+        if (cmd.cmd == cmd_user_fetch || cmd.cmd == cmd_user_creds) {
             Usuario *const u = get_map (users, cmd.info.user.username);
             if (send (
                     client_sock,
-                    (cmd = u && !strcmp (u->contrasena, cmd.info.user.contrasena) ? user_creds_command (*u)
-                                                                                  : error_command (CMD_ERROR_NO_USER),
+                    (cmd = u && (cmd.cmd == cmd_user_fetch || !strcmp (u->contrasena, cmd.info.user.contrasena))
+                               ? user_creds_command (*u)
+                               : error_command (CMD_ERROR_NO_USER),
                      (void *) &cmd),
                     sizeof (cmd_t), 0
                 ) ==

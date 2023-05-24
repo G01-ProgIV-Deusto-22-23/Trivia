@@ -35,9 +35,11 @@ extern "C" {
     extern cmd_t game_list_command (void);
     extern cmd_t connect_game_command (const char [sizeof ("XXXX")]);
     extern cmd_t create_game_command (const game_attr_t);
+    extern cmd_t user_fetch_command (const Usuario);
     extern cmd_t user_creds_command (const Usuario);
     extern cmd_t insert_user_command (const Usuario);
     extern cmd_t update_user_command (const Usuario);
+    extern cmd_t delete_user_command (const Usuario);
     extern void  packet (
          cmd_t *const restrict,
          const char [

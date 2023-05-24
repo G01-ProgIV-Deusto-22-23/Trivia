@@ -97,6 +97,7 @@ login:
     }
 
     user_menu (s, loginfo.info.user);
+    goto main_menu;
 
     return 0;
 }

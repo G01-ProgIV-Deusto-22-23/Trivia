@@ -108,7 +108,7 @@ static pthread_t FREE_MENU_THREADS [sizeof (MENUS) / sizeof (*MENUS)];
 
         if (
 #ifdef _WIN32
-            !ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1, NULL)
+            !ReleaseSemaphore (*(FREE_MENU_SEMS + menu), 1L, NULL)
 #else
         sem_post (FREE_MENU_SEMS + menu) == -1
 #endif

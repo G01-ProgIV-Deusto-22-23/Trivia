@@ -1,5 +1,4 @@
 #include "sample_db.h"
-#include "sqlite3.h"
 
 void print_db_err (sqlite3 *const restrict db) {
     fprintf (stderr, "SQLite error code %d: %s\n", sqlite3_errcode (db), sqlite3_errmsg (db));
@@ -9,9 +8,27 @@ __attribute__ ((nonnull (2))) void open_db (const char *const restrict f, sqlite
     bool new = false;
     if (sqlite3_open_v2 (set_database_file (f), db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
         new = true;
-        if (sqlite3_open (get_database_file (), db) != SQLITE_OK) {
-            print_db_err (*db);
-            error ("could not open the database.");
+        if (sqlite3_open_v2 (get_database_file (), db, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+            warning (
+                "could not create and open the database file, using the fallback database and writing it to the specified file instead."
+            );
+            new = false;
+
+            FILE *const _f = fopen (get_database_file (), "w+");
+            if (!_f)
+                error ("could not create the database file.");
+
+            if (fwrite (SAMPLE_DB_DATA, 1, sizeof (SAMPLE_DB_DATA), _f) < sizeof (SAMPLE_DB_DATA))
+                warning ("could not write the contents of the fallback database entirely.");
+
+            if (fclose (_f) == EOF)
+                warning ("the database file could not be closed properly.");
+
+            if (sqlite3_open_v2 (get_database_file (), db, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL) !=
+                SQLITE_OK) {
+                print_db_err (*db);
+                error ("could not open the database.");
+            }
         }
     }
 

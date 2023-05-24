@@ -25,6 +25,10 @@ cmd_t create_game_command (const game_attr_t game) {
     return (cmd_t) { .cmd = cmd_game_create, .info.game = game };
 }
 
+cmd_t user_fetch_command (const Usuario u) {
+    return (cmd_t) { .cmd = cmd_user_fetch, .info.user = u };
+}
+
 cmd_t user_creds_command (const Usuario u) {
     return (cmd_t) { .cmd = cmd_user_creds, .info.user = u };
 }
@@ -35,6 +39,14 @@ cmd_t insert_user_command (const Usuario u) {
 
 cmd_t update_user_command (const Usuario u) {
     return (cmd_t) { .cmd = cmd_user_update, .info.user = u };
+}
+
+cmd_t delete_user_command (const Usuario u) {
+    cmd_t cmd;
+    packet (&cmd, u.username, sizeof (u.username) - 1, false);
+    cmd.cmd = cmd_user_delete;
+
+    return cmd;
 }
 
 void packet (cmd_t *const restrict dest, const char src [static 1], size_t sz, const bool cont) {
@@ -54,5 +66,5 @@ void packet (cmd_t *const restrict dest, const char src [static 1], size_t sz, c
 
     dest->cmd           = cmd_packet + cont;
     dest->info.pack.len = (uint16_t) sz;
-    memcpy (dest->info.pack.text, src, sz);
+    memccpy (dest->info.pack.text, src, '\0', sz);
 }

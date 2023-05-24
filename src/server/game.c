@@ -24,9 +24,8 @@ static char                 GAME_LIST_RAW [MAX_GAMES * (sizeof ("XXXX;") - 1)] =
 static size_t __attribute__ ((unused)) NPLAYERS [MAX_GAMES]                    = { 0 };
 static int PLAYER_RESULTS [MAX_GAMES][MAX_PLAYERS];
 
-static
 #ifndef _WIN32
-    pthread_t GAME_THREADS [MAX_GAMES][MAX_PLAYERS + 1];
+static pthread_t GAME_THREADS [MAX_GAMES][MAX_PLAYERS + 1];
 static atomic_bool __attribute__ ((unused)) PLAYER_THREAD_STILL_RUNNING [MAX_GAMES][MAX_PLAYERS];
 #endif
 
@@ -162,8 +161,8 @@ const char *init_game (game_attr_t attr, int port, const bool pub) {
              !CreateProcessA (
                  path, ({
                      snprintf (
-                         cmd, sizeof (cmd), "%s%d %" PRISZ " %" PRIu8 " %" PRIu8, GAME_ARG, port, CURGAME, attr.players,
-                         attr.round_time
+                         cmd, sizeof (cmd), "%s%d %" PRISZ " %" PRIu8 " %" PRIu8 " %" PRIu32, GAME_ARG, port, CURGAME,
+                         attr.players, attr.rounds, attr.round_time
                      );
                      cmd;
                  }),
@@ -266,11 +265,11 @@ bool init_games (void) {
 #ifdef _WIN32
     char       crypto_name [512] = { 0 };
     DWORD      crypto_name_sz    = sizeof (crypto_name);
-    HCRYPTPROV crypto            = NULL;
+    HCRYPTPROV crypto            = 0;
 
     if (!(CryptGetDefaultProviderA (PROV_RSA_FULL, NULL, CRYPT_MACHINE_DEFAULT, crypto_name, &crypto_name_sz) &&
           CryptAcquireContextA (&crypto, NULL, crypto_name, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT) &&
-          CryptGetRandom (crypto, MAX_GAMES, randbytes)) ||
+          CryptGenRandom (crypto, MAX_GAMES, randbytes)) ||
         crypto_name_sz < sizeof (randbytes))
         warning ("could not get enough random bytes to fill the buffer with " stringify (MAX_GAMES) " bytes.");
 
@@ -387,7 +386,8 @@ static void *watch_for_parent (void __attribute__ ((unused)) * unused) {
 }
 #endif
 
-__attribute__ ((noreturn)) void game_server (const size_t ngame, const int port, game_attr_t attr) {
+__attribute__ ((noreturn)) void
+    game_server (const size_t __attribute__ ((unused)) ngame, const int port, game_attr_t attr) {
     ct_error (
         sizeof (question_t) > sizeof (packet_t), "the size of a question cannot be bigger than that of a packet."
     );
@@ -455,11 +455,11 @@ __attribute__ ((noreturn)) void game_server (const size_t ngame, const int port,
 #ifdef _WIN32
     static char       crypto_name [512] = { 0 };
     static DWORD      crypto_name_sz    = sizeof (crypto_name);
-    static HCRYPTPROV crypto            = NULL;
+    static HCRYPTPROV crypto            = 0;
 
     if (!(CryptGetDefaultProviderA (PROV_RSA_FULL, NULL, CRYPT_MACHINE_DEFAULT, crypto_name, &crypto_name_sz) &&
           CryptAcquireContextA (&crypto, NULL, crypto_name, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT) &&
-          CryptGetRandom (crypto, attr.rounds, info + sizeof (game_attr_t))) ||
+          CryptGenRandom (crypto, attr.rounds, info + sizeof (game_attr_t))) ||
         crypto_name_sz < attr.rounds)
         warning ("could not get enough random bytes to fill the buffer");
 
@@ -596,7 +596,7 @@ __attribute__ ((noreturn)) void game_server (const size_t ngame, const int port,
         }
 #endif
 
-        if (send (client_sock, info, sizeof (game_attr_t) + attr.rounds, 0) ==
+        if (send (client_sock, (char *) info, sizeof (game_attr_t) + attr.rounds, 0) ==
 #ifdef _WIN32
             SOCKET_ERROR
 #else

@@ -55,8 +55,8 @@ typedef struct {
                 } alnum;
 
                 struct {
-                        long min;
-                        long max;
+                        long long min;
+                        long long max;
                 } integer;
         } type_args;
 } field_attr_t;
@@ -98,9 +98,11 @@ typedef enum __attribute__ ((packed)
     cmd_game_results,
     cmd_packet,
     cmd_packet_cont,
+    cmd_user_fetch,
     cmd_user_creds,
     cmd_user_insert,
     cmd_user_update,
+    cmd_user_delete,
     cmd_success = 0,
     cmd_error   = -1 } cmdname_t;
 

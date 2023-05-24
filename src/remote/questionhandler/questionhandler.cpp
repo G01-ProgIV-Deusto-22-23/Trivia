@@ -128,10 +128,10 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
         *(this->game_id + 3) = *(c + v % (sizeof (l) - 1));
     }
 
-    std::random_device                                       dev;
-    std::mt19937                                             rng (dev ());
-    std::uniform_int_distribution<std::mt19937::result_type> dist (0, l - 1);
-    std::unordered_set<size_t>                               picks;
+    std::random_device                                          dev;
+    std::mt19937_64                                             rng (dev ());
+    std::uniform_int_distribution<std::mt19937_64::result_type> dist (0, l - 1);
+    std::unordered_set<size_t>                                  picks;
     picks.reserve (rounds);
 
     for (size_t i = 0, r; i < rounds; i++) {
@@ -139,8 +139,6 @@ void QuestionHandler::local (size_t rounds, size_t roundtime) {
             ;
 
         picks.insert (r);
-        fprintf (stderr, "(r: %" PRISZ ") ", r);
-        imprimirPregunta (*(reinterpret_cast<question_t *> (buf) + r));
         if (!(i ? insert_linkedlist (this->queue, reinterpret_cast<question_t *> (buf) + r)
                 : (bool) (this->queue = create_linkedlist (reinterpret_cast<question_t *> (buf) + r))))
             warning ("could not insert the question into the linked list.");

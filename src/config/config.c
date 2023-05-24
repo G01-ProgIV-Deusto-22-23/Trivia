@@ -9,6 +9,34 @@ static char QUESTIONS_FILE [MAX_FILE_CHARS + 1] = DEFAULT_QUESTIONS_FILE;
 static char CONFIG_FILE [MAX_FILE_CHARS + 1]    = DEFAULT_CONFIG_FILE;
 
 const char *get_database_file (void) {
+    static struct stat st = { 0 };
+    static char        DATABASE_FILE2 [MAX_FILE_CHARS + 1];
+
+    if (stat (
+#ifdef _WIN32
+            (_fullpath (DATABASE_FILE, DATABASE_FILE2, sizeof (DATABASE_FILE2) - 1),
+             *(DATABASE_FILE2 + ({
+                   size_t i = strlen (DATABASE_FILE2);
+                   for (; i && *(DATABASE_FILE2 + i - 1) && *(DATABASE_FILE2 + i - 1) != '\\';)
+                       ;
+                   i;
+               })) = '\0',
+             DATABASE_FILE2)
+#else
+            (realpath (DATABASE_FILE, DATABASE_FILE2),
+             *(DATABASE_FILE2 + strlen (DATABASE_FILE2) - strlen (basename (DATABASE_FILE2))) = '\0', DATABASE_FILE2)
+#endif
+                ,
+            &st
+        ) == -1)
+        mkdir (
+            DATABASE_FILE2
+#ifndef _WIN32
+            ,
+            0700
+#endif
+        );
+
     return DATABASE_FILE;
 }
 

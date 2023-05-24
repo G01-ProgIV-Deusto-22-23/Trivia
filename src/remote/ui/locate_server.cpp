@@ -28,7 +28,7 @@ locate_server (void) {
         size_t            f         = form (0, 0, 0, 0, fields, titles);
 
         memccpy (ip, *get_form_data (f), '\0', sizeof (ip));
-        if (strcmp ("0", *(get_form_data (f) + 1)) && !(port = (int) strtol (*(get_form_data (f) + 1), NULL, 10)))
+        if (strcmp ("0", *(get_form_data (f) + 1)) && !(port = (int) strtoll (*(get_form_data (f) + 1), NULL, 10)))
             warning ("could not parse the port number.");
 
         delete_form (f);

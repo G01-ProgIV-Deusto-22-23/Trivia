@@ -70,23 +70,23 @@ else
 all: linux windows
 endif
 
-linux: CC          := $(GCC_LINUX)
-linux: CXX         := $(GXX_LINUX)
-linux: LIBDIR      := $(LIBDIR)/linux
-linux: CFLAGS      += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
-linux: CXXFLAGS    += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
-linux: OBJDIR      := $(OBJDIR)/linux
-linux: BINDIR      := $(BINDIR)/linux
-linux: BINRESDIR   := $(BINDIR)/resouces
+linux: CC        := $(GCC_LINUX)
+linux: CXX       := $(GXX_LINUX)
+linux: LIBDIR    := $(LIBDIR)/linux
+linux: CFLAGS    += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
+linux: CXXFLAGS  += -I $(EXTERNINCLUDE)/linux -L $(EXTERNLIB)/linux -L $(LIBDIR) -pthread -lpthread
+linux: OBJDIR    := $(OBJDIR)/linux
+linux: BINDIR    := $(BINDIR)/linux
+linux: BINRESDIR := $(BINDIR)/resources
 
-windows: CC          := $(GCC_WINDOWS)
-windows: CXX         := $(GXX_WINDOWS)
-windows: LIBDIR      := $(LIBDIR)/windows
-windows: CFLAGS      += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
-windows: CXXFLAGS    += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
-windows: OBJDIR      := $(OBJDIR)/windows
-windows: BINDIR      := $(BINDIR)/windows
-windows: BINRESDIR   := $(BINDIR)/resources
+windows: CC        := $(GCC_WINDOWS)
+windows: CXX       := $(GXX_WINDOWS)
+windows: LIBDIR    := $(LIBDIR)/windows
+windows: CFLAGS    += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: CXXFLAGS  += -mwindows -municode -mthreads -I $(EXTERNINCLUDE)/windows -L $(EXTERNLIB)/windows -L $(LIBDIR)
+windows: OBJDIR    := $(OBJDIR)/windows
+windows: BINDIR    := $(BINDIR)/windows
+windows: BINRESDIR := $(BINDIR)/resources
 
 init: init_bin init_lib init_obj
 
@@ -140,8 +140,8 @@ SERVERW     := $(LIBDIR)/windows/libserver.a
 SERVEROBJSL := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/linux/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
 SERVEROBJSW := $(patsubst $(SRCDIR)/server/%.c, $(OBJDIR)/windows/server_%.o, $(wildcard $(SRCDIR)/server/*.c))
 
-DBL := $(LIBDIR)/linux/libdb.a
-DBW := $(LIBDIR)/windows/libdb.a
+DBL     := $(LIBDIR)/linux/libdb.a
+DBW     := $(LIBDIR)/windows/libdb.a
 DBOBJSL := $(patsubst $(SRCDIR)/local/db/%.c, $(OBJDIR)/linux/db_%.o, $(wildcard $(SRCDIR)/local/db/*.c))
 DBOBJSW := $(patsubst $(SRCDIR)/local/db/%.c, $(OBJDIR)/windows/db_%.o, $(wildcard $(SRCDIR)/local/db/*.c))
 
@@ -229,7 +229,7 @@ $(OBJDIR)/windows/server_%.o: $(SRCDIR)/server/%.c
 $(DBL): $(DBOBJSL)
 	ar rcs $@ $^
 
-$(DBW): $(DBOBJSL)
+$(DBW): $(DBOBJSW)
 	ar rcs $@ $^
 
 $(OBJDIR)/linux/db_%.o: $(SRCDIR)/local/db/%.c

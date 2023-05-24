@@ -31,8 +31,9 @@ main : {
         mempcpy (mempcpy (title + sizeof ("Hola, "), u.nombreVisible, strlen (u.nombreVisible)), "(", sizeof ("(") - 1),
         u.username, strlen (u.username)
     )                                = ')';
-    static const char *const opts [] = { "Jugar una partida", "Ver mis datos", "Cambiar mi nombre visible",
-                                         "Cambiar mi contraseña", "Limpiar mis estadísticas" };
+    static const char *const opts [] = { "Jugar una partida",         "Ver mis datos",
+                                         "Cambiar mi nombre visible", "Cambiar mi contraseña",
+                                         "Limpiar mis estadísticas",  "Eliminar mi cuenta" };
     m                                = choicemenu (0, 0, 0, 0, opts, title);
 }
 
@@ -321,6 +322,102 @@ main : {
         goto main;
     }
 
+    if (r == 4) {
+        static const char *const opts [][2] = { { "", "Sí" }, { "", "No" } };
+        m                                   = choicemenu (0, 0, 0, 0, opts, "¿Estás seguro?");
+        r                                   = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
+
+        if (!get_menu_ret (m))
+            warning ("could not get the user's response.");
+
+        if (!delete_menu (m))
+            warning ("could not delete the menu properly.");
+
+        if (r == (size_t) -1 || r == 1)
+            goto main;
+
+        const uint32_t prev [2] = { u.aciertosTotales, u.fallosTotales };
+        u.aciertosTotales       = 0;
+        u.fallosTotales         = 0;
+
+        if (send_server (ip, port, update_user_command (u), NULL, 0).cmd == cmd_error) {
+            u.aciertosTotales = *prev;
+            u.fallosTotales   = *(prev + 1);
+
+            WINDOW *const w = create_window (0, 0, 0, 0);
+            if (!w)
+                error ("could not create the window.");
+
+            box (w, 0, 0);
+            mvwprintw (w, 5, 2, "No se pudieron limpiar las estadísticas.");
+            mvwprintw (w, 6, 2, "Pulsa Intro para continuar.");
+            for (int c; (c = wgetch (w)) != '\r' && c != '\n' && c != KEY_ENTER;)
+                ;
+
+            if (!delete_window (w))
+                warning ("the window could not be deleted properly.");
+
+            goto main;
+        }
+    }
+
+    static size_t            f;
+    static const char *const titles [] = { "Contraseña", "Confirmar contraseña" };
+delete_form : {
+    const field_attr_t fields [] = { passwd_field (sizeof (u.contrasena) - 1),
+                                     passwd_field (sizeof (u.contrasena) - 1) };
+    f = form (0, 0, 0, 0, fields, titles, "Introduce tu contraseña (deja los campos vacíos para salir)");
+
+    if (!(**get_form_data (f) || **(get_form_data (f) + 1))) {
+        if (!delete_form (f))
+            warning ("the form could not be deleted properly.");
+
+        goto main;
+    }
+
+    if (strcmp (*get_form_data (f), *(get_form_data (f) + 1))) {
+        if (!delete_form (f))
+            warning ("the form could not be deleted properly.");
+
+        WINDOW *const w = create_window (0, 0, 0, 0);
+        if (!w)
+            error ("could not create the \"fields do not match window.\".");
+
+        box (w, 0, 0);
+        mvwprintw (w, 5, 2, "Los campos no coinciden.");
+        mvwprintw (w, 6, 2, "Pulsa Intro para continuar.");
+        for (int c; (c = wgetch (w)) != '\r' && c != '\n' && c != KEY_ENTER;)
+            ;
+
+        if (!delete_window (w))
+            warning ("the window could not be deleted properly.");
+
+        goto delete_form;
+    }
+
+    if (strcmp (u.contrasena, *get_form_data (f))) {
+        if (!delete_form (f))
+            warning ("the form could not be deleted properly.");
+
+        WINDOW *const w = create_window (0, 0, 0, 0);
+        if (!w)
+            error ("could not create the \"fields do not match window.\".");
+
+        box (w, 0, 0);
+        mvwprintw (w, 5, 2, "La contraseña introducida no coincide con la contraseña del usuario.");
+        mvwprintw (w, 6, 2, "Pulsa Intro para continuar.");
+        for (int c; (c = wgetch (w)) != '\r' && c != '\n' && c != KEY_ENTER;)
+            ;
+
+        if (!delete_window (w))
+            warning ("the window could not be deleted properly.");
+
+        goto delete_form;
+    }
+
+    delete_form (f);
+}
+
     static const char *const opts [][2] = { { "", "Sí" }, { "", "No" } };
     m                                   = choicemenu (0, 0, 0, 0, opts, "¿Estás seguro?");
     r                                   = get_menu_ret (m) ? *get_menu_ret (m) : (size_t) -1;
@@ -329,32 +426,41 @@ main : {
         warning ("could not get the user's response.");
 
     if (!delete_menu (m))
-        warning ("could not delete the menu properly.");
+        warning ("the menu could not be deleted properly.");
 
-    if (r == (size_t) -1 || r == 1)
+    if (r)
         goto main;
 
-    const uint32_t prev [2] = { u.aciertosTotales, u.fallosTotales };
-    u.aciertosTotales       = 0;
-    u.fallosTotales         = 0;
-
-    if (send_server (ip, port, update_user_command (u), NULL, 0).cmd == cmd_error) {
-        u.aciertosTotales = *prev;
-        u.fallosTotales   = *(prev + 1);
-
+    const cmd_t resp = send_server (ip, port, delete_user_command (u), NULL, 0);
+    if (resp.cmd == cmd_error) {
         WINDOW *const w = create_window (0, 0, 0, 0);
         if (!w)
-            error ("could not create the window.");
+            error ("could not create the \"insert user error\" window.");
 
         box (w, 0, 0);
-        mvwprintw (w, 5, 2, "No se pudieron limpiar las estadísticas.");
+        mvwprintw (
+            w, 5, 2,
+            *resp.info.arg == CMD_ERROR_NO_USER ? "El usuario a eliminar no existe"
+                                                : "Hubo un error no especificado a la hora de eliminar el usuario"
+        );
         mvwprintw (w, 6, 2, "Pulsa Intro para continuar.");
         for (int c; (c = wgetch (w)) != '\r' && c != '\n' && c != KEY_ENTER;)
             ;
 
         if (!delete_window (w))
-            warning ("the window could not be deleted properly.");
+            warning ("could not delete the window properly.");
     }
 
-    goto main;
+    WINDOW *const w = create_window (0, 0, 0, 0);
+    if (!w)
+        error ("could not create the \"logout\" window.");
+
+    box (w, 0, 0);
+    mvwprintw (w, 5, 2, "Se va a proceder a cerrar sesión.");
+    mvwprintw (w, 6, 2, "Pulsa Intro para continuar.");
+    for (int c; (c = wgetch (w)) != '\r' && c != '\n' && c != KEY_ENTER;)
+        ;
+
+    if (!delete_window (w))
+        warning ("could not delete the window properly.");
 }

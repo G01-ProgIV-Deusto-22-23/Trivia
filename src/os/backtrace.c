@@ -154,6 +154,45 @@ static void bt_error_func (void *f, const char __attribute__ ((unused)) * unused
         if (BT_INIT_ALREADY_CALLED)
             return;
 
+#ifdef _WIN32
+        static char PROG_PATH [MAX_PATH + 1];
+
+        if (!SetCurrentDirectoryA (({
+                memccpy (
+                    PROG_PATH, dirname (({
+                        if (!GetModuleFileNameA (NULL, PROG_PATH, MAX_PATH + 1))
+                            error ("could not get the executable filename.");
+                        PROG_PATH;
+                    })),
+                    '\0', MAX_PATH + 1
+                );
+                for (size_t i = 0, l = strlen (PROG_PATH); i < l; i++)
+                    if (*(PROG_PATH + i) == '/')
+                        *(PROG_PATH + i) = '\\';
+                PROG_PATH;
+            })))
+            error ("could not change the current working directory.");
+#else
+    static char PROG_PATH [PATH_MAX + 1];
+    static char PROG_PATH2 [PATH_MAX + 1];
+
+    if (!realpath (
+            (readlink ("/proc/self/exe", PROG_PATH2, PATH_MAX) == -1 ? error ("could not get the executable path.")
+                                                                     : (void) 0,
+             PROG_PATH2),
+            PROG_PATH
+        ))
+        error ("could not get the program path.");
+    *(PROG_PATH + ({
+          size_t i = strlen (PROG_PATH);
+          for (; i && *(PROG_PATH + i - 1) != '/'; i--)
+              ;
+          i;
+      })) = '\0';
+    if (chdir (PROG_PATH) == -1)
+        error ("could not change the current working directory");
+#endif
+
         BT_INIT_ALREADY_CALLED = true;
 
         BT_PID =

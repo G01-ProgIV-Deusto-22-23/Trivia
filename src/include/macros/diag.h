@@ -122,7 +122,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
     #define log(level, ...) ((void) 0)
 #else
     #ifdef _WIN32
-        #ifdef __cpluplus
+        #ifdef __cplusplus
             #define message(...)                                                                                                                            \
                 (ct_error (                                                                                                                                 \
                      NARGS (__VA_ARGS__) > 1,                                                                                                               \
@@ -169,7 +169,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                              return ".\033[0m";                                                                                             \
                                          return ":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "");                                                          \
                                      }) (),                                                                                                                 \
-                                     ([] () {                                                                                                               \
+                                     (DWORD) ([] () {                                                                                                               \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                                                           \
                                              return sizeof (".\033[0m") - 1;                                                                                \
                                          return sizeof (":\033[0m " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                             \
@@ -183,7 +183,7 @@ template <typename T> static constexpr bool IS_STRING_LITERAL_FUNC (T) {
                                              return ".";                                                                                                    \
                                          return ": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "");                                                                 \
                                      }) (),                                                                                                                 \
-                                     ([] () {                                                                                                               \
+                                     (DWORD) ([] () {                                                                                                               \
                                          if (sizeof (ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) == 1)                                                           \
                                              return sizeof (".") - 1;                                                                                       \
                                          return sizeof (": " ARG1 (__VA_ARGS__ __VA_OPT__ (, ) "")) - 1;                                                    \

@@ -86,7 +86,7 @@ static void     *impl_trivia_free_form (void *__form__) {
 
     if (
 #ifdef _WIN32
-        !ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1, NULL)
+        !ReleaseSemaphore (*(FREE_FORM_SEMS + form), 1L, NULL)
 #else
         sem_post (FREE_FORM_SEMS + form) == -1
 #endif
@@ -135,9 +135,9 @@ void start_form_gc (void) {
 #ifdef _WIN32
             !(sprintf (*(FREE_FORM_SEM_NAMES + i), "TRIVIA_FREE_FORM_SEM_%lu_%" PRISZ, GetCurrentProcessId (), i) !=
                   -1 &&
-              CreateSemaphoreA (NULL, 1L, 1L, *(FREE_FORM_SEM_NAMES + i)) &&
+              CreateSemaphoreA (NULL, 1L, LONG_MAX, *(FREE_FORM_SEM_NAMES + i)) &&
               (*(FREE_FORM_SEMS + i) =
-                   OpenSemaphoreA (SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, TRUE, *(FREE_FORM_SEM_NAMES + i))))
+                   OpenSemaphoreA (SEMAPHORE_MODIFY_STATE | SYNCHRONIZE, FALSE, *(FREE_FORM_SEM_NAMES + i))))
 #else
             sem_init (FREE_FORM_SEMS + i, false, 1)
 #endif
@@ -820,7 +820,7 @@ size_t
                             })
                           : (attrs + i)->type == TYPE_INTEGER
                               ? ({
-                                    long v = strtol (buf, NULL, 10);
+                                    long long v = strtoll (buf, NULL, 10);
 
                                     !(errno == ERANGE || (!v && ({
                                           bool r = true;
@@ -903,7 +903,7 @@ size_t
 
                     else if ((attrs + i)->type == TYPE_INTEGER)
                         mvwprintw (
-                            win, r, 2, "Debe introducirse un número entero entre %ld y %ld en el campo %" PRISZ ".",
+                            win, r, 2, "Debe introducirse un número entero entre %lld y %lld en el campo %" PRISZ ".",
                             (attrs + i)->type_args.integer.min, (attrs + i)->type_args.integer.max, i + 1
                         );
 
